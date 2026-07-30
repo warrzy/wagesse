@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  database:
+    image: postgres:15-alpine
+    container_name: wagesse-db
+    environment:
+      POSTGRES_USER: wagesse_user
+      POSTGRES_PASSWORD: wagesse_password_dev
+      POSTGRES_DB: wagesse
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wagesse_user -d wagesse"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis (pour sessions, cache, jobs)
+  redis:
+    image: redis:7-alpine
+    container_name: wagesse-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Next.js Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wagesse-app
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://wagesse_user:wagesse_password_dev@database:5432/wagesse
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: super_secret_dev_key_change_in_production
+      NEXT_PUBLIC_APP_NAME: Wagesse
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      PAYMENT_PROVIDER: orange_money_sandbox
+    ports:
+      - "3000:3000"
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    command: npm run dev
+
+  # Optional: Adminer for database management
+  adminer:
+    image: adminer:latest
+    container_name: wagesse-adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      - database
+
+volumes:
+  postgres_data:
+    driver: local

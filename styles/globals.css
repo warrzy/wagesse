@@ -1,0 +1,160 @@
+@reference "tailwindcss";
+@import "tailwindcss";
+
+/* === Base Styles === */
+:root {
+  --color-primary: #E8714D;
+  --color-secondary: #8B6F47;
+  --color-accent: #D4B896;
+  --color-dark: #2C3E50;
+  --color-light: #F5F1ED;
+  --color-success: #4CAF50;
+  --color-warning: #FFA500;
+  --color-danger: #EF4444;
+}
+
+body {
+  font-family: Inter, system-ui, sans-serif;
+  color: var(--color-dark);
+  background-color: #FFFFFF;
+}
+
+/* === Typography === */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  color: var(--color-dark);
+}
+
+h1 {
+  font-size: 2.5rem;
+  line-height: 1.2;
+}
+
+h2 {
+  font-size: 2rem;
+  line-height: 1.3;
+}
+
+h3 {
+  font-size: 1.5rem;
+  line-height: 1.4;
+}
+
+/* === Components === */
+.button-primary {
+  @apply bg-[#E8714D] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#d45c39] transition-colors;
+}
+
+.button-secondary {
+  @apply bg-[#8B6F47] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#7a5f3d] transition-colors;
+}
+
+.button-outline {
+  @apply border-2 border-[#E8714D] text-[#E8714D] px-6 py-3 rounded-lg font-medium hover:bg-[#E8714D] hover:text-white transition-colors;
+}
+
+.card {
+  @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6;
+}
+
+.card-hover {
+  @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6 transition-all hover:shadow-lg hover:border-[#E8714D];
+}
+
+.input-field {
+  @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#E8714D] focus:ring-2 focus:ring-[#E8714D]/20;
+}
+
+.badge {
+  @apply inline-block px-3 py-1 rounded-full text-sm font-medium;
+}
+
+.badge-success {
+  @apply inline-block px-3 py-1 rounded-full text-sm font-medium bg-[#4CAF50]/20 text-[#2d7a3a];
+}
+
+.badge-warning {
+  @apply inline-block px-3 py-1 rounded-full text-sm font-medium bg-[#FFA500]/20 text-[#b87500];
+}
+
+.badge-danger {
+  @apply inline-block px-3 py-1 rounded-full text-sm font-medium bg-[#EF4444]/20 text-[#b91c1c];
+}
+
+/* === Animations === */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-in;
+}
+
+.slide-in-up {
+  animation: slideInUp 0.5s ease-out;
+}
+
+/* === Utilities === */
+.text-ellipsis {
+  @apply truncate;
+}
+
+.flex-center {
+  @apply flex items-center justify-center;
+}
+
+.container-max {
+  @apply container mx-auto max-w-6xl px-4;
+}
+
+.safe-bottom {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+.safe-top {
+  padding-top: max(1rem, env(safe-area-inset-top));
+}
+
+/* === Responsive === */
+@media (max-width: 640px) {
+  h1 {
+    font-size: 1.75rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+
+  h3 {
+    font-size: 1.25rem;
+  }
+
+  .button-primary,
+  .button-secondary,
+  .button-outline {
+    @apply w-full;
+  }
+}
+
+/* === Print === */
+@media print {
+  .no-print {
+    display: none;
+  }
+}

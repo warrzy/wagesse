@@ -1,0 +1,1470 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// USERS & AUTHENTICATION
+// ============================================================================
+
+model User {
+  id                    String    @id @default(cuid())
+  email                 String    @unique
+  phone                 String    @unique
+  phoneVerified         DateTime?
+  password              String
+  firstName             String?
+  lastName              String?
+  profilePhoto          String?
+  role                  Role      @default(CLIENT)
+  status                UserStatus @default(ACTIVE)
+  
+  // Relations
+  customerProfile       CustomerProfile?
+  truckerProfile        TruckerProfile?
+  organizationMembers   OrganizationMember[]
+  notifications         Notification[]
+  conversations         Conversation[]
+  messages              Message[]
+  ratings               Rating[]
+  supportTickets        SupportTicket[]
+  auditLogs             AuditLog[]
+  
+  // Security
+  lastLoginAt           DateTime?
+  loginAttempts         Int       @default(0)
+  lockedUntil           DateTime?
+  twoFactorEnabled      Boolean   @default(false)
+  twoFactorSecret       String?
+  
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  deletedAt             DateTime?
+  
+  @@index([email])
+  @@index([phone])
+  @@index([role])
+  @@index([status])
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+  SUSPENDED
+  DELETED
+}
+
+enum Role {
+  VISITOR
+  CLIENT
+  TRUCKER
+  OPERATOR
+  ADMIN
+}
+
+model Permission {
+  id                    String    @id @default(cuid())
+  name                  String    @unique
+  description           String?
+  resource              String
+  action                String
+  
+  roles                 RolePermission[]
+  
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  
+  @@unique([resource, action])
+}
+
+model RolePermission {
+  id                    String    @id @default(cuid())
+  role                  Role
+  permission            Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  permissionId          String
+  
+  gratedAt              DateTime  @default(now())
+  
+  @@unique([role, permissionId])
+}
+
+// ============================================================================
+// CUSTOMER PROFILES
+// ============================================================================
+
+model CustomerProfile {
+  id                    String    @id @default(cuid())
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                String    @unique
+  
+  // Profile Info
+  companyName           String?
+  companyRegistration   String?
+  companyType           CustomerType @default(INDIVIDUAL)
+  taxNumber             String?
+  
+  // Address
+  city                  String
+  provinceCode          String?
+  district              String?
+  sector                String?
+  landmark              String?
+  
+  // Contact
+  alternatePhone        String?
+  preferredLanguage     String    @default("fr")
+  
+  // Statistics
+  totalRequests         Int       @default(0)
+  totalMissions         Int       @default(0)
+  successRate           Float     @default(100)
+  averageRating         Float     @default(0)
+  
+  // Relations
+  requests              TransportRequest[]
+  missions              Mission[]
+  payments              Payment[]
+  subscriptions         Subscription[]
+  
+  verificationStatus    VerificationStatus @default(PENDING)
+  verificationDocs      Document[]
+  
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  deletedAt             DateTime?
+  
+  @@index([userId])
+  @@index([companyType])
+}
+
+enum CustomerType {
+  INDIVIDUAL
+  CONSTRUCTION_COMPANY
+  QUARRY
+  MINING_COMPANY
+  MATERIAL_TRADER
+  TRANSPORT_SOCIETY
+  OTHER
+}
+
+// ============================================================================
+// TRUCKER PROFILES
+// ============================================================================
+
+model TruckerProfile {
+  id                    String    @id @default(cuid())
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                String    @unique
+  
+  // Profile Type
+  truckerType           TruckerType @default(INDEPENDENT)
+  
+  // Organization (if applicable)
+  organization          Organization? @relation(fields: [organizationId], references: [id])
+  organizationId        String?
+  
+  // Location Info
+  city                  String
+  provinceCode          String?
+  district              String?
+  sector                String?
+  
+  // Business Info
+  operatingLicense      String?
+  licenseExpiry         DateTime?
+  insurancePolicy       String?
+  insuranceExpiry       DateTime?
+  
+  // Service Areas
+  serviceAreas          ServiceArea[]
+  
+  // Vehicles
+  vehicles              Vehicle[]
+  
+  // Documents
+  documents             Document[]
+  
+  // Ratings & Stats
+  averageRating         Float     @default(0)
+  totalRatings          Int       @default(0)
+  totalMissions         Int       @default(0)
+  acceptanceRate        Float     @default(100)
+  cancellationRate      Float     @default(0)
+  
+  // Payment
+  orangeMoneyNumber     String?   // For payouts
+  mobileMoneyNumber     String?
+  bankAccount           String?
+  
+  // Verification
+  verificationStatus    VerificationStatus @default(PENDING)
+  verificationBadges    String[]  @default([])
+  
+  // Subscription
+  subscription          Subscription? @relation("TruckerSubscription")
+  currentPlan           SubscriptionPlan? @relation(fields: [subscriptionPlanId], references: [id])
+  subscriptionPlanId    String?
+  
+  // Status
+  isAvailable           Boolean   @default(true)
+  lastAvailabilityUpdate DateTime?
+  
+  // Relations
+  missions              Mission[]
+  quotes                Quote[]
+  ratings               Rating[]
+  disputes              Dispute[]
+  
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  deletedAt             DateTime?
+  
+  @@index([userId])
+  @@index([organizationId])
+  @@index([truckerType])
+  @@index([verificationStatus])
+}
+
+enum TruckerType {
+  INDEPENDENT_DRIVER
+  TRUCK_OWNER
+  TRANSPORT_COMPANY
+}
+
+model ServiceArea {
+  id                    String    @id @default(cuid())
+  trucker               TruckerProfile @relation(fields: [truckerId], references: [id], onDelete: Cascade)
+  truckerId             String
+  
+  city                  String
+  provinceCode          String?
+  latitude              Float?
+  longitude             Float?
+  radiusKm              Int?      @default(50)
+  
+  createdAt             DateTime  @default(now())
+  
+  @@unique([truckerId, city, provinceCode])
+  @@index([city])
+}
+
+enum VerificationStatus {
+  PENDING
+  UNDER_REVIEW
+  VERIFIED
+  REJECTED
+  EXPIRED
+}
+
+// ============================================================================
+// ORGANIZATIONS
+// ============================================================================
+
+model Organization {
+  id                    String    @id @default(cuid())
+  name                  String
+  registrationNumber    String    @unique
+  address               String?
+  city                  String
+  
+  // Contacts
+  contactEmail          String?
+  contactPhone          String?
+  
+  // Members
+  members               OrganizationMember[]
+  truckers              TruckerProfile[]
+  
+  // Logo
+  logoUrl               String?
+  
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  
+  @@index([city])
+}
+
+model OrganizationMember {
+  id                    String    @id @default(cuid())
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                String
+  
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId        String
+  
+  role                  String    @default("member") // manager, member, driver, etc.
+  joinedAt              DateTime  @default(now())
+  
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+}
+
+// ============================================================================
+// VEHICLES & DOCUMENTS
+// ============================================================================
+
+model Vehicle {
+  id                    String    @id @default(cuid())
+  trucker               TruckerProfile @relation(fields: [truckerId], references: [id], onDelete: Cascade)
+  truckerId             String
+  
+  // Vehicle Info
+  licensePlate          String    @unique
+  brand                 String
+  model                 String
+  year                  Int
+  vehicleType           VehicleType
+  axles                 Int?
+  
+  // Capacity
+  capacityTonnes        Float
+  capacityM3            Float?
+  
+  // Benne Info
+  benneType             String?   // Benne basculante, semi-remorque, etc.
+  
+  // Status
+  condition             VehicleCondition @default(GOOD)
+  isOperational         Boolean   @default(true)
+  
+  // Documents
+  documents             VehicleDocument[]
+  photos                String[]  @default([])
+  
+  // Insurance & Inspection
+  insuranceExpiry       DateTime?
+  inspectionExpiry      DateTime?
+  
+  // Availability
+  availability          String?   // JSON schedule
+  assignedDriver        Driver?   @relation(fields: [driverId], references: [id])
+  driverId              String?
+  
+  // Relations
+  missions              Mission[]
+  
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  deletedAt             DateTime?
+  
+  @@index([truckerId])
+  @@index([licensePlate])
+  @@index([vehicleType])
+}
+
+enum VehicleType {
+  DUMP_TRUCK_3_AXLES
+  DUMP_TRUCK_4_AXLES
+  DUMP_TRUCK_5_AXLES
+  TIPPER_TRUCK
+  FLATBED
+  CONTAINER_TRUCK
+  ARTICULATED_TRUCK
+  OTHER
+}
+
+enum VehicleCondition {
+  EXCELLENT
+  GOOD
+  FAIR
+  POOR
+}
+
+model VehicleDocument {
+  id                    String    @id @default(cuid())
+  vehicle               Vehicle   @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  vehicleId             String
+  
+  documentType          String    // registration, insurance, inspection, etc.
+  fileUrl               String
+  expiryDate            DateTime?
+  isVerified            Boolean   @default(false)
+  
+  uploadedAt            DateTime  @default(now())
+  verifiedAt            DateTime?
+  
+  @@index([vehicleId])
+}
+
+model Driver {
+  id                    String    @id @default(cuid())
+  
+  // Personal Info
+  firstName             String
+  lastName              String
+  phone                 String    @unique
+  
+  // License
+  licenseNumber         String    @unique
+  licenseExpiry         DateTime
+  licenseCategory       String?   // C, EC, etc.
+  
+  // Documents
+  idCardUrl             String?
+  idCardExpiry          DateTime?
+  
+  // Vehicles
+  vehicles              Vehicle[]
+  
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  
+  @@index([phone])
+}
+
+model Document {
+  id                    String    @id @default(cuid())
+  
+  // Owner
+  customer              CustomerProfile? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  customerId            String?
+  
+  trucker               TruckerProfile? @relation(fields: [truckerId], references: [id], onDelete: SetNull)
+  truckerId             String?
+  
+  // Document Info
+  documentType          DocumentType
+  fileUrl               String
+  expiryDate            DateTime?
+  isVerified            Boolean   @default(false)
+  
+  verifiedBy            String?   // Admin user who verified
+  verificationNotes     String?
+  
+  uploadedAt            DateTime  @default(now())
+  verifiedAt            DateTime?
+  
+  @@index([customerId])
+  @@index([truckerId])
+}
+
+enum DocumentType {
+  IDENTITY_CARD
+  PASSPORT
+  DRIVER_LICENSE
+  VEHICLE_REGISTRATION
+  INSURANCE_CERTIFICATE
+  INSPECTION_CERTIFICATE
+  BUSINESS_LICENSE
+  TAX_CERTIFICATE
+  COMPANY_REGISTRATION
+  BANK_STATEMENT
+  OTHER
+}
+
+// ============================================================================
+// MATERIALS & TRUCK TYPES
+// ============================================================================
+
+model Material {
+  id                    String    @id @default(cuid())
+  name                  String    @unique
+  category              String    // sand, gravel, granite, earth, etc.
+  description           String?
+  density               Float?    // kg/m3
+  icon                  String?
+  
+  requests              TransportRequest[]
+  quotes                Quote[]
+  
+  createdAt             DateTime  @default(now())
+  
+  @@index([category])
+}
+
+model TruckType {
+  id                    String    @id @default(cuid())
+  name                  String    @unique
+  description           String?
+  minCapacity           Float
+  maxCapacity           Float
+  icon                  String?
+  
+  createdAt             DateTime  @default(now())
+}
+
+// ============================================================================
+// TRANSPORT REQUESTS & MATCHING
+// ============================================================================
+
+model TransportRequest {
+  id                    String    @id @default(cuid())
+  customer              CustomerProfile @relation(fields: [customerId], references: [id])
+  customerId            String
+  
+  // Request Details
+  requestType           RequestType @default(ONE_TIME)
+  material              Material? @relation(fields: [materialId], references: [id])
+  materialId            String?
+  materialDescription   String?
+  quantity              Float
+  unit                  QuantityUnit
+  
+  // Locations
+  pickupCity            String
+  pickupProvince        String?
+  pickupDistrict        String?
+  pickupSector          String?
+  pickupLandmark        String?
+  pickupLat             Float?
+  pickupLng             Float?
+  pickupAccessNotes     String?
+  
+  dropoffCity           String
+  dropoffProvince       String?
+  dropoffDistrict       String?
+  dropoffSector         String?
+  dropoffLandmark       String?
+  dropoffLat            Float?
+  dropoffLng            Float?
+  
+  // Timing
+  requestedDate         DateTime
+  urgency               Urgency   @default(STANDARD)
+  
+  // Details
+  truckTypePreference   String?
+  minCapacity           Float?
+  needsDriver           Boolean   @default(false)
+  numberOfTrucks        Int       @default(1)
+  numberOfTrips         Int?      // For multiple trips
+  
+  // Budget
+  budgetEstimate        Float?
+  currencyCode          String    @default("XOF")
+  
+  // Media
+  photos                String[]  @default([])
+  
+  // Status
+  status                RequestStatus @default(DRAFT)
+  
+  // Publication
+  publishedAt           DateTime?
+  expiresAt             DateTime?
+  
+  // Relations
+  matches               Match[]
+  contactUnlocks        ContactUnlock[]
+  quotes                Quote[]
+  missions              Mission[]
+  
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  deletedAt             DateTime?
+  
+  @@index([customerId])
+  @@index([status])
+  @@index([requestedDate])
+}
+
+enum RequestType {
+  ONE_TIME
+  RECURRING
+  URGENT
+}
+
+enum QuantityUnit {
+  TONNES
+  CUBIC_METERS
+  NUMBER_OF_TRIPS
+  FULL_TRUCK_LOAD
+}
+
+enum RequestStatus {
+  DRAFT
+  PENDING_PAYMENT
+  PUBLISHED
+  MATCHED
+  IN_NEGOTIATION
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  DISPUTED
+}
+
+enum Urgency {
+  STANDARD
+  URGENT
+  VERY_URGENT
+}
+
+model Match {
+  id                    String    @id @default(cuid())
+  request               TransportRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  requestId             String
+  
+  trucker               TruckerProfile @relation(fields: [truckerId], references: [id], onDelete: Cascade)
+  truckerId             String
+  
+  // Matching Score
+  matchScore            Float     // 0-100
+  scoreBreakdown        String?   // JSON with scoring details
+  
+  // Status
+  status                MatchStatus @default(PROPOSED)
+  
+  createdAt             DateTime  @default(now())
+  proposedAt            DateTime?
+  
+  @@unique([requestId, truckerId])
+  @@index([requestId])
+  @@index([truckerId])
+}
+
+enum MatchStatus {
+  PROPOSED
+  INTERESTED
+  QUOTE_SENT
+  QUOTE_ACCEPTED
+  QUOTE_REJECTED
+  MISSION_CREATED
+  ARCHIVED
+}
+
+model ContactUnlock {
+  id                    String    @id @default(cuid())
+  request               TransportRequest @relation(fields: [requestId], references: [id])
+  requestId             String
+  
+  // Payment Info
+  payment               Payment   @relation(fields: [paymentId], references: [id])
+  paymentId             String
+  
+  // Unlocked Contacts
+  unlockedContacts      String[]  // JSON array of {truckerId, trucker contact info}
+  
+  createdAt             DateTime  @default(now())
+  
+  @@unique([requestId, paymentId])
+}
+
+// ============================================================================
+// QUOTES & MISSIONS
+// ============================================================================
+
+model Quote {
+  id                    String    @id @default(cuid())
+  request               TransportRequest @relation(fields: [requestId], references: [id])
+  requestId             String
+  
+  trucker               TruckerProfile @relation(fields: [truckerId], references: [id])
+  truckerId             String
+  
+  material              Material? @relation(fields: [materialId], references: [id])
+  materialId            String?
+  
+  // Pricing
+  totalPrice            Float
+  pricePerTrip          Float?
+  numberOfTrips         Int       @default(1)
+  currencyCode          String    @default("XOF")
+  
+  // Timing
+  proposedDate          DateTime
+  estimatedDuration     String?
+  validUntil            DateTime
+  
+  // Details
+  comments              String?
+  specialConditions     String?
+  
+  // Status
+  status                QuoteStatus @default(PENDING)
+  
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  acceptedAt            DateTime?
+  rejectedAt            DateTime?
+  
+  @@index([requestId])
+  @@index([truckerId])
+  @@index([status])
+}
+
+enum QuoteStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  COUNTER_OFFER
+  EXPIRED
+}
+
+model Mission {
+  id                    String    @id @default(cuid())
+  request               TransportRequest @relation(fields: [requestId], references: [id])
+  requestId             String
+  
+  customer              CustomerProfile @relation(fields: [customerId], references: [id])
+  customerId            String
+  
+  trucker               TruckerProfile @relation(fields: [truckerId], references: [id])
+  truckerId             String
+  
+  vehicle               Vehicle   @relation(fields: [vehicleId], references: [id])
+  vehicleId             String
+  
+  // Mission Details
+  missionReference      String    @unique // Unique reference for operations
+  contractMaterial      String?
+  contractQuantity      Float?
+  contractUnit          String?   // tonnes, m3, etc.
+  contractPrice         Float
+  contractCurrency      String    @default("XOF")
+  
+  // Dates & Times
+  scheduledDate         DateTime
+  startDate             DateTime?
+  endDate               DateTime?
+  
+  // Locations
+  pickupLocation        String
+  dropoffLocation       String
+  
+  // Status & History
+  status                MissionStatus @default(DRAFT)
+  statusHistory         MissionStatusHistory[]
+  
+  // Proof
+  pickupProof           DeliveryProof?
+  deliveryProof         DeliveryProof?
+  
+  // Payment
+  payment               Payment?  @relation("MissionPayment")
+  paymentId             String?
+  
+  // Commission
+  platformCommission    Float?
+  platformCommissionRate Float? @default(0.10) // 10% default
+  
+  // Ratings
+  customerRating        Rating?   @relation("CustomerRatingMission")
+  truckerRating         Rating?   @relation("TruckerRatingMission")
+  
+  // Disputes
+  dispute               Dispute?
+  
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  
+  @@index([requestId])
+  @@index([customerId])
+  @@index([truckerId])
+  @@index([status])
+  @@index([scheduledDate])
+}
+
+enum MissionStatus {
+  DRAFT
+  PENDING_PAYMENT
+  PAID
+  PENDING_ACCEPTANCE
+  ACCEPTED
+  TRUCK_EN_ROUTE_PICKUP
+  ARRIVED_PICKUP
+  LOADING_IN_PROGRESS
+  EN_ROUTE_DELIVERY
+  ARRIVED_DELIVERY
+  DELIVERED
+  PENDING_CONFIRMATION
+  COMPLETED
+  CANCELLED
+  DISPUTED
+  REFUNDED
+}
+
+model MissionStatusHistory {
+  id                    String    @id @default(cuid())
+  mission               Mission   @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  missionId             String
+  
+  previousStatus        MissionStatus?
+  newStatus             MissionStatus
+  reason                String?
+  notes                 String?
+  
+  changedBy             String?   // User ID who changed it
+  timestamp             DateTime  @default(now())
+  
+  @@index([missionId])
+}
+
+model DeliveryProof {
+  id                    String    @id @default(cuid())
+  
+  mission               Mission   @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  missionId             String    @unique
+  
+  proofType             String    // "pickup" or "delivery"
+  photoUrl              String
+  gpsLat                Float?
+  gpsLng                Float?
+  otpCode               String?   // OTP verification code
+  otpVerifiedAt         DateTime?
+  
+  capturedAt            DateTime  @default(now())
+  verifiedAt            DateTime?
+  verifiedBy            String?
+  
+  @@index([missionId])
+}
+
+// ============================================================================
+// RATINGS & DISPUTES
+// ============================================================================
+
+model Rating {
+  id                    String    @id @default(cuid())
+  
+  rater                 User      @relation(fields: [raterId], references: [id])
+  raterId               String
+  
+  mission               Mission?  @relation("CustomerRatingMission", fields: [missionId], references: [id])
+  missionId             String?   @unique
+  
+  trucker               TruckerProfile @relation(fields: [truckerId], references: [id])
+  truckerId             String
+  
+  // Rating
+  score                 Int       // 1-5
+  category              String    // professionalism, punctuality, vehicle_condition, etc.
+  comment               String?
+  
+  ratedAt               DateTime  @default(now())
+  
+  @@index([raterId])
+  @@index([truckerId])
+}
+
+model Dispute {
+  id                    String    @id @default(cuid())
+  mission               Mission   @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  missionId             String    @unique
+  
+  // Who filed
+  filedBy               String    // "customer" or "trucker"
+  description           String
+  evidence              String[]  // URLs to photos/documents
+  
+  // Resolution
+  status                DisputeStatus @default(OPEN)
+  resolution            String?
+  resolvedAt            DateTime?
+  resolvedBy            String?   // Admin user ID
+  
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  
+  @@index([missionId])
+  @@index([status])
+}
+
+enum DisputeStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  APPEAL_FILED
+  APPEAL_RESOLVED
+}
+
+// ============================================================================
+// PAYMENTS & FINANCE
+// ============================================================================
+
+model SubscriptionPlan {
+  id                    String    @id @default(cuid())
+  name                  String    @unique
+  tier                  String    // "discovery", "professional", "fleet"
+  description           String?
+  
+  // Pricing
+  monthlyPrice          Float
+  annualPrice           Float?
+  currency              String    @default("XOF")
+  trialDays             Int       @default(0)
+  
+  // Limits
+  maxVehicles           Int       @default(1)
+  maxRequests           Int?      // null = unlimited
+  maxProposals          Int?      // null = unlimited
+  
+  // Features
+  features              String[]  @default([])
+  
+  // Commission
+  platformCommissionRate Float @default(0.10)
+  
+  // Status
+  isActive              Boolean   @default(true)
+  
+  // Relations
+  truckers              TruckerProfile[]
+  subscriptions         Subscription[]
+  
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+model Subscription {
+  id                    String    @id @default(cuid())
+  
+  // Subscriber
+  customer              CustomerProfile? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customerId            String?
+  
+  trucker               TruckerProfile? @relation("TruckerSubscription", fields: [truckerId], references: [id], onDelete: Cascade)
+  truckerId             String?
+  
+  plan                  SubscriptionPlan @relation(fields: [planId], references: [id])
+  planId                String
+  
+  // Dates
+  startDate             DateTime
+  endDate               DateTime?
+  autoRenewal           Boolean   @default(true)
+  
+  // Payment
+  lastPaymentDate       DateTime?
+  nextPaymentDate       DateTime?
+  
+  // Status
+  status                SubscriptionStatus @default(ACTIVE)
+  
+  // Payment History
+  payments              SubscriptionPayment[]
+  
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  
+  @@index([customerId])
+  @@index([truckerId])
+  @@index([planId])
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAUSED
+  CANCELLED
+  EXPIRED
+}
+
+model SubscriptionPayment {
+  id                    String    @id @default(cuid())
+  subscription          Subscription @relation(fields: [subscriptionId], references: [id])
+  subscriptionId        String
+  
+  amount                Float
+  currency              String    @default("XOF")
+  
+  status                PaymentStatus @default(INITIATED)
+  paymentMethod         String    // "orange_money", "card", etc.
+  
+  transactionRef        String?   @unique
+  providerRef           String?   // Reference from payment provider
+  
+  paidAt                DateTime?
+  failureReason         String?
+  
+  createdAt             DateTime  @default(now())
+  
+  @@index([subscriptionId])
+}
+
+model Payment {
+  id                    String    @id @default(cuid())
+  
+  // Payer
+  payer                 String    // User ID
+  
+  // Payment Details
+  amount                Float
+  currency              String    @default("XOF")
+  type                  PaymentType
+  
+  description           String?
+  reference             String    @unique // Internal reference
+  
+  // Provider Info
+  providerName          String    // "orange_money", "stripe", etc.
+  providerReference     String?   @unique // External provider reference
+  
+  // Status
+  status                PaymentStatus @default(INITIATED)
+  
+  // Attempts
+  attempts              PaymentAttempt[]
+  lastAttemptAt         DateTime?
+  
+  // Fees
+  platformFee           Float     @default(0)
+  providerFee           Float     @default(0)
+  
+  // Related Records
+  contactUnlock         ContactUnlock?
+  mission               Mission?  @relation("MissionPayment", fields: [missionId], references: [id])
+  missionId             String?   @unique
+  
+  subscriptionPayment   SubscriptionPayment?
+  
+  // Metadata
+  metadata              String?   // JSON for additional data
+  
+  // Timestamps
+  initiatedAt           DateTime  @default(now())
+  confirmedAt           DateTime?
+  failedAt              DateTime?
+  expiresAt             DateTime?
+  
+  @@index([payer])
+  @@index([status])
+  @@index([type])
+  @@index([confirmedAt])
+}
+
+enum PaymentType {
+  CONTACT_UNLOCK
+  MISSION_PAYMENT
+  SUBSCRIPTION
+  PLATFORM_FEE
+  REFUND
+}
+
+enum PaymentStatus {
+  INITIATED
+  PENDING
+  IN_PROGRESS
+  SUCCESSFUL
+  FAILED
+  EXPIRED
+  CANCELLED
+  PARTIALLY_REFUNDED
+  REFUNDED
+  DISPUTED
+}
+
+model PaymentAttempt {
+  id                    String    @id @default(cuid())
+  payment               Payment   @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  paymentId             String
+  
+  attemptNumber         Int
+  status                String    // from provider
+  errorCode             String?
+  errorMessage          String?
+  
+  requestData           String?   // Encrypted
+  responseData          String?   // Encrypted
+  
+  attemptedAt           DateTime  @default(now())
+  
+  @@index([paymentId])
+}
+
+model Transaction {
+  id                    String    @id @default(cuid())
+  
+  // Participants
+  fromUser              String    // User ID
+  toUser                String    // User ID
+  
+  // Amount
+  amount                Float
+  currency              String    @default("XOF")
+  
+  // Type
+  type                  String    // "commission", "payout", "refund", etc.
+  reference             String?
+  
+  // Related Records
+  mission               Mission?  @relation(fields: [missionId], references: [id])
+  missionId             String?
+  
+  // Related Ledger Entries
+  ledgerEntries         LedgerEntry[]
+  
+  // Status
+  status                String    @default("pending") // pending, confirmed, cancelled
+  
+  createdAt             DateTime  @default(now())
+  
+  @@index([fromUser])
+  @@index([toUser])
+  @@index([type])
+}
+
+model LedgerEntry {
+  id                    String    @id @default(cuid())
+  
+  // Account
+  account               String    // User ID or "platform"
+  
+  // Transaction
+  transaction           Transaction @relation(fields: [transactionId], references: [id])
+  transactionId         String
+  
+  // Amount
+  amount                Float     // Can be positive or negative
+  currency              String    @default("XOF")
+  
+  // Entry Type
+  entryType             String    // "credit", "debit", "commission", "fee", "refund"
+  
+  // Balance
+  balanceAfter          Float?
+  
+  // Metadata
+  description           String?
+  reference             String?
+  
+  createdAt             DateTime  @default(now())
+  
+  @@index([account])
+  @@index([transactionId])
+}
+
+model Commission {
+  id                    String    @id @default(cuid())
+  
+  // Mission
+  mission               Mission?  @relation(fields: [missionId], references: [id], onDelete: SetNull)
+  missionId             String?
+  
+  // Trucker
+  trucker               TruckerProfile @relation(fields: [truckerId], references: [id])
+  truckerId             String
+  
+  // Amount
+  commissionAmount      Float
+  commissionRate        Float
+  missionAmount         Float
+  currency              String    @default("XOF")
+  
+  // Status
+  status                String    @default("pending") // pending, calculated, paid
+  
+  createdAt             DateTime  @default(now())
+  paidAt                DateTime?
+  
+  @@index([truckerId])
+  @@index([missionId])
+}
+
+model Payout {
+  id                    String    @id @default(cuid())
+  
+  // Trucker
+  trucker               TruckerProfile @relation(fields: [truckerId], references: [id])
+  truckerId             String
+  
+  // Amount
+  amount                Float
+  currency              String    @default("XOF")
+  
+  // Payment Method
+  paymentMethod         String    // "orange_money", "mobile_money", "bank_transfer"
+  destination           String    // Phone number or account
+  
+  // Status
+  status                PayoutStatus @default(PENDING)
+  transactionId         String?   @unique
+  errorMessage          String?
+  
+  requestedAt           DateTime  @default(now())
+  processedAt           DateTime?
+  
+  @@index([truckerId])
+  @@index([status])
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  SUCCESSFUL
+  FAILED
+  CANCELLED
+}
+
+model Refund {
+  id                    String    @id @default(cuid())
+  
+  // Original Payment
+  originalPayment       Payment?  @relation(fields: [paymentId], references: [id])
+  paymentId             String?
+  
+  // Amount
+  amount                Float
+  currency              String    @default("XOF")
+  reason                String
+  
+  // Status
+  status                RefundStatus @default(PENDING)
+  processedAt           DateTime?
+  
+  createdAt             DateTime  @default(now())
+  
+  @@index([paymentId])
+  @@index([status])
+}
+
+enum RefundStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model Invoice {
+  id                    String    @id @default(cuid())
+  
+  // Customer
+  customer              CustomerProfile? @relation(fields: [customerId], references: [id])
+  customerId            String?
+  
+  // Invoice Details
+  invoiceNumber         String    @unique
+  invoiceDate           DateTime  @default(now())
+  dueDate               DateTime
+  
+  // Amounts
+  subtotal              Float
+  platformFee           Float
+  tax                   Float     @default(0)
+  total                 Float
+  currency              String    @default("XOF")
+  
+  // Items
+  items                 String    // JSON array of invoice items
+  
+  // Status
+  status                InvoiceStatus @default(DRAFT)
+  paidAt                DateTime?
+  
+  // PDF
+  pdfUrl                String?
+  
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  
+  @@index([customerId])
+  @@index([status])
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  VIEWED
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+model PaymentWebhook {
+  id                    String    @id @default(cuid())
+  
+  provider              String    // "orange_money", "stripe", etc.
+  eventType             String
+  
+  data                  String    // JSON webhook data
+  signature             String?   // Provider signature for verification
+  
+  processed             Boolean   @default(false)
+  processedAt           DateTime?
+  
+  error                 String?
+  
+  receivedAt            DateTime  @default(now())
+  
+  @@index([provider])
+  @@index([processed])
+}
+
+// ============================================================================
+// NOTIFICATIONS & MESSAGING
+// ============================================================================
+
+model Notification {
+  id                    String    @id @default(cuid())
+  
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                String
+  
+  // Content
+  type                  NotificationType
+  title                 String
+  message               String
+  icon                  String?
+  
+  // Actions
+  actionUrl             String?
+  actionLabel           String?
+  
+  // Status
+  read                  Boolean   @default(false)
+  readAt                DateTime?
+  
+  // Delivery
+  deliveryChannels      String[]  @default([]) // in-app, email, sms, whatsapp
+  sentAt                DateTime?
+  
+  // Metadata
+  metadata              String?   // JSON
+  
+  createdAt             DateTime  @default(now())
+  
+  @@index([userId])
+  @@index([type])
+  @@index([read])
+}
+
+enum NotificationType {
+  ACCOUNT_CONFIRMATION
+  DOCUMENTS_RECEIVED
+  PROFILE_VALIDATED
+  PROFILE_REJECTED
+  NEW_REQUEST_AVAILABLE
+  NEW_QUOTE_RECEIVED
+  QUOTE_ACCEPTED
+  PAYMENT_CONFIRMED
+  MISSION_ACCEPTED
+  TRUCK_EN_ROUTE
+  DELIVERY_COMPLETED
+  PAYMENT_AVAILABLE
+  DOCUMENT_EXPIRING_SOON
+  SUBSCRIPTION_EXPIRING_SOON
+  DISPUTE_OPENED
+  DISPUTE_RESOLVED
+  SYSTEM_ALERT
+}
+
+model Conversation {
+  id                    String    @id @default(cuid())
+  
+  // Participants
+  participants          User[]
+  
+  // Context
+  type                  String    // "mission_related", "support", etc.
+  referenceId           String?   // mission ID, request ID, etc.
+  
+  // Last Activity
+  lastMessageAt         DateTime?
+  
+  // Messages
+  messages              Message[]
+  
+  // Status
+  isActive              Boolean   @default(true)
+  
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+model Message {
+  id                    String    @id @default(cuid())
+  
+  conversation          Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId        String
+  
+  sender                User      @relation(fields: [senderId], references: [id])
+  senderId              String
+  
+  content               String
+  attachments           String[]  @default([]) // URLs
+  
+  readAt                DateTime?
+  
+  createdAt             DateTime  @default(now())
+  
+  @@index([conversationId])
+  @@index([senderId])
+}
+
+// ============================================================================
+// SUPPORT
+// ============================================================================
+
+model SupportTicket {
+  id                    String    @id @default(cuid())
+  
+  user                  User      @relation(fields: [userId], references: [id])
+  userId                String
+  
+  // Details
+  subject               String
+  category              String    // "payment", "mission", "document", etc.
+  priority              String    @default("normal") // low, normal, high, urgent
+  description           String
+  attachments           String[]  @default([])
+  
+  // Status
+  status                String    @default("open") // open, in_progress, resolved, closed
+  
+  // Resolution
+  resolution            String?
+  resolvedAt            DateTime?
+  
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  
+  @@index([userId])
+  @@index([status])
+}
+
+// ============================================================================
+// ADMIN & AUDIT
+// ============================================================================
+
+model AuditLog {
+  id                    String    @id @default(cuid())
+  
+  user                  User      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId                String?
+  
+  // Action
+  action                String    // "create", "update", "delete", "verify", etc.
+  resource              String    // "user", "mission", "payment", etc.
+  resourceId            String?
+  
+  // Changes
+  changes               String?   // JSON of before/after
+  
+  // Metadata
+  ipAddress             String?
+  userAgent             String?
+  
+  createdAt             DateTime  @default(now())
+  
+  @@index([userId])
+  @@index([resource])
+  @@index([action])
+}
+
+model PlatformSetting {
+  id                    String    @id @default(cuid())
+  
+  // Setting Key
+  key                   String    @unique
+  value                 String    // JSON for complex values
+  
+  // Metadata
+  description           String?
+  type                  String    // "string", "number", "boolean", "json"
+  
+  updatedBy             String?   // Admin user ID
+  
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  
+  @@index([key])
+}
