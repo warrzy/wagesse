@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { quoteService } from '@/lib/services/quote-service';
-import { verifyToken } from '@/lib/auth';
+import { getAuthContext, getCustomerProfileId, unauthorized } from '@/lib/api-auth';
 
 /**
  * POST /api/quotes/[id]/accept
@@ -8,27 +8,22 @@ import { verifyToken } from '@/lib/auth';
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const quoteId = params.id;
+    const { id: quoteId } = await params;
 
-    const token = request.headers.get('Authorization')?.split(' ')[1];
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = getAuthContext(request);
+    if (!auth) return unauthorized();
+
+    const customerId = await getCustomerProfileId(auth.userId);
+    if (!customerId) {
+      return NextResponse.json({ error: 'Customer profile not found' }, { status: 404 });
     }
 
-    let decoded: any;
-    try {
-      decoded = verifyToken(token);
-    } catch (error) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-    }
+    const mission = await quoteService.accept(quoteId, customerId);
 
-    // Accept the quote
-    const mission = await quoteService.accept(quoteId, decoded.userId);
-
-    return NextResponse.json(mission, { status: 201 });
+    return NextResponse.json({ success: true, data: mission }, { status: 201 });
   } catch (error: any) {
     console.error('[POST /api/quotes/[id]/accept]', error);
 
@@ -38,6 +33,10 @@ export async function POST(
 
     if (error.message === 'Unauthorized') {
       return NextResponse.json({ error: error.message }, { status: 403 });
+    }
+
+    if (error.message.includes('unlock the quotes')) {
+      return NextResponse.json({ error: error.message }, { status: 402 });
     }
 
     return NextResponse.json(

@@ -1,6 +1,34 @@
 import { prisma } from '@/lib/prisma';
 import { createQuoteSchema, CreateQuoteInput } from '@/lib/validations';
 import { Quote, QuoteStatus } from '@prisma/client';
+import { generateReference } from '@/lib/auth';
+import { sanitizeOptionalString } from '@/lib/anti-leak';
+
+const truckerSelect = {
+  id: true,
+  averageRating: true,
+  acceptanceRate: true,
+  user: {
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      phone: true,
+    },
+  },
+} as const;
+
+const customerSelect = {
+  id: true,
+  user: {
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      phone: true,
+    },
+  },
+} as const;
 
 /**
  * Service for managing quotes (price offers from truckers)
@@ -13,10 +41,8 @@ export const quoteService = {
     truckerId: string,
     data: CreateQuoteInput
   ): Promise<Quote> {
-    // Validate input
     const validated = createQuoteSchema.parse(data);
 
-    // Verify the request exists and is PUBLISHED
     const request = await prisma.transportRequest.findUnique({
       where: { id: validated.requestId },
     });
@@ -29,7 +55,14 @@ export const quoteService = {
       throw new Error('Can only quote on published requests');
     }
 
-    // Check if trucker already quoted on this request
+    const vehicle = await prisma.vehicle.findFirst({
+      where: { id: validated.vehicleId, truckerId },
+    });
+
+    if (!vehicle) {
+      throw new Error('Vehicle not found or does not belong to you');
+    }
+
     const existingQuote = await prisma.quote.findFirst({
       where: {
         requestId: validated.requestId,
@@ -41,27 +74,24 @@ export const quoteService = {
       throw new Error('You have already quoted on this request');
     }
 
-    // Create quote
     const quote = await prisma.quote.create({
       data: {
         requestId: validated.requestId,
         truckerId,
+        vehicleId: validated.vehicleId,
         totalPrice: validated.totalPrice,
-        currency: 'XOF',
-        estimatedDays: validated.estimatedDays || 2,
-        description: validated.description || '',
-        status: 'PENDING' as QuoteStatus,
+        pricePerTrip: validated.pricePerTrip,
+        numberOfTrips: validated.numberOfTrips,
+        currencyCode: 'XOF',
+        proposedDate: validated.proposedDate,
+        validUntil: validated.validUntil,
+        comments: sanitizeOptionalString(validated.comments),
+        specialConditions: sanitizeOptionalString(validated.specialConditions),
+        status: 'PENDING',
       },
       include: {
         request: true,
-        trucker: {
-          select: {
-            id: true,
-            name: true,
-            phone: true,
-            rating: true,
-          },
-        },
+        trucker: { select: truckerSelect },
       },
     });
 
@@ -71,32 +101,17 @@ export const quoteService = {
   /**
    * Get a single quote by ID
    */
-  async getById(quoteId: string): Promise<Quote | null> {
+  async getById(quoteId: string) {
     return await prisma.quote.findUnique({
       where: { id: quoteId },
       include: {
         request: {
           include: {
-            materials: true,
-            customer: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                phone: true,
-              },
-            },
+            customer: { select: customerSelect },
           },
         },
-        trucker: {
-          select: {
-            id: true,
-            name: true,
-            phone: true,
-            rating: true,
-            acceptanceRate: true,
-          },
-        },
+        trucker: { select: truckerSelect },
+        vehicle: true,
       },
     });
   },
@@ -105,24 +120,14 @@ export const quoteService = {
    * Get all quotes for a request
    */
   async getByRequestId(requestId: string) {
-    const quotes = await prisma.quote.findMany({
+    return await prisma.quote.findMany({
       where: { requestId },
       include: {
-        trucker: {
-          select: {
-            id: true,
-            name: true,
-            phone: true,
-            rating: true,
-            averageResponseTime: true,
-            acceptanceRate: true,
-          },
-        },
+        trucker: { select: truckerSelect },
+        vehicle: true,
       },
-      orderBy: { totalPrice: 'asc' }, // Sort by lowest price
+      orderBy: { totalPrice: 'asc' },
     });
-
-    return quotes;
   },
 
   /**
@@ -149,17 +154,10 @@ export const quoteService = {
         include: {
           request: {
             include: {
-              materials: true,
-              customer: {
-                select: {
-                  id: true,
-                  firstName: true,
-                  lastName: true,
-                  phone: true,
-                },
-              },
+              customer: { select: customerSelect },
             },
           },
+          vehicle: true,
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -180,65 +178,89 @@ export const quoteService = {
    * Accept a quote (creates a mission)
    */
   async accept(quoteId: string, customerId: string) {
-    // Get the quote
     const quote = await prisma.quote.findUnique({
       where: { id: quoteId },
-      include: {
-        request: true,
-      },
+      include: { request: true },
     });
 
     if (!quote) {
       throw new Error('Quote not found');
     }
 
-    // Verify customer owns the request
     if (quote.request.customerId !== customerId) {
       throw new Error('Unauthorized');
     }
 
-    // Verify quote status is PENDING
     if (quote.status !== 'PENDING') {
       throw new Error(`Cannot accept a ${quote.status} quote`);
     }
 
-    // Create a mission
+    if (!quote.vehicleId) {
+      throw new Error('Quote has no associated vehicle');
+    }
+
+    const customerProfile = await prisma.customerProfile.findUnique({
+      where: { id: customerId },
+      select: { userId: true },
+    });
+    const unlockedByUserId = customerProfile?.userId;
+
+    const unlock = unlockedByUserId
+      ? await prisma.contactUnlock.findFirst({ where: { requestId: quote.requestId, unlockedByUserId } })
+      : null;
+    if (!unlock) {
+      throw new Error('You must unlock the quotes on this request before accepting one');
+    }
+
     const mission = await prisma.$transaction(async (tx) => {
-      // Update quote status
       await tx.quote.update({
         where: { id: quoteId },
-        data: { status: 'ACCEPTED' as QuoteStatus },
+        data: { status: 'ACCEPTED', acceptedAt: new Date() },
       });
 
-      // Create mission
-      const newMission = await tx.mission.create({
-        data: {
-          requestId: quote.requestId,
-          quoteId: quoteId,
-          truckerId: quote.truckerId,
-          totalPrice: quote.totalPrice,
-          status: 'ACCEPTED',
-          startDate: new Date(),
-          estimatedEndDate: new Date(
-            Date.now() + quote.estimatedDays * 24 * 60 * 60 * 1000
-          ),
-          description: quote.description,
-        },
-        include: {
-          request: true,
-          trucker: true,
-          quote: true,
-        },
-      });
-
-      // Reject all other quotes for this request
       await tx.quote.updateMany({
         where: {
           requestId: quote.requestId,
           id: { not: quoteId },
           status: 'PENDING',
         },
-        data: { status: 'REJECTED' as QuoteStatus },
+        data: { status: 'REJECTED', rejectedAt: new Date() },
+      });
+
+      await tx.transportRequest.update({
+        where: { id: quote.requestId },
+        data: { status: 'ASSIGNED' },
+      });
+
+      const pickupLocation = [quote.request.pickupCity, quote.request.pickupSector]
+        .filter(Boolean)
+        .join(', ');
+      const dropoffLocation = [quote.request.dropoffCity, quote.request.dropoffSector]
+        .filter(Boolean)
+        .join(', ');
+
+      const newMission = await tx.mission.create({
+        data: {
+          requestId: quote.requestId,
+          customerId: quote.request.customerId,
+          truckerId: quote.truckerId,
+          vehicleId: quote.vehicleId as string,
+          missionReference: generateReference('MIS'),
+          contractMaterial: quote.request.materialDescription,
+          contractQuantity: quote.request.quantity,
+          contractUnit: quote.request.unit,
+          contractPrice: quote.totalPrice,
+          contractCurrency: quote.currencyCode,
+          scheduledDate: quote.proposedDate,
+          pickupLocation,
+          dropoffLocation,
+          status: 'ACCEPTED',
+        },
+        include: {
+          request: true,
+          trucker: { select: truckerSelect },
+          vehicle: true,
+        },
       });
 
       return newMission;
@@ -270,7 +292,7 @@ export const quoteService = {
 
     return await prisma.quote.update({
       where: { id: quoteId },
-      data: { status: 'REJECTED' as QuoteStatus },
+      data: { status: 'REJECTED', rejectedAt: new Date() },
     });
   },
 
@@ -296,7 +318,7 @@ export const quoteService = {
 
     return await prisma.quote.update({
       where: { id: quoteId },
-      data: { status: 'WITHDRAWN' as QuoteStatus },
+      data: { status: 'WITHDRAWN' },
     });
   },
 

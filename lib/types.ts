@@ -36,7 +36,7 @@ export interface CustomerProfile {
     | "TRANSPORT_SOCIETY"
     | "OTHER"
   city: string
-  tax Number?: string
+  taxNumber?: string
   totalRequests: number
   totalMissions: number
   averageRating: number
