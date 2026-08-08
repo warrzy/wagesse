@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -15,39 +15,41 @@ datasource db {
 // ============================================================================
 
 model User {
-  id                    String    @id @default(cuid())
-  email                 String    @unique
-  phone                 String    @unique
-  phoneVerified         DateTime?
-  password              String
-  firstName             String?
-  lastName              String?
-  profilePhoto          String?
-  role                  Role      @default(CLIENT)
-  status                UserStatus @default(ACTIVE)
-  
+  id            String     @id @default(cuid())
+  email         String     @unique
+  phone         String     @unique
+  phoneVerified DateTime?
+  password      String
+  firstName     String?
+  lastName      String?
+  profilePhoto  String?
+  role          Role       @default(CLIENT)
+  status        UserStatus @default(ACTIVE)
+
   // Relations
-  customerProfile       CustomerProfile?
-  truckerProfile        TruckerProfile?
-  organizationMembers   OrganizationMember[]
-  notifications         Notification[]
-  conversations         Conversation[]
-  messages              Message[]
-  ratings               Rating[]
-  supportTickets        SupportTicket[]
-  auditLogs             AuditLog[]
-  
+  customerProfile     CustomerProfile?
+  truckerProfile      TruckerProfile?
+  creditWallet        CreditWallet?
+  contactUnlocks      ContactUnlock[]      @relation("UnlockedByUser")
+  organizationMembers OrganizationMember[]
+  notifications       Notification[]
+  conversations       Conversation[]
+  messages            Message[]
+  ratings             Rating[]
+  supportTickets      SupportTicket[]
+  auditLogs           AuditLog[]
+
   // Security
-  lastLoginAt           DateTime?
-  loginAttempts         Int       @default(0)
-  lockedUntil           DateTime?
-  twoFactorEnabled      Boolean   @default(false)
-  twoFactorSecret       String?
-  
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-  deletedAt             DateTime?
-  
+  lastLoginAt      DateTime?
+  loginAttempts    Int       @default(0)
+  lockedUntil      DateTime?
+  twoFactorEnabled Boolean   @default(false)
+  twoFactorSecret  String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
   @@index([email])
   @@index([phone])
   @@index([role])
@@ -70,28 +72,28 @@ enum Role {
 }
 
 model Permission {
-  id                    String    @id @default(cuid())
-  name                  String    @unique
-  description           String?
-  resource              String
-  action                String
-  
-  roles                 RolePermission[]
-  
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-  
+  id          String  @id @default(cuid())
+  name        String  @unique
+  description String?
+  resource    String
+  action      String
+
+  roles RolePermission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@unique([resource, action])
 }
 
 model RolePermission {
-  id                    String    @id @default(cuid())
-  role                  Role
-  permission            Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
-  permissionId          String
-  
-  gratedAt              DateTime  @default(now())
-  
+  id           String     @id @default(cuid())
+  role         Role
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  permissionId String
+
+  gratedAt DateTime @default(now())
+
   @@unique([role, permissionId])
 }
 
@@ -100,46 +102,47 @@ model RolePermission {
 // ============================================================================
 
 model CustomerProfile {
-  id                    String    @id @default(cuid())
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId                String    @unique
-  
+  id     String @id @default(cuid())
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @unique
+
   // Profile Info
-  companyName           String?
-  companyRegistration   String?
-  companyType           CustomerType @default(INDIVIDUAL)
-  taxNumber             String?
-  
+  companyName         String?
+  companyRegistration String?
+  companyType         CustomerType @default(INDIVIDUAL)
+  taxNumber           String?
+
   // Address
-  city                  String
-  provinceCode          String?
-  district              String?
-  sector                String?
-  landmark              String?
-  
+  city         String
+  provinceCode String?
+  district     String?
+  sector       String?
+  landmark     String?
+
   // Contact
-  alternatePhone        String?
-  preferredLanguage     String    @default("fr")
-  
+  alternatePhone    String?
+  preferredLanguage String  @default("fr")
+
   // Statistics
-  totalRequests         Int       @default(0)
-  totalMissions         Int       @default(0)
-  successRate           Float     @default(100)
-  averageRating         Float     @default(0)
-  
+  totalRequests Int   @default(0)
+  totalMissions Int   @default(0)
+  successRate   Float @default(100)
+  averageRating Float @default(0)
+
   // Relations
-  requests              TransportRequest[]
-  missions              Mission[]
-  payments              Payment[]
-  subscriptions         Subscription[]
-  
-  verificationStatus    VerificationStatus @default(PENDING)
-  verificationDocs      Document[]
-  
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-  deletedAt             DateTime?
-  
+  requests      TransportRequest[]
+  missions      Mission[]
+  payments      Payment[]
+  subscriptions Subscription[]
+  invoices      Invoice[]
+
+  verificationStatus VerificationStatus @default(PENDING)
+  verificationDocs   Document[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
   @@index([userId])
   @@index([companyType])
 }
@@ -159,73 +162,76 @@ enum CustomerType {
 // ============================================================================
 
 model TruckerProfile {
-  id                    String    @id @default(cuid())
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId                String    @unique
-  
+  id     String @id @default(cuid())
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @unique
+
   // Profile Type
-  truckerType           TruckerType @default(INDEPENDENT)
-  
+  truckerType TruckerType @default(INDEPENDENT_DRIVER)
+
   // Organization (if applicable)
-  organization          Organization? @relation(fields: [organizationId], references: [id])
-  organizationId        String?
-  
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String?
+
   // Location Info
-  city                  String
-  provinceCode          String?
-  district              String?
-  sector                String?
-  
+  city         String
+  provinceCode String?
+  district     String?
+  sector       String?
+
   // Business Info
-  operatingLicense      String?
-  licenseExpiry         DateTime?
-  insurancePolicy       String?
-  insuranceExpiry       DateTime?
-  
+  operatingLicense String?
+  licenseExpiry    DateTime?
+  insurancePolicy  String?
+  insuranceExpiry  DateTime?
+
   // Service Areas
-  serviceAreas          ServiceArea[]
-  
+  serviceAreas ServiceArea[]
+
   // Vehicles
-  vehicles              Vehicle[]
-  
+  vehicles Vehicle[]
+
   // Documents
-  documents             Document[]
-  
+  documents Document[]
+
   // Ratings & Stats
-  averageRating         Float     @default(0)
-  totalRatings          Int       @default(0)
-  totalMissions         Int       @default(0)
-  acceptanceRate        Float     @default(100)
-  cancellationRate      Float     @default(0)
-  
+  averageRating    Float @default(0)
+  totalRatings     Int   @default(0)
+  totalMissions    Int   @default(0)
+  acceptanceRate   Float @default(100)
+  cancellationRate Float @default(0)
+
   // Payment
-  orangeMoneyNumber     String?   // For payouts
-  mobileMoneyNumber     String?
-  bankAccount           String?
-  
+  orangeMoneyNumber String? // For payouts
+  mobileMoneyNumber String?
+  bankAccount       String?
+
   // Verification
-  verificationStatus    VerificationStatus @default(PENDING)
-  verificationBadges    String[]  @default([])
-  
+  verificationStatus VerificationStatus @default(PENDING)
+  verificationBadges Json               @default("[]")
+
   // Subscription
-  subscription          Subscription? @relation("TruckerSubscription")
-  currentPlan           SubscriptionPlan? @relation(fields: [subscriptionPlanId], references: [id])
-  subscriptionPlanId    String?
-  
+  subscription       Subscription?     @relation("TruckerSubscription")
+  currentPlan        SubscriptionPlan? @relation(fields: [subscriptionPlanId], references: [id])
+  subscriptionPlanId String?
+
   // Status
-  isAvailable           Boolean   @default(true)
+  isAvailable            Boolean   @default(true)
   lastAvailabilityUpdate DateTime?
-  
+
   // Relations
-  missions              Mission[]
-  quotes                Quote[]
-  ratings               Rating[]
-  disputes              Dispute[]
-  
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-  deletedAt             DateTime?
-  
+  missions    Mission[]
+  quotes      Quote[]
+  ratings     Rating[]
+  disputes    Dispute[]
+  matches     Match[]
+  commissions Commission[]
+  payouts     Payout[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
   @@index([userId])
   @@index([organizationId])
   @@index([truckerType])
@@ -239,18 +245,18 @@ enum TruckerType {
 }
 
 model ServiceArea {
-  id                    String    @id @default(cuid())
-  trucker               TruckerProfile @relation(fields: [truckerId], references: [id], onDelete: Cascade)
-  truckerId             String
-  
-  city                  String
-  provinceCode          String?
-  latitude              Float?
-  longitude             Float?
-  radiusKm              Int?      @default(50)
-  
-  createdAt             DateTime  @default(now())
-  
+  id        String         @id @default(cuid())
+  trucker   TruckerProfile @relation(fields: [truckerId], references: [id], onDelete: Cascade)
+  truckerId String
+
+  city         String
+  provinceCode String?
+  latitude     Float?
+  longitude    Float?
+  radiusKm     Int?    @default(50)
+
+  createdAt DateTime @default(now())
+
   @@unique([truckerId, city, provinceCode])
   @@index([city])
 }
@@ -268,40 +274,40 @@ enum VerificationStatus {
 // ============================================================================
 
 model Organization {
-  id                    String    @id @default(cuid())
-  name                  String
-  registrationNumber    String    @unique
-  address               String?
-  city                  String
-  
+  id                 String  @id @default(cuid())
+  name               String
+  registrationNumber String  @unique
+  address            String?
+  city               String
+
   // Contacts
-  contactEmail          String?
-  contactPhone          String?
-  
+  contactEmail String?
+  contactPhone String?
+
   // Members
-  members               OrganizationMember[]
-  truckers              TruckerProfile[]
-  
+  members  OrganizationMember[]
+  truckers TruckerProfile[]
+
   // Logo
-  logoUrl               String?
-  
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-  
+  logoUrl String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([city])
 }
 
 model OrganizationMember {
-  id                    String    @id @default(cuid())
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId                String
-  
-  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  organizationId        String
-  
-  role                  String    @default("member") // manager, member, driver, etc.
-  joinedAt              DateTime  @default(now())
-  
+  id     String @id @default(cuid())
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  role     String   @default("member") // manager, member, driver, etc.
+  joinedAt DateTime @default(now())
+
   @@unique([userId, organizationId])
   @@index([organizationId])
 }
@@ -311,49 +317,50 @@ model OrganizationMember {
 // ============================================================================
 
 model Vehicle {
-  id                    String    @id @default(cuid())
-  trucker               TruckerProfile @relation(fields: [truckerId], references: [id], onDelete: Cascade)
-  truckerId             String
-  
+  id        String         @id @default(cuid())
+  trucker   TruckerProfile @relation(fields: [truckerId], references: [id], onDelete: Cascade)
+  truckerId String
+
   // Vehicle Info
-  licensePlate          String    @unique
-  brand                 String
-  model                 String
-  year                  Int
-  vehicleType           VehicleType
-  axles                 Int?
-  
+  licensePlate String      @unique
+  brand        String
+  model        String
+  year         Int
+  vehicleType  VehicleType
+  axles        Int?
+
   // Capacity
-  capacityTonnes        Float
-  capacityM3            Float?
-  
+  capacityTonnes Float
+  capacityM3     Float?
+
   // Benne Info
-  benneType             String?   // Benne basculante, semi-remorque, etc.
-  
+  benneType String? // Benne basculante, semi-remorque, etc.
+
   // Status
-  condition             VehicleCondition @default(GOOD)
-  isOperational         Boolean   @default(true)
-  
+  condition     VehicleCondition @default(GOOD)
+  isOperational Boolean          @default(true)
+
   // Documents
-  documents             VehicleDocument[]
-  photos                String[]  @default([])
-  
+  documents VehicleDocument[]
+  photos    Json              @default("[]")
+
   // Insurance & Inspection
-  insuranceExpiry       DateTime?
-  inspectionExpiry      DateTime?
-  
+  insuranceExpiry  DateTime?
+  inspectionExpiry DateTime?
+
   // Availability
-  availability          String?   // JSON schedule
-  assignedDriver        Driver?   @relation(fields: [driverId], references: [id])
-  driverId              String?
-  
+  availability   Json? // schedule
+  assignedDriver Driver? @relation(fields: [driverId], references: [id])
+  driverId       String?
+
   // Relations
-  missions              Mission[]
-  
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-  deletedAt             DateTime?
-  
+  missions Mission[]
+  quotes   Quote[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
   @@index([truckerId])
   @@index([licensePlate])
   @@index([vehicleType])
@@ -378,69 +385,69 @@ enum VehicleCondition {
 }
 
 model VehicleDocument {
-  id                    String    @id @default(cuid())
-  vehicle               Vehicle   @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
-  vehicleId             String
-  
-  documentType          String    // registration, insurance, inspection, etc.
-  fileUrl               String
-  expiryDate            DateTime?
-  isVerified            Boolean   @default(false)
-  
-  uploadedAt            DateTime  @default(now())
-  verifiedAt            DateTime?
-  
+  id        String  @id @default(cuid())
+  vehicle   Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  vehicleId String
+
+  documentType String // registration, insurance, inspection, etc.
+  fileUrl      String
+  expiryDate   DateTime?
+  isVerified   Boolean   @default(false)
+
+  uploadedAt DateTime  @default(now())
+  verifiedAt DateTime?
+
   @@index([vehicleId])
 }
 
 model Driver {
-  id                    String    @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // Personal Info
-  firstName             String
-  lastName              String
-  phone                 String    @unique
-  
+  firstName String
+  lastName  String
+  phone     String @unique
+
   // License
-  licenseNumber         String    @unique
-  licenseExpiry         DateTime
-  licenseCategory       String?   // C, EC, etc.
-  
+  licenseNumber   String   @unique
+  licenseExpiry   DateTime
+  licenseCategory String? // C, EC, etc.
+
   // Documents
-  idCardUrl             String?
-  idCardExpiry          DateTime?
-  
+  idCardUrl    String?
+  idCardExpiry DateTime?
+
   // Vehicles
-  vehicles              Vehicle[]
-  
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-  
+  vehicles Vehicle[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([phone])
 }
 
 model Document {
-  id                    String    @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // Owner
-  customer              CustomerProfile? @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  customerId            String?
-  
-  trucker               TruckerProfile? @relation(fields: [truckerId], references: [id], onDelete: SetNull)
-  truckerId             String?
-  
+  customer   CustomerProfile? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  customerId String?
+
+  trucker   TruckerProfile? @relation(fields: [truckerId], references: [id], onDelete: SetNull)
+  truckerId String?
+
   // Document Info
-  documentType          DocumentType
-  fileUrl               String
-  expiryDate            DateTime?
-  isVerified            Boolean   @default(false)
-  
-  verifiedBy            String?   // Admin user who verified
-  verificationNotes     String?
-  
-  uploadedAt            DateTime  @default(now())
-  verifiedAt            DateTime?
-  
+  documentType DocumentType
+  fileUrl      String
+  expiryDate   DateTime?
+  isVerified   Boolean      @default(false)
+
+  verifiedBy        String? // Admin user who verified
+  verificationNotes String?
+
+  uploadedAt DateTime  @default(now())
+  verifiedAt DateTime?
+
   @@index([customerId])
   @@index([truckerId])
 }
@@ -464,30 +471,30 @@ enum DocumentType {
 // ============================================================================
 
 model Material {
-  id                    String    @id @default(cuid())
-  name                  String    @unique
-  category              String    // sand, gravel, granite, earth, etc.
-  description           String?
-  density               Float?    // kg/m3
-  icon                  String?
-  
-  requests              TransportRequest[]
-  quotes                Quote[]
-  
-  createdAt             DateTime  @default(now())
-  
+  id          String  @id @default(cuid())
+  name        String  @unique
+  category    String // sand, gravel, granite, earth, etc.
+  description String?
+  density     Float? // kg/m3
+  icon        String?
+
+  requests TransportRequest[]
+  quotes   Quote[]
+
+  createdAt DateTime @default(now())
+
   @@index([category])
 }
 
 model TruckType {
-  id                    String    @id @default(cuid())
-  name                  String    @unique
-  description           String?
-  minCapacity           Float
-  maxCapacity           Float
-  icon                  String?
-  
-  createdAt             DateTime  @default(now())
+  id          String  @id @default(cuid())
+  name        String  @unique
+  description String?
+  minCapacity Float
+  maxCapacity Float
+  icon        String?
+
+  createdAt DateTime @default(now())
 }
 
 // ============================================================================
@@ -495,71 +502,74 @@ model TruckType {
 // ============================================================================
 
 model TransportRequest {
-  id                    String    @id @default(cuid())
-  customer              CustomerProfile @relation(fields: [customerId], references: [id])
-  customerId            String
-  
+  id         String          @id @default(cuid())
+  customer   CustomerProfile @relation(fields: [customerId], references: [id])
+  customerId String
+
   // Request Details
-  requestType           RequestType @default(ONE_TIME)
-  material              Material? @relation(fields: [materialId], references: [id])
-  materialId            String?
-  materialDescription   String?
-  quantity              Float
-  unit                  QuantityUnit
-  
+  requestType         RequestType  @default(ONE_TIME)
+  material            Material?    @relation(fields: [materialId], references: [id])
+  materialId          String?
+  materialDescription String?
+  quantity            Float
+  unit                QuantityUnit
+
   // Locations
-  pickupCity            String
-  pickupProvince        String?
-  pickupDistrict        String?
-  pickupSector          String?
-  pickupLandmark        String?
-  pickupLat             Float?
-  pickupLng             Float?
-  pickupAccessNotes     String?
-  
-  dropoffCity           String
-  dropoffProvince       String?
-  dropoffDistrict       String?
-  dropoffSector         String?
-  dropoffLandmark       String?
-  dropoffLat            Float?
-  dropoffLng            Float?
-  
+  pickupCity        String
+  pickupProvince    String?
+  pickupDistrict    String?
+  pickupSector      String?
+  pickupLandmark    String?
+  pickupLat         Float?
+  pickupLng         Float?
+  pickupAccessNotes String?
+
+  dropoffCity     String
+  dropoffProvince String?
+  dropoffDistrict String?
+  dropoffSector   String?
+  dropoffLandmark String?
+  dropoffLat      Float?
+  dropoffLng      Float?
+
   // Timing
-  requestedDate         DateTime
-  urgency               Urgency   @default(STANDARD)
-  
+  requestedDate DateTime
+  urgency       Urgency  @default(STANDARD)
+
   // Details
-  truckTypePreference   String?
-  minCapacity           Float?
-  needsDriver           Boolean   @default(false)
-  numberOfTrucks        Int       @default(1)
-  numberOfTrips         Int?      // For multiple trips
-  
+  truckTypePreference String?
+  minCapacity         Float?
+  needsDriver         Boolean @default(false)
+  numberOfTrucks      Int     @default(1)
+  numberOfTrips       Int? // For multiple trips
+
   // Budget
-  budgetEstimate        Float?
-  currencyCode          String    @default("XOF")
-  
+  budgetEstimate Float?
+  currencyCode   String @default("XOF")
+
+  // Additional notes from the customer
+  notes String?
+
   // Media
-  photos                String[]  @default([])
-  
+  photos Json @default("[]")
+
   // Status
-  status                RequestStatus @default(DRAFT)
-  
+  status RequestStatus @default(DRAFT)
+
   // Publication
-  publishedAt           DateTime?
-  expiresAt             DateTime?
-  
+  publishedAt DateTime?
+  expiresAt   DateTime?
+
   // Relations
-  matches               Match[]
-  contactUnlocks        ContactUnlock[]
-  quotes                Quote[]
-  missions              Mission[]
-  
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-  deletedAt             DateTime?
-  
+  matches        Match[]
+  contactUnlocks ContactUnlock[]
+  quotes         Quote[]
+  missions       Mission[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
   @@index([customerId])
   @@index([status])
   @@index([requestedDate])
@@ -598,23 +608,23 @@ enum Urgency {
 }
 
 model Match {
-  id                    String    @id @default(cuid())
-  request               TransportRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
-  requestId             String
-  
-  trucker               TruckerProfile @relation(fields: [truckerId], references: [id], onDelete: Cascade)
-  truckerId             String
-  
+  id        String           @id @default(cuid())
+  request   TransportRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  requestId String
+
+  trucker   TruckerProfile @relation(fields: [truckerId], references: [id], onDelete: Cascade)
+  truckerId String
+
   // Matching Score
-  matchScore            Float     // 0-100
-  scoreBreakdown        String?   // JSON with scoring details
-  
+  matchScore     Float // 0-100
+  scoreBreakdown Json? // scoring details
+
   // Status
-  status                MatchStatus @default(PROPOSED)
-  
-  createdAt             DateTime  @default(now())
-  proposedAt            DateTime?
-  
+  status MatchStatus @default(PROPOSED)
+
+  createdAt  DateTime  @default(now())
+  proposedAt DateTime?
+
   @@unique([requestId, truckerId])
   @@index([requestId])
   @@index([truckerId])
@@ -631,20 +641,70 @@ enum MatchStatus {
 }
 
 model ContactUnlock {
-  id                    String    @id @default(cuid())
-  request               TransportRequest @relation(fields: [requestId], references: [id])
-  requestId             String
-  
-  // Payment Info
-  payment               Payment   @relation(fields: [paymentId], references: [id])
-  paymentId             String
-  
+  id               String           @id @default(cuid())
+  request          TransportRequest @relation(fields: [requestId], references: [id])
+  requestId        String
+  unlockedByUser   User             @relation("UnlockedByUser", fields: [unlockedByUserId], references: [id], onDelete: Cascade)
+  unlockedByUserId String
+
   // Unlocked Contacts
-  unlockedContacts      String[]  // JSON array of {truckerId, trucker contact info}
-  
-  createdAt             DateTime  @default(now())
-  
-  @@unique([requestId, paymentId])
+  unlockedContacts Json // array of {truckerId, trucker contact info}
+
+  createdAt DateTime @default(now())
+
+  @@unique([requestId, unlockedByUserId])
+}
+
+model CreditWallet {
+  id                           String              @id @default(cuid())
+  user                         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                       String              @unique
+  balance                      Int                 @default(0)
+  purchasedBalance             Int                 @default(0)
+  subscriptionBalance          Int                 @default(0)
+  subscriptionBalanceExpiresAt DateTime?
+  createdAt                    DateTime            @default(now())
+  updatedAt                    DateTime            @updatedAt
+  transactions                 CreditTransaction[]
+}
+
+enum CreditTransactionType {
+  PURCHASE
+  UNLOCK_CONTACT
+  SUBSCRIPTION_MONTHLY_TOPUP
+  ADMIN_ADJUSTMENT
+  PROMO
+}
+
+model CreditTransaction {
+  id           String                @id @default(cuid())
+  wallet       CreditWallet          @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  walletId     String
+  type         CreditTransactionType
+  amount       Int
+  balanceAfter Int
+  metadata     Json?
+  createdAt    DateTime              @default(now())
+
+  @@index([walletId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+model CreditPack {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  title     String
+  priceXof  Int
+  credits   Int
+  badge     String?
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([sortOrder])
 }
 
 // ============================================================================
@@ -652,41 +712,45 @@ model ContactUnlock {
 // ============================================================================
 
 model Quote {
-  id                    String    @id @default(cuid())
-  request               TransportRequest @relation(fields: [requestId], references: [id])
-  requestId             String
-  
-  trucker               TruckerProfile @relation(fields: [truckerId], references: [id])
-  truckerId             String
-  
-  material              Material? @relation(fields: [materialId], references: [id])
-  materialId            String?
-  
+  id        String           @id @default(cuid())
+  request   TransportRequest @relation(fields: [requestId], references: [id])
+  requestId String
+
+  trucker   TruckerProfile @relation(fields: [truckerId], references: [id])
+  truckerId String
+
+  material   Material? @relation(fields: [materialId], references: [id])
+  materialId String?
+
+  vehicle   Vehicle? @relation(fields: [vehicleId], references: [id])
+  vehicleId String?
+
   // Pricing
-  totalPrice            Float
-  pricePerTrip          Float?
-  numberOfTrips         Int       @default(1)
-  currencyCode          String    @default("XOF")
-  
+  totalPrice    Float
+  pricePerTrip  Float?
+  numberOfTrips Int    @default(1)
+  currencyCode  String @default("XOF")
+
   // Timing
-  proposedDate          DateTime
-  estimatedDuration     String?
-  validUntil            DateTime
-  
+  proposedDate      DateTime
+  estimatedDuration String?
+  validUntil        DateTime
+
   // Details
-  comments              String?
-  specialConditions     String?
-  
+  comments          String?
+  specialConditions String?
+
   // Status
-  status                QuoteStatus @default(PENDING)
-  
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-  acceptedAt            DateTime?
-  rejectedAt            DateTime?
-  
+  status QuoteStatus @default(PENDING)
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  acceptedAt DateTime?
+  rejectedAt DateTime?
+
   @@index([requestId])
   @@index([truckerId])
+  @@index([vehicleId])
   @@index([status])
 }
 
@@ -694,67 +758,71 @@ enum QuoteStatus {
   PENDING
   ACCEPTED
   REJECTED
+  WITHDRAWN
   COUNTER_OFFER
   EXPIRED
 }
 
 model Mission {
-  id                    String    @id @default(cuid())
-  request               TransportRequest @relation(fields: [requestId], references: [id])
-  requestId             String
-  
-  customer              CustomerProfile @relation(fields: [customerId], references: [id])
-  customerId            String
-  
-  trucker               TruckerProfile @relation(fields: [truckerId], references: [id])
-  truckerId             String
-  
-  vehicle               Vehicle   @relation(fields: [vehicleId], references: [id])
-  vehicleId             String
-  
+  id        String           @id @default(cuid())
+  request   TransportRequest @relation(fields: [requestId], references: [id])
+  requestId String
+
+  customer   CustomerProfile @relation(fields: [customerId], references: [id])
+  customerId String
+
+  trucker   TruckerProfile @relation(fields: [truckerId], references: [id])
+  truckerId String
+
+  vehicle   Vehicle @relation(fields: [vehicleId], references: [id])
+  vehicleId String
+
   // Mission Details
-  missionReference      String    @unique // Unique reference for operations
-  contractMaterial      String?
-  contractQuantity      Float?
-  contractUnit          String?   // tonnes, m3, etc.
-  contractPrice         Float
-  contractCurrency      String    @default("XOF")
-  
+  missionReference String  @unique // Unique reference for operations
+  contractMaterial String?
+  contractQuantity Float?
+  contractUnit     String? // tonnes, m3, etc.
+  contractPrice    Float
+  contractCurrency String  @default("XOF")
+
   // Dates & Times
-  scheduledDate         DateTime
-  startDate             DateTime?
-  endDate               DateTime?
-  
+  scheduledDate DateTime
+  startDate     DateTime?
+  endDate       DateTime?
+
   // Locations
-  pickupLocation        String
-  dropoffLocation       String
-  
+  pickupLocation  String
+  dropoffLocation String
+
   // Status & History
-  status                MissionStatus @default(DRAFT)
-  statusHistory         MissionStatusHistory[]
-  
+  status        MissionStatus          @default(DRAFT)
+  statusHistory MissionStatusHistory[]
+
   // Proof
-  pickupProof           DeliveryProof?
-  deliveryProof         DeliveryProof?
-  
+  proofs DeliveryProof[]
+
   // Payment
-  payment               Payment?  @relation("MissionPayment")
-  paymentId             String?
-  
+  payment   Payment? @relation("MissionPayment")
+  paymentId String?
+
   // Commission
-  platformCommission    Float?
+  platformCommission     Float?
   platformCommissionRate Float? @default(0.10) // 10% default
-  
+
   // Ratings
-  customerRating        Rating?   @relation("CustomerRatingMission")
-  truckerRating         Rating?   @relation("TruckerRatingMission")
-  
+  customerRating Rating? @relation("CustomerRatingMission")
+  truckerRating  Rating? @relation("TruckerRatingMission")
+
   // Disputes
-  dispute               Dispute?
-  
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-  
+  dispute Dispute?
+
+  // Ledger
+  transactions Transaction[]
+  commissions  Commission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([requestId])
   @@index([customerId])
   @@index([truckerId])
@@ -782,38 +850,39 @@ enum MissionStatus {
 }
 
 model MissionStatusHistory {
-  id                    String    @id @default(cuid())
-  mission               Mission   @relation(fields: [missionId], references: [id], onDelete: Cascade)
-  missionId             String
-  
-  previousStatus        MissionStatus?
-  newStatus             MissionStatus
-  reason                String?
-  notes                 String?
-  
-  changedBy             String?   // User ID who changed it
-  timestamp             DateTime  @default(now())
-  
+  id        String  @id @default(cuid())
+  mission   Mission @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  missionId String
+
+  previousStatus MissionStatus?
+  newStatus      MissionStatus
+  reason         String?
+  notes          String?
+
+  changedBy String? // User ID who changed it
+  timestamp DateTime @default(now())
+
   @@index([missionId])
 }
 
 model DeliveryProof {
-  id                    String    @id @default(cuid())
-  
-  mission               Mission   @relation(fields: [missionId], references: [id], onDelete: Cascade)
-  missionId             String    @unique
-  
-  proofType             String    // "pickup" or "delivery"
-  photoUrl              String
-  gpsLat                Float?
-  gpsLng                Float?
-  otpCode               String?   // OTP verification code
-  otpVerifiedAt         DateTime?
-  
-  capturedAt            DateTime  @default(now())
-  verifiedAt            DateTime?
-  verifiedBy            String?
-  
+  id String @id @default(cuid())
+
+  mission   Mission @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  missionId String
+
+  proofType     String // "pickup" or "delivery"
+  photoUrl      String
+  gpsLat        Float?
+  gpsLng        Float?
+  otpCode       String? // OTP verification code
+  otpVerifiedAt DateTime?
+
+  capturedAt DateTime  @default(now())
+  verifiedAt DateTime?
+  verifiedBy String?
+
+  @@unique([missionId, proofType])
   @@index([missionId])
 }
 
@@ -822,48 +891,55 @@ model DeliveryProof {
 // ============================================================================
 
 model Rating {
-  id                    String    @id @default(cuid())
-  
-  rater                 User      @relation(fields: [raterId], references: [id])
-  raterId               String
-  
-  mission               Mission?  @relation("CustomerRatingMission", fields: [missionId], references: [id])
-  missionId             String?   @unique
-  
-  trucker               TruckerProfile @relation(fields: [truckerId], references: [id])
-  truckerId             String
-  
+  id String @id @default(cuid())
+
+  rater   User   @relation(fields: [raterId], references: [id])
+  raterId String
+
+  mission   Mission? @relation("CustomerRatingMission", fields: [missionId], references: [id])
+  missionId String?  @unique
+
+  truckerRatingMission   Mission? @relation("TruckerRatingMission", fields: [truckerRatingMissionId], references: [id])
+  truckerRatingMissionId String?  @unique
+
+  trucker   TruckerProfile @relation(fields: [truckerId], references: [id])
+  truckerId String
+
   // Rating
-  score                 Int       // 1-5
-  category              String    // professionalism, punctuality, vehicle_condition, etc.
-  comment               String?
-  
-  ratedAt               DateTime  @default(now())
-  
+  score    Int // 1-5
+  category String // professionalism, punctuality, vehicle_condition, etc.
+  comment  String?
+
+  ratedAt DateTime @default(now())
+
   @@index([raterId])
   @@index([truckerId])
 }
 
 model Dispute {
-  id                    String    @id @default(cuid())
-  mission               Mission   @relation(fields: [missionId], references: [id], onDelete: Cascade)
-  missionId             String    @unique
-  
+  id        String  @id @default(cuid())
+  mission   Mission @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  missionId String  @unique
+
+  trucker   TruckerProfile? @relation(fields: [truckerId], references: [id])
+  truckerId String?
+
   // Who filed
-  filedBy               String    // "customer" or "trucker"
-  description           String
-  evidence              String[]  // URLs to photos/documents
-  
+  filedBy     String // "customer" or "trucker"
+  description String
+  evidence    Json // URLs to photos/documents
+
   // Resolution
-  status                DisputeStatus @default(OPEN)
-  resolution            String?
-  resolvedAt            DateTime?
-  resolvedBy            String?   // Admin user ID
-  
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-  
+  status     DisputeStatus @default(OPEN)
+  resolution String?
+  resolvedAt DateTime?
+  resolvedBy String? // Admin user ID
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([missionId])
+  @@index([truckerId])
   @@index([status])
 }
 
@@ -880,70 +956,87 @@ enum DisputeStatus {
 // ============================================================================
 
 model SubscriptionPlan {
-  id                    String    @id @default(cuid())
-  name                  String    @unique
-  tier                  String    // "discovery", "professional", "fleet"
-  description           String?
-  
+  id          String  @id @default(cuid())
+  code        String? @unique // FREE | PRO | BUSINESS
+  name        String
+  tier        String // "free", "pro", "business"
+  description String?
+
   // Pricing
-  monthlyPrice          Float
-  annualPrice           Float?
-  currency              String    @default("XOF")
-  trialDays             Int       @default(0)
-  
+  monthlyPrice Float
+  annualPrice  Float?
+  currency     String @default("XOF")
+  trialDays    Int    @default(0)
+
+  // Subscription Credits & Monetization
+  monthlyCredits    Int  @default(0)
+  unlockCostCredits Int  @default(1)
+  monthlyBoosts     Int  @default(0)
+  cycleDays         Int  @default(30)
+  benefits          Json @default("[]")
+  sortOrder         Int  @default(0)
+
   // Limits
-  maxVehicles           Int       @default(1)
-  maxRequests           Int?      // null = unlimited
-  maxProposals          Int?      // null = unlimited
-  
+  maxVehicles  Int  @default(1)
+  maxRequests  Int? // null = unlimited
+  maxProposals Int? // null = unlimited
+
   // Features
-  features              String[]  @default([])
-  
+  features Json @default("[]")
+
   // Commission
   platformCommissionRate Float @default(0.10)
-  
+
   // Status
-  isActive              Boolean   @default(true)
-  
+  isActive Boolean @default(true)
+
+  // Publishing & visibility (public site)
+  isPublished Boolean  @default(false)
+  isVisible   Boolean  @default(true)
+  badge       String?
+
+  // Soft-archive (keep history for existing subscriptions)
+  archivedAt DateTime?
+
   // Relations
-  truckers              TruckerProfile[]
-  subscriptions         Subscription[]
-  
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  truckers      TruckerProfile[]
+  subscriptions Subscription[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Subscription {
-  id                    String    @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // Subscriber
-  customer              CustomerProfile? @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  customerId            String?
-  
-  trucker               TruckerProfile? @relation("TruckerSubscription", fields: [truckerId], references: [id], onDelete: Cascade)
-  truckerId             String?
-  
-  plan                  SubscriptionPlan @relation(fields: [planId], references: [id])
-  planId                String
-  
+  customer   CustomerProfile? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customerId String?
+
+  trucker   TruckerProfile? @relation("TruckerSubscription", fields: [truckerId], references: [id], onDelete: Cascade)
+  truckerId String?         @unique
+
+  plan   SubscriptionPlan @relation(fields: [planId], references: [id])
+  planId String
+
   // Dates
-  startDate             DateTime
-  endDate               DateTime?
-  autoRenewal           Boolean   @default(true)
-  
+  startDate   DateTime
+  endDate     DateTime?
+  autoRenewal Boolean   @default(true)
+
   // Payment
-  lastPaymentDate       DateTime?
-  nextPaymentDate       DateTime?
-  
+  lastPaymentDate DateTime?
+  nextPaymentDate DateTime?
+
   // Status
-  status                SubscriptionStatus @default(ACTIVE)
-  
+  status SubscriptionStatus @default(ACTIVE)
+
   // Payment History
-  payments              SubscriptionPayment[]
-  
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-  
+  payments SubscriptionPayment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([customerId])
   @@index([truckerId])
   @@index([planId])
@@ -954,76 +1047,84 @@ enum SubscriptionStatus {
   PAUSED
   CANCELLED
   EXPIRED
+  PAST_DUE
 }
 
 model SubscriptionPayment {
-  id                    String    @id @default(cuid())
-  subscription          Subscription @relation(fields: [subscriptionId], references: [id])
-  subscriptionId        String
-  
-  amount                Float
-  currency              String    @default("XOF")
-  
-  status                PaymentStatus @default(INITIATED)
-  paymentMethod         String    // "orange_money", "card", etc.
-  
-  transactionRef        String?   @unique
-  providerRef           String?   // Reference from payment provider
-  
-  paidAt                DateTime?
-  failureReason         String?
-  
-  createdAt             DateTime  @default(now())
-  
+  id             String       @id @default(cuid())
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id])
+  subscriptionId String
+
+  payment   Payment? @relation(fields: [paymentId], references: [id])
+  paymentId String?  @unique
+
+  amount   Float
+  currency String @default("XOF")
+
+  status        PaymentStatus @default(INITIATED)
+  paymentMethod String // "orange_money", "card", etc.
+
+  transactionRef String? @unique
+  providerRef    String? // Reference from payment provider
+
+  paidAt        DateTime?
+  failureReason String?
+
+  createdAt DateTime @default(now())
+
   @@index([subscriptionId])
 }
 
 model Payment {
-  id                    String    @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // Payer
-  payer                 String    // User ID
-  
+  payer String // User ID
+
+  customer   CustomerProfile? @relation(fields: [customerId], references: [id])
+  customerId String?
+
   // Payment Details
-  amount                Float
-  currency              String    @default("XOF")
-  type                  PaymentType
-  
-  description           String?
-  reference             String    @unique // Internal reference
-  
+  amount   Float
+  currency String      @default("XOF")
+  type     PaymentType
+
+  description String?
+  reference   String  @unique // Internal reference
+
   // Provider Info
-  providerName          String    // "orange_money", "stripe", etc.
-  providerReference     String?   @unique // External provider reference
-  
+  providerName      String // "orange_money", "stripe", etc.
+  providerReference String? @unique // External provider reference
+
   // Status
-  status                PaymentStatus @default(INITIATED)
-  
+  status PaymentStatus @default(INITIATED)
+
   // Attempts
-  attempts              PaymentAttempt[]
-  lastAttemptAt         DateTime?
-  
+  attempts      PaymentAttempt[]
+  lastAttemptAt DateTime?
+
   // Fees
-  platformFee           Float     @default(0)
-  providerFee           Float     @default(0)
-  
+  platformFee Float @default(0)
+  providerFee Float @default(0)
+
   // Related Records
-  contactUnlock         ContactUnlock?
-  mission               Mission?  @relation("MissionPayment", fields: [missionId], references: [id])
-  missionId             String?   @unique
-  
-  subscriptionPayment   SubscriptionPayment?
-  
+  mission   Mission? @relation("MissionPayment", fields: [missionId], references: [id])
+  missionId String?  @unique
+
+  subscriptionPayment SubscriptionPayment?
+  refunds             Refund[]
+
   // Metadata
-  metadata              String?   // JSON for additional data
-  
+  metadata Json? // additional data
+
   // Timestamps
-  initiatedAt           DateTime  @default(now())
-  confirmedAt           DateTime?
-  failedAt              DateTime?
-  expiresAt             DateTime?
-  
+  initiatedAt DateTime  @default(now())
+  confirmedAt DateTime?
+  failedAt    DateTime?
+  expiresAt   DateTime?
+
   @@index([payer])
+  @@index([customerId])
   @@index([status])
   @@index([type])
   @@index([confirmedAt])
@@ -1031,6 +1132,7 @@ model Payment {
 
 enum PaymentType {
   CONTACT_UNLOCK
+  CREDIT_PURCHASE
   MISSION_PAYMENT
   SUBSCRIPTION
   PLATFORM_FEE
@@ -1051,135 +1153,135 @@ enum PaymentStatus {
 }
 
 model PaymentAttempt {
-  id                    String    @id @default(cuid())
-  payment               Payment   @relation(fields: [paymentId], references: [id], onDelete: Cascade)
-  paymentId             String
-  
-  attemptNumber         Int
-  status                String    // from provider
-  errorCode             String?
-  errorMessage          String?
-  
-  requestData           String?   // Encrypted
-  responseData          String?   // Encrypted
-  
-  attemptedAt           DateTime  @default(now())
-  
+  id        String  @id @default(cuid())
+  payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  paymentId String
+
+  attemptNumber Int
+  status        String // from provider
+  errorCode     String?
+  errorMessage  String?
+
+  requestData  String? // Encrypted
+  responseData String? // Encrypted
+
+  attemptedAt DateTime @default(now())
+
   @@index([paymentId])
 }
 
 model Transaction {
-  id                    String    @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // Participants
-  fromUser              String    // User ID
-  toUser                String    // User ID
-  
+  fromUser String // User ID
+  toUser   String // User ID
+
   // Amount
-  amount                Float
-  currency              String    @default("XOF")
-  
+  amount   Float
+  currency String @default("XOF")
+
   // Type
-  type                  String    // "commission", "payout", "refund", etc.
-  reference             String?
-  
+  type      String // "commission", "payout", "refund", etc.
+  reference String?
+
   // Related Records
-  mission               Mission?  @relation(fields: [missionId], references: [id])
-  missionId             String?
-  
+  mission   Mission? @relation(fields: [missionId], references: [id])
+  missionId String?
+
   // Related Ledger Entries
-  ledgerEntries         LedgerEntry[]
-  
+  ledgerEntries LedgerEntry[]
+
   // Status
-  status                String    @default("pending") // pending, confirmed, cancelled
-  
-  createdAt             DateTime  @default(now())
-  
+  status String @default("pending") // pending, confirmed, cancelled
+
+  createdAt DateTime @default(now())
+
   @@index([fromUser])
   @@index([toUser])
   @@index([type])
 }
 
 model LedgerEntry {
-  id                    String    @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // Account
-  account               String    // User ID or "platform"
-  
+  account String // User ID or "platform"
+
   // Transaction
-  transaction           Transaction @relation(fields: [transactionId], references: [id])
-  transactionId         String
-  
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  transactionId String
+
   // Amount
-  amount                Float     // Can be positive or negative
-  currency              String    @default("XOF")
-  
+  amount   Float // Can be positive or negative
+  currency String @default("XOF")
+
   // Entry Type
-  entryType             String    // "credit", "debit", "commission", "fee", "refund"
-  
+  entryType String // "credit", "debit", "commission", "fee", "refund"
+
   // Balance
-  balanceAfter          Float?
-  
+  balanceAfter Float?
+
   // Metadata
-  description           String?
-  reference             String?
-  
-  createdAt             DateTime  @default(now())
-  
+  description String?
+  reference   String?
+
+  createdAt DateTime @default(now())
+
   @@index([account])
   @@index([transactionId])
 }
 
 model Commission {
-  id                    String    @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // Mission
-  mission               Mission?  @relation(fields: [missionId], references: [id], onDelete: SetNull)
-  missionId             String?
-  
+  mission   Mission? @relation(fields: [missionId], references: [id], onDelete: SetNull)
+  missionId String?
+
   // Trucker
-  trucker               TruckerProfile @relation(fields: [truckerId], references: [id])
-  truckerId             String
-  
+  trucker   TruckerProfile @relation(fields: [truckerId], references: [id])
+  truckerId String
+
   // Amount
-  commissionAmount      Float
-  commissionRate        Float
-  missionAmount         Float
-  currency              String    @default("XOF")
-  
+  commissionAmount Float
+  commissionRate   Float
+  missionAmount    Float
+  currency         String @default("XOF")
+
   // Status
-  status                String    @default("pending") // pending, calculated, paid
-  
-  createdAt             DateTime  @default(now())
-  paidAt                DateTime?
-  
+  status String @default("pending") // pending, calculated, paid
+
+  createdAt DateTime  @default(now())
+  paidAt    DateTime?
+
   @@index([truckerId])
   @@index([missionId])
 }
 
 model Payout {
-  id                    String    @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // Trucker
-  trucker               TruckerProfile @relation(fields: [truckerId], references: [id])
-  truckerId             String
-  
+  trucker   TruckerProfile @relation(fields: [truckerId], references: [id])
+  truckerId String
+
   // Amount
-  amount                Float
-  currency              String    @default("XOF")
-  
+  amount   Float
+  currency String @default("XOF")
+
   // Payment Method
-  paymentMethod         String    // "orange_money", "mobile_money", "bank_transfer"
-  destination           String    // Phone number or account
-  
+  paymentMethod String // "orange_money", "mobile_money", "bank_transfer"
+  destination   String // Phone number or account
+
   // Status
-  status                PayoutStatus @default(PENDING)
-  transactionId         String?   @unique
-  errorMessage          String?
-  
-  requestedAt           DateTime  @default(now())
-  processedAt           DateTime?
-  
+  status        PayoutStatus @default(PENDING)
+  transactionId String?      @unique
+  errorMessage  String?
+
+  requestedAt DateTime  @default(now())
+  processedAt DateTime?
+
   @@index([truckerId])
   @@index([status])
 }
@@ -1193,23 +1295,23 @@ enum PayoutStatus {
 }
 
 model Refund {
-  id                    String    @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // Original Payment
-  originalPayment       Payment?  @relation(fields: [paymentId], references: [id])
-  paymentId             String?
-  
+  originalPayment Payment? @relation(fields: [paymentId], references: [id])
+  paymentId       String?
+
   // Amount
-  amount                Float
-  currency              String    @default("XOF")
-  reason                String
-  
+  amount   Float
+  currency String @default("XOF")
+  reason   String
+
   // Status
-  status                RefundStatus @default(PENDING)
-  processedAt           DateTime?
-  
-  createdAt             DateTime  @default(now())
-  
+  status      RefundStatus @default(PENDING)
+  processedAt DateTime?
+
+  createdAt DateTime @default(now())
+
   @@index([paymentId])
   @@index([status])
 }
@@ -1224,37 +1326,37 @@ enum RefundStatus {
 }
 
 model Invoice {
-  id                    String    @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // Customer
-  customer              CustomerProfile? @relation(fields: [customerId], references: [id])
-  customerId            String?
-  
+  customer   CustomerProfile? @relation(fields: [customerId], references: [id])
+  customerId String?
+
   // Invoice Details
-  invoiceNumber         String    @unique
-  invoiceDate           DateTime  @default(now())
-  dueDate               DateTime
-  
+  invoiceNumber String   @unique
+  invoiceDate   DateTime @default(now())
+  dueDate       DateTime
+
   // Amounts
-  subtotal              Float
-  platformFee           Float
-  tax                   Float     @default(0)
-  total                 Float
-  currency              String    @default("XOF")
-  
+  subtotal    Float
+  platformFee Float
+  tax         Float  @default(0)
+  total       Float
+  currency    String @default("XOF")
+
   // Items
-  items                 String    // JSON array of invoice items
-  
+  items Json // array of invoice items
+
   // Status
-  status                InvoiceStatus @default(DRAFT)
-  paidAt                DateTime?
-  
+  status InvoiceStatus @default(DRAFT)
+  paidAt DateTime?
+
   // PDF
-  pdfUrl                String?
-  
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-  
+  pdfUrl String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([customerId])
   @@index([status])
 }
@@ -1270,21 +1372,21 @@ enum InvoiceStatus {
 }
 
 model PaymentWebhook {
-  id                    String    @id @default(cuid())
-  
-  provider              String    // "orange_money", "stripe", etc.
-  eventType             String
-  
-  data                  String    // JSON webhook data
-  signature             String?   // Provider signature for verification
-  
-  processed             Boolean   @default(false)
-  processedAt           DateTime?
-  
-  error                 String?
-  
-  receivedAt            DateTime  @default(now())
-  
+  id String @id @default(cuid())
+
+  provider  String // "orange_money", "stripe", etc.
+  eventType String
+
+  data      Json // webhook data
+  signature String? // Provider signature for verification
+
+  processed   Boolean   @default(false)
+  processedAt DateTime?
+
+  error String?
+
+  receivedAt DateTime @default(now())
+
   @@index([provider])
   @@index([processed])
 }
@@ -1294,34 +1396,34 @@ model PaymentWebhook {
 // ============================================================================
 
 model Notification {
-  id                    String    @id @default(cuid())
-  
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId                String
-  
+  id String @id @default(cuid())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
   // Content
-  type                  NotificationType
-  title                 String
-  message               String
-  icon                  String?
-  
+  type    NotificationType
+  title   String
+  message String
+  icon    String?
+
   // Actions
-  actionUrl             String?
-  actionLabel           String?
-  
+  actionUrl   String?
+  actionLabel String?
+
   // Status
-  read                  Boolean   @default(false)
-  readAt                DateTime?
-  
+  read   Boolean   @default(false)
+  readAt DateTime?
+
   // Delivery
-  deliveryChannels      String[]  @default([]) // in-app, email, sms, whatsapp
-  sentAt                DateTime?
-  
+  deliveryChannels Json      @default("[]") // in-app, email, sms, whatsapp
+  sentAt           DateTime?
+
   // Metadata
-  metadata              String?   // JSON
-  
-  createdAt             DateTime  @default(now())
-  
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
   @@index([userId])
   @@index([type])
   @@index([read])
@@ -1348,44 +1450,44 @@ enum NotificationType {
 }
 
 model Conversation {
-  id                    String    @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // Participants
-  participants          User[]
-  
+  participants User[]
+
   // Context
-  type                  String    // "mission_related", "support", etc.
-  referenceId           String?   // mission ID, request ID, etc.
-  
+  type        String // "mission_related", "support", etc.
+  referenceId String? // mission ID, request ID, etc.
+
   // Last Activity
-  lastMessageAt         DateTime?
-  
+  lastMessageAt DateTime?
+
   // Messages
-  messages              Message[]
-  
+  messages Message[]
+
   // Status
-  isActive              Boolean   @default(true)
-  
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Message {
-  id                    String    @id @default(cuid())
-  
-  conversation          Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  conversationId        String
-  
-  sender                User      @relation(fields: [senderId], references: [id])
-  senderId              String
-  
-  content               String
-  attachments           String[]  @default([]) // URLs
-  
-  readAt                DateTime?
-  
-  createdAt             DateTime  @default(now())
-  
+  id String @id @default(cuid())
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId String
+
+  sender   User   @relation(fields: [senderId], references: [id])
+  senderId String
+
+  content     String
+  attachments Json   @default("[]") // URLs
+
+  readAt DateTime?
+
+  createdAt DateTime @default(now())
+
   @@index([conversationId])
   @@index([senderId])
 }
@@ -1395,28 +1497,28 @@ model Message {
 // ============================================================================
 
 model SupportTicket {
-  id                    String    @id @default(cuid())
-  
-  user                  User      @relation(fields: [userId], references: [id])
-  userId                String
-  
+  id String @id @default(cuid())
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
   // Details
-  subject               String
-  category              String    // "payment", "mission", "document", etc.
-  priority              String    @default("normal") // low, normal, high, urgent
-  description           String
-  attachments           String[]  @default([])
-  
+  subject     String
+  category    String // "payment", "mission", "document", etc.
+  priority    String @default("normal") // low, normal, high, urgent
+  description String
+  attachments Json   @default("[]")
+
   // Status
-  status                String    @default("open") // open, in_progress, resolved, closed
-  
+  status String @default("open") // open, in_progress, resolved, closed
+
   // Resolution
-  resolution            String?
-  resolvedAt            DateTime?
-  
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-  
+  resolution String?
+  resolvedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([userId])
   @@index([status])
 }
@@ -1426,45 +1528,45 @@ model SupportTicket {
 // ============================================================================
 
 model AuditLog {
-  id                    String    @id @default(cuid())
-  
-  user                  User      @relation(fields: [userId], references: [id], onDelete: SetNull)
-  userId                String?
-  
+  id String @id @default(cuid())
+
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId String?
+
   // Action
-  action                String    // "create", "update", "delete", "verify", etc.
-  resource              String    // "user", "mission", "payment", etc.
-  resourceId            String?
-  
+  action     String // "create", "update", "delete", "verify", etc.
+  resource   String // "user", "mission", "payment", etc.
+  resourceId String?
+
   // Changes
-  changes               String?   // JSON of before/after
-  
+  changes Json? // before/after
+
   // Metadata
-  ipAddress             String?
-  userAgent             String?
-  
-  createdAt             DateTime  @default(now())
-  
+  ipAddress String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
+
   @@index([userId])
   @@index([resource])
   @@index([action])
 }
 
 model PlatformSetting {
-  id                    String    @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // Setting Key
-  key                   String    @unique
-  value                 String    // JSON for complex values
-  
+  key   String @unique
+  value Json // complex values
+
   // Metadata
-  description           String?
-  type                  String    // "string", "number", "boolean", "json"
-  
-  updatedBy             String?   // Admin user ID
-  
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-  
+  description String?
+  type        String // "string", "number", "boolean", "json"
+
+  updatedBy String? // Admin user ID
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([key])
 }

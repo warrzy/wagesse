@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requestService } from '@/lib/services/request-service';
-import { verifyToken } from '@/lib/auth';
+import { getAuthContext, getCustomerProfileId, unauthorized } from '@/lib/api-auth';
 
 /**
  * POST /api/requests/[id]/publish
@@ -8,29 +8,22 @@ import { verifyToken } from '@/lib/auth';
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const requestId = params.id;
+    const { id: requestId } = await params;
 
-    // Get token from header
-    const token = request.headers.get('Authorization')?.split(' ')[1];
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = getAuthContext(request);
+    if (!auth) return unauthorized();
+
+    const customerId = await getCustomerProfileId(auth.userId);
+    if (!customerId) {
+      return NextResponse.json({ error: 'Customer profile not found' }, { status: 404 });
     }
 
-    // Verify token
-    let decoded: any;
-    try {
-      decoded = verifyToken(token);
-    } catch (error) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-    }
+    const result = await requestService.publish(requestId, customerId);
 
-    // Publish request
-    const result = await requestService.publish(requestId, decoded.userId);
-
-    return NextResponse.json(result);
+    return NextResponse.json({ success: true, data: result });
   } catch (error: any) {
     console.error('[POST /api/requests/[id]/publish]', error);
 

@@ -121,6 +121,15 @@ npm run format
 
 # Lint code
 npm run lint
+
+# Type-check without emitting files
+npm run typecheck
+
+# End-to-end browser tests
+npm run test:e2e
+
+# Full technical validation loop
+npm run validate
 ```
 
 ---

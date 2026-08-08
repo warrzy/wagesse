@@ -6,6 +6,108 @@ Projet développé par GitHub Copilot | Stack: Next.js, TypeScript, Prisma, Post
 
 **WAGESSE** est une plateforme web premium de mise en relation entre clients (entreprises de BTP, mines, commerçants) et camionneurs pour les transports de matériaux en Afrique de l'Ouest, avec un focus initial sur le Burkina Faso.
 
+## 🎯 Objectif de la phase actuelle (Lancement) : Tarifs dynamiques + paiement
+
+Mettre en place un **modèle commercial clair** et **administrable** depuis l'interface admin :
+
+- **1 crédit = 1 déblocage de contact**.
+- **Packs de crédits** : achats ponctuels, crédits achetés **n'expirent pas**.
+- **Abonnements** : crédits mensuels + boosts + avantages.
+  - Les crédits mensuels **expirent en fin de cycle**.
+
+Exigences :
+
+- Les **plans d'abonnement** et **packs de crédits** doivent être **100% pilotés par la DB** (pas de hardcode sur la page publique).
+- L'admin doit pouvoir :
+  - créer
+  - modifier
+  - publier / dépublier (abonnements)
+  - archiver (abonnements)
+  - activer / désactiver
+  - changer prix, crédits, boosts, avantages, badge, ordre d'affichage
+- Réutiliser **le système de paiement existant** (ne pas reconstruire).
+
+## ✅ Réalisé jusqu'à maintenant
+
+### 1) Abonnements (dynamiques, DB-driven)
+
+- API publique : `GET /api/subscription/plans`
+  - Retourne uniquement : `isActive=true`, `isPublished=true`, `isVisible=true`, `archivedAt=null`
+  - Cache désactivé (réactivité immédiate après modifications admin)
+- Admin abonnements (CRUD + publication)
+  - Liste : `/admin/abonnements`
+  - Détail / édition : `/admin/abonnements/[id]`
+  - Gestion `isPublished`, `isVisible`, `sortOrder`, `badge`, `monthlyCredits`, `monthlyBoosts`, `benefits`
+  - Gestion erreur Prisma `P2002` (code unique) → **409** avec message clair
+- Activation d'abonnement : support des codes dynamiques (validation par lookup DB)
+
+### 2) Paiement abonnement (réutilise le système existant)
+
+- API : `POST /api/subscription/purchase`
+  - Initialise un paiement `SUBSCRIPTION` via `paymentServiceLayer.initialize`
+  - Au succès, side effects : activation/renouvellement de l'abonnement
+- Checkout : `/pricing/subscription-checkout?plan=CODE`
+
+### 3) Packs de crédits (dynamiques, DB-driven)
+
+- Admin packs (CRUD)
+  - Liste + création : `/admin/tarifs`
+  - Détail / édition / suppression : `/admin/tarifs/[id]`
+  - API :
+    - `GET /api/admin/credit-packs`
+    - `POST /api/admin/credit-packs`
+    - `GET /api/admin/credit-packs/[id]`
+    - `PATCH /api/admin/credit-packs/[id]`
+    - `DELETE /api/admin/credit-packs/[id]` (avec garde-fou)
+  - Suppression : **409** si le pack a déjà été utilisé dans un paiement (dans ce cas → désactiver)
+
+### 4) Page publique Pricing (nouvelle UI)
+
+- Page : `/pricing`
+  - Titre + sous-titre (lancement)
+  - Onglets : `[ Abonnements ] [ Packs de crédits ]`
+  - Abonnements : 3 cards alignées, ✓ avantages, CTA en bas, PRO mis en avant via badge
+  - Packs : affichage clair (crédits, prix, ≈ FCFA/contact)
+  - Bloc d'aide : "Quel choix pour moi ?"
+- Page forcée en dynamique (`force-dynamic` / `revalidate=0`) pour que `?tab=packs` fonctionne correctement.
+
+### 5) Seed (valeurs de lancement en DB)
+
+- Mise à jour du seed Prisma : `prisma/seed.ts`
+  - Abonnements : FREE / PRO / BUSINESS
+  - Packs : Découverte / Essentiel / Pro / Business
+
+## 🧩 À faire (autres blocs / lots)
+
+### Lot A — Vérification fonctionnelle end-to-end (tarifs)
+
+- Vérifier que :
+  - le **prix DB** est bien celui utilisé au paiement (packs + abonnements)
+  - les plans/packs **dépubliés/désactivés** n'apparaissent plus sur la page publique
+  - l'admin peut réordonner l'affichage (via `sortOrder`) et l'ordre se reflète sur `/pricing`
+
+### Lot B — Règles produit "crédits" et expiration
+
+- Valider côté backend :
+  - crédits achetés (packs) = persistants
+  - crédits mensuels (abonnement) = expirent en fin de cycle
+  - règles de cumul / renouvellement / idempotence paiement
+
+### Lot C — UX & contenu marketing final
+
+- Ajouter/valider dans l'admin :
+  - wording exact des avantages
+  - badges exacts (ex : "Le plus populaire", "Pour les professionnels", "Meilleure valeur")
+  - cohérence marketing (PRO doit rester l'offre la plus attractive)
+
+### Lot D — Nettoyage + stabilité
+
+- Tests manuels + corrections mineures UI (alignements, responsive, accessibilité)
+- Vérifier la compatibilité build/prod (cache Next.js, revalidation)
+- Vérifier les migrations Prisma et la génération du client sur Windows
+
+---
+
 ### Caractéristiques principales
 
 - 🔐 **Authentification sécurisée** par OTP et JWT
@@ -73,8 +175,8 @@ wagesse/
 
 ### Prérequis
 
-- Node.js 18+
-- PostgreSQL 14+
+- Node.js 22 LTS (voir `.nvmrc`)
+- MySQL 8+
 - npm ou yarn
 
 ### 1. Installation des dépendances
@@ -86,13 +188,13 @@ npm install
 ### 2. Configuration de l'environnement
 
 ```bash
-cp .env.example .env.local
+cp .env.example .env
 ```
 
-Éditer `.env.local`:
+Éditer `.env`:
 ```env
 # Database
-DATABASE_URL="postgresql://user:password@localhost:5432/wagesse"
+DATABASE_URL="mysql://user:password@localhost:3306/wagesse"
 
 # JWT
 JWT_SECRET=your_super_secret_key_change_in_production
@@ -112,9 +214,6 @@ SMTP_PORT=587
 ### 3. Base de données
 
 ```bash
-# Créer la base de données
-createdb wagesse
-
 # Exécuter les migrations
 npm run prisma:migrate
 
@@ -421,17 +520,19 @@ docker run -p 3000:3000 wagesse
 
 ## 🧪 Tests
 
-Les tests essentiels à mettre en place:
+La validation technique disponible :
 
 ```bash
-# Unit & Integration
-npm test
+# TypeScript et lint
+npm run typecheck
+npm run lint
 
-# E2E
+# E2E Playwright (démarre automatiquement l'application)
 npm run test:e2e
 
-# Coverage
-npm run test:coverage
+# Build, puis boucle complète
+npm run build
+npm run validate
 ```
 
 ---

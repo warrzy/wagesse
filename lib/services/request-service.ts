@@ -1,6 +1,38 @@
 import { prisma } from '@/lib/prisma';
 import { createTransportRequestSchema, CreateTransportRequestInput } from '@/lib/validations';
-import { TransportRequest, TransportRequestStatus } from '@prisma/client';
+import { TransportRequest, RequestStatus } from '@prisma/client';
+import { maskEmail, maskPhoneNumber } from '@/lib/auth';
+import { sanitizeOptionalString } from '@/lib/anti-leak';
+
+const customerSelect = {
+  id: true,
+  city: true,
+  user: {
+    select: {
+      id: true,
+      email: true,
+      phone: true,
+      firstName: true,
+      lastName: true,
+    },
+  },
+} as const;
+
+const truckerSelect = {
+  id: true,
+  truckerType: true,
+  averageRating: true,
+  totalRatings: true,
+  acceptanceRate: true,
+  user: {
+    select: {
+      id: true,
+      phone: true,
+      firstName: true,
+      lastName: true,
+    },
+  },
+} as const;
 
 /**
  * Service for managing transport requests
@@ -10,50 +42,33 @@ export const requestService = {
    * Create a new transport request
    */
   async create(
-    userId: string,
+    customerId: string,
     data: CreateTransportRequestInput
   ): Promise<TransportRequest> {
-    // Validate input
     const validated = createTransportRequestSchema.parse(data);
 
-    // Create request with associated materials
     const request = await prisma.transportRequest.create({
       data: {
-        customerId: userId,
+        customerId,
+        materialDescription: sanitizeOptionalString(validated.material) || validated.material,
+        quantity: validated.quantity,
+        unit: validated.unit,
         pickupCity: validated.pickupCity,
+        pickupSector: sanitizeOptionalString(validated.pickupSector),
         dropoffCity: validated.dropoffCity,
-        pickupLatitude: validated.pickupLatitude,
-        pickupLongitude: validated.pickupLongitude,
-        dropoffLatitude: validated.dropoffLatitude,
-        dropoffLongitude: validated.dropoffLongitude,
-        pickupDate: new Date(validated.pickupDate),
-        estimatedDistance: validated.estimatedDistance || 0,
-        description: validated.description || '',
-        status: 'DRAFT' as TransportRequestStatus,
-        totalWeight: validated.totalWeight || 0,
-        totalVolume: validated.totalVolume || 0,
-        
-        // Create associated materials
-        materials: {
-          create: validated.materials.map((material) => ({
-            materialType: material.materialType,
-            quantity: material.quantity,
-            unit: material.unit,
-            estimatedPrice: material.estimatedPrice || 0,
-          })),
-        },
+        dropoffSector: sanitizeOptionalString(validated.dropoffSector),
+        requestedDate: validated.requestedDate,
+        urgency: validated.urgency,
+        minCapacity: validated.minCapacity,
+        truckTypePreference: sanitizeOptionalString(validated.truckTypePreference),
+        needsDriver: validated.needsDriver,
+        numberOfTrucks: validated.numberOfTrucks,
+        budgetEstimate: validated.budgetEstimate,
+        notes: sanitizeOptionalString(validated.comments),
+        status: 'DRAFT',
       },
       include: {
-        materials: true,
-        customer: {
-          select: {
-            id: true,
-            email: true,
-            phone: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
+        customer: { select: customerSelect },
       },
     });
 
@@ -61,48 +76,86 @@ export const requestService = {
   },
 
   /**
-   * Get a single request by ID
+   * Get a single request by ID (owner view). Quote details (price, trucker
+   * identity, vehicle) stay hidden until the customer pays to unlock them —
+   * only the count/status of received quotes is visible before that.
    */
-  async getById(requestId: string): Promise<TransportRequest | null> {
-    return await prisma.transportRequest.findUnique({
+  async getById(requestId: string, unlockedByUserId?: string | null) {
+    const request = await prisma.transportRequest.findUnique({
       where: { id: requestId },
       include: {
-        materials: true,
-        customer: {
-          select: {
-            id: true,
-            email: true,
-            phone: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
+        customer: { select: customerSelect },
         quotes: {
           include: {
-            trucker: {
-              select: {
-                id: true,
-                name: true,
-                phone: true,
-                rating: true,
-              },
-            },
+            trucker: { select: truckerSelect },
+            vehicle: true,
           },
         },
         matches: {
           include: {
-            trucker: {
-              select: {
-                id: true,
-                name: true,
-                phone: true,
-                rating: true,
-              },
-            },
+            trucker: { select: truckerSelect },
           },
         },
       },
     });
+
+    if (!request) return null;
+
+    const unlock = unlockedByUserId
+      ? await prisma.contactUnlock.findFirst({ where: { requestId, unlockedByUserId } })
+      : null;
+    const contactsUnlocked = !!unlock;
+
+    const quotes = contactsUnlocked
+      ? request.quotes.map((q) => ({ ...q, locked: false as const }))
+      : request.quotes.map((q) => ({
+          id: q.id,
+          status: q.status,
+          createdAt: q.createdAt,
+          locked: true as const,
+        }));
+
+    if (!contactsUnlocked) {
+      for (const match of request.matches) {
+        match.trucker.user.phone = maskPhoneNumber(match.trucker.user.phone);
+      }
+    }
+
+    return { ...request, quotes, contactsUnlocked };
+  },
+
+  /**
+   * Get a single published request without exposing other truckers' quotes
+   * (used when a trucker views a request to decide whether to quote on it)
+   */
+  async getPublicById(requestId: string) {
+    return await prisma.transportRequest.findFirst({
+      where: { id: requestId, status: { not: 'DRAFT' }, deletedAt: null },
+      include: {
+        customer: { select: customerSelect },
+      },
+    });
+  },
+
+  async getPublicByIdForUser(requestId: string, unlockedByUserId: string) {
+    const request = await prisma.transportRequest.findFirst({
+      where: { id: requestId, status: { not: 'DRAFT' }, deletedAt: null },
+      include: {
+        customer: { select: customerSelect },
+      },
+    });
+
+    if (!request) return null;
+
+    const unlock = await prisma.contactUnlock.findFirst({ where: { requestId, unlockedByUserId } });
+    const customerContactsUnlocked = !!unlock;
+
+    if (!customerContactsUnlocked) {
+      request.customer.user.phone = maskPhoneNumber(request.customer.user.phone);
+      request.customer.user.email = maskEmail(request.customer.user.email);
+    }
+
+    return { ...request, customerContactsUnlocked };
   },
 
   /**
@@ -111,14 +164,14 @@ export const requestService = {
   async getByCustomerId(
     customerId: string,
     options?: {
-      status?: TransportRequestStatus;
+      status?: RequestStatus;
       skip?: number;
       take?: number;
     }
   ) {
     const { status, skip = 0, take = 10 } = options || {};
 
-    const where: any = { customerId };
+    const where: any = { customerId, deletedAt: null };
     if (status) {
       where.status = status;
     }
@@ -127,8 +180,7 @@ export const requestService = {
       prisma.transportRequest.findMany({
         where,
         include: {
-          materials: true,
-          quotes: { select: { id: true, truckerId: true, status: true } },
+          quotes: { select: { id: true, truckerId: true, status: true, totalPrice: true } },
           matches: { select: { id: true, truckerId: true } },
         },
         orderBy: { createdAt: 'desc' },
@@ -154,7 +206,6 @@ export const requestService = {
     customerId: string,
     data: Partial<CreateTransportRequestInput>
   ): Promise<TransportRequest> {
-    // Verify ownership
     const existing = await prisma.transportRequest.findFirst({
       where: { id: requestId, customerId },
     });
@@ -163,45 +214,38 @@ export const requestService = {
       throw new Error('Request not found or unauthorized');
     }
 
-    // Only allow updates in DRAFT status
     if (existing.status !== 'DRAFT') {
       throw new Error('Can only update requests in DRAFT status');
     }
 
-    // Validate partial data
     const validated = createTransportRequestSchema.partial().parse(data);
 
-    // Update request
     const updated = await prisma.transportRequest.update({
       where: { id: requestId },
       data: {
-        ...(validated.pickupCity && { pickupCity: validated.pickupCity }),
-        ...(validated.dropoffCity && { dropoffCity: validated.dropoffCity }),
-        ...(validated.pickupLatitude && { pickupLatitude: validated.pickupLatitude }),
-        ...(validated.pickupLongitude && { pickupLongitude: validated.pickupLongitude }),
-        ...(validated.dropoffLatitude && { dropoffLatitude: validated.dropoffLatitude }),
-        ...(validated.dropoffLongitude && { dropoffLongitude: validated.dropoffLongitude }),
-        ...(validated.pickupDate && { pickupDate: new Date(validated.pickupDate) }),
-        ...(validated.estimatedDistance && { estimatedDistance: validated.estimatedDistance }),
-        ...(validated.description && { description: validated.description }),
-        ...(validated.totalWeight && { totalWeight: validated.totalWeight }),
-        ...(validated.totalVolume && { totalVolume: validated.totalVolume }),
-
-        // Update materials if provided
-        ...(validated.materials && {
-          materials: {
-            deleteMany: {},
-            create: validated.materials.map((material) => ({
-              materialType: material.materialType,
-              quantity: material.quantity,
-              unit: material.unit,
-              estimatedPrice: material.estimatedPrice || 0,
-            })),
-          },
+        ...(validated.material !== undefined && {
+          materialDescription: sanitizeOptionalString(validated.material) || validated.material,
         }),
-      },
-      include: {
-        materials: true,
+        ...(validated.quantity !== undefined && { quantity: validated.quantity }),
+        ...(validated.unit !== undefined && { unit: validated.unit }),
+        ...(validated.pickupCity !== undefined && { pickupCity: validated.pickupCity }),
+        ...(validated.pickupSector !== undefined && {
+          pickupSector: sanitizeOptionalString(validated.pickupSector),
+        }),
+        ...(validated.dropoffCity !== undefined && { dropoffCity: validated.dropoffCity }),
+        ...(validated.dropoffSector !== undefined && {
+          dropoffSector: sanitizeOptionalString(validated.dropoffSector),
+        }),
+        ...(validated.requestedDate !== undefined && { requestedDate: validated.requestedDate }),
+        ...(validated.urgency !== undefined && { urgency: validated.urgency }),
+        ...(validated.minCapacity !== undefined && { minCapacity: validated.minCapacity }),
+        ...(validated.truckTypePreference !== undefined && {
+          truckTypePreference: sanitizeOptionalString(validated.truckTypePreference),
+        }),
+        ...(validated.needsDriver !== undefined && { needsDriver: validated.needsDriver }),
+        ...(validated.numberOfTrucks !== undefined && { numberOfTrucks: validated.numberOfTrucks }),
+        ...(validated.budgetEstimate !== undefined && { budgetEstimate: validated.budgetEstimate }),
+        ...(validated.comments !== undefined && { notes: sanitizeOptionalString(validated.comments) }),
       },
     });
 
@@ -212,7 +256,6 @@ export const requestService = {
    * Publish a request (changes status from DRAFT to PUBLISHED)
    */
   async publish(requestId: string, customerId: string): Promise<TransportRequest> {
-    // Verify ownership
     const existing = await prisma.transportRequest.findFirst({
       where: { id: requestId, customerId },
     });
@@ -225,18 +268,13 @@ export const requestService = {
       throw new Error('Can only publish requests in DRAFT status');
     }
 
-    const published = await prisma.transportRequest.update({
+    return await prisma.transportRequest.update({
       where: { id: requestId },
       data: {
-        status: 'PUBLISHED' as TransportRequestStatus,
+        status: 'PUBLISHED',
         publishedAt: new Date(),
       },
-      include: {
-        materials: true,
-      },
     });
-
-    return published;
   },
 
   /**
@@ -258,21 +296,17 @@ export const requestService = {
     return await prisma.transportRequest.update({
       where: { id: requestId },
       data: {
-        status: 'CANCELLED' as TransportRequestStatus,
+        status: 'CANCELLED',
       },
     });
   },
 
   /**
-   * Search requests with filters
+   * Search published requests with filters (for truckers browsing available work)
    */
   async search(filters: {
     pickupCity?: string;
     dropoffCity?: string;
-    materialType?: string;
-    minDistance?: number;
-    maxDistance?: number;
-    status?: TransportRequestStatus;
     skip?: number;
     take?: number;
   }) {
@@ -285,44 +319,22 @@ export const requestService = {
 
     if (filters.pickupCity) where.pickupCity = filters.pickupCity;
     if (filters.dropoffCity) where.dropoffCity = filters.dropoffCity;
-    if (filters.minDistance) where.estimatedDistance = { gte: filters.minDistance };
-    if (filters.maxDistance) {
-      if (where.estimatedDistance) {
-        where.estimatedDistance.lte = filters.maxDistance;
-      } else {
-        where.estimatedDistance = { lte: filters.maxDistance };
-      }
-    }
 
-    let results = await prisma.transportRequest.findMany({
-      where,
-      include: {
-        materials: true,
-        customer: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            rating: true,
-          },
+    const [requests, total] = await Promise.all([
+      prisma.transportRequest.findMany({
+        where,
+        include: {
+          customer: { select: customerSelect },
         },
-      },
-      orderBy: { createdAt: 'desc' },
-      skip,
-      take,
-    });
-
-    // Filter by materialType if provided
-    if (filters.materialType) {
-      results = results.filter((req) =>
-        req.materials.some((m) => m.materialType === filters.materialType)
-      );
-    }
-
-    const total = await prisma.transportRequest.count({ where });
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take,
+      }),
+      prisma.transportRequest.count({ where }),
+    ]);
 
     return {
-      requests: results,
+      requests,
       total,
       page: Math.floor(skip / take) + 1,
       pages: Math.ceil(total / take),
