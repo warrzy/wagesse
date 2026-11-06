@@ -16,8 +16,9 @@ Le site HTTPS déjà présent sur `147.79.118.212` est ECOM-TOUCH (`ecom-touch.t
 | Phase 2 incluse | `8d813ae` (PR #3, qui contient la PR #2) |
 | `main` | `bf64432`, non modifié |
 | Branche à déployer | `cursor/preprod-deployment-ba0b` |
+| Commit installé par le script | `91e8235de45f3dfd58be558dc4636147d2a7d8df` |
 
-Cette branche ajoute le refus des comptes de démonstration (`SEED_DEMO_ACCOUNTS=false`) et `deploy/preprod/install.sh`. Le SHA à déployer est le HEAD de cette branche. Le script fait `git checkout` de `DEPLOY_REF` (défaut : cette branche).
+Cette branche ajoute le refus des comptes de démonstration (`SEED_DEMO_ACCOUNTS=false`) et `deploy/preprod/install.sh`. Le script déploie par défaut le commit `91e8235de45f3dfd58be558dc4636147d2a7d8df`, qui contient l’installateur et le seed. `DEPLOY_REF` permet d’en choisir un autre.
 
 `main` ne reçoit pas le déploiement.
 

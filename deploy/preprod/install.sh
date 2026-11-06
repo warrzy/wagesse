@@ -15,7 +15,7 @@ WEBROOT=/var/www/letsencrypt
 PORT_DEFAULT=3010
 NODE_VERSION=22.23.4
 REPO="${DEPLOY_REPO:-https://github.com/warrzy/wagesse.git}"
-REF="${DEPLOY_REF:-cursor/preprod-deployment-ba0b}"
+REF="${DEPLOY_REF:-91e8235de45f3dfd58be558dc4636147d2a7d8df}"
 LOG=/var/log/wagesse-preprod-install.log
 
 if [[ "${EUID}" -ne 0 ]]; then
