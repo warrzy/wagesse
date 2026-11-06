@@ -33,6 +33,7 @@ model User {
   contactUnlocks      ContactUnlock[]      @relation("UnlockedByUser")
   organizationMembers OrganizationMember[]
   notifications       Notification[]
+  commercialOrders    CommercialOrder[]
   conversations       Conversation[]
   messages            Message[]
   ratings             Rating[]
@@ -681,10 +682,11 @@ model CreditTransaction {
   wallet       CreditWallet          @relation(fields: [walletId], references: [id], onDelete: Cascade)
   walletId     String
   type         CreditTransactionType
-  amount       Int
-  balanceAfter Int
-  metadata     Json?
-  createdAt    DateTime              @default(now())
+  amount         Int
+  balanceAfter   Int
+  metadata       Json?
+  idempotencyKey String?               @unique
+  createdAt      DateTime              @default(now())
 
   @@index([walletId])
   @@index([type])
@@ -705,6 +707,64 @@ model CreditPack {
 
   @@index([isActive])
   @@index([sortOrder])
+}
+
+// Commande commerciale figée (règlement hors plateforme ou provider).
+// Le snapshot ne change plus après la création, même si le pack ou le plan est modifié.
+model CommercialOrder {
+  id                   String                  @id @default(cuid())
+  reference            String                  @unique
+  user                 User                    @relation(fields: [userId], references: [id], onDelete: Restrict)
+  userId               String
+  kind                 CommercialOrderKind
+  status               CommercialOrderStatus   @default(PENDING)
+  offerCode            String
+  title                String
+  amountXof            Int
+  currency             String                  @default("XOF")
+  credits              Int                     @default(0)
+  monthlyBoosts        Int                     @default(0)
+  unlockCostCredits    Int?
+  cycleDays            Int?
+  benefits             Json
+  badge                String?
+  paymentInstructions  String                  @db.Text
+  decisionNote         String?                 @db.Text
+  decidedById          String?
+  decidedAt            DateTime?
+  appliedAt            DateTime?
+  events               CommercialOrderEvent[]
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([kind])
+  @@index([createdAt])
+}
+
+model CommercialOrderEvent {
+  id        String          @id @default(cuid())
+  order     CommercialOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId   String
+  action    String
+  note      String?         @db.Text
+  actorId   String?
+  createdAt DateTime        @default(now())
+
+  @@index([orderId])
+  @@index([createdAt])
+}
+
+enum CommercialOrderKind {
+  CREDIT_PACK
+  SUBSCRIPTION
+}
+
+enum CommercialOrderStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 // ============================================================================

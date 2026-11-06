@@ -23,11 +23,16 @@ export async function POST(request: NextRequest) {
 
     const { phone, code } = validation.data
 
-    const isValid = verifyOTP(phone, code)
-    if (!isValid) {
+    const check = verifyOTP(phone, code)
+    if (!check.ok) {
+      const locked = check.reason === "locked"
       return NextResponse.json(
-        { success: false, error: "Code invalide ou expiré", code: "INVALID_OTP" },
-        { status: 400 }
+        {
+          success: false,
+          error: locked ? "Trop de tentatives. Demandez un nouveau code plus tard." : "Code invalide ou expiré",
+          code: locked ? "OTP_LOCKED" : "INVALID_OTP",
+        },
+        { status: locked ? 429 : 400 }
       )
     }
 

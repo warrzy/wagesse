@@ -32,7 +32,9 @@ export default function CheckoutSubscriptionClient() {
   const [plan, setPlan] = useState<Plan | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [phoneNumber, setPhoneNumber] = useState("")
-  const [method, setMethod] = useState<"orange_money" | "mobile_money" | "card">("orange_money")
+  const [method, setMethod] = useState<"orange_money" | "mobile_money" | "card" | "paydunya">("orange_money")
+  const [paymentMode, setPaymentMode] = useState<"MANUAL" | "PAYDUNYA" | "PROVIDER">("MANUAL")
+  const [instructions, setInstructions] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
   const benefits: string[] = useMemo(() => {
@@ -52,6 +54,13 @@ export default function CheckoutSubscriptionClient() {
         setError("Plan manquant")
         setLoading(false)
         return
+      }
+
+      const modeRes = await apiClient.getPaymentMode()
+      if (modeRes.success && modeRes.data) {
+        setPaymentMode(modeRes.data.mode)
+        setInstructions(modeRes.data.instructions)
+        if (modeRes.data.mode === "PAYDUNYA") setMethod("paydunya")
       }
 
       const res = await apiClient.getSubscriptionPlans()
@@ -172,7 +181,18 @@ export default function CheckoutSubscriptionClient() {
                 </div>
                 <div className="rounded-xl border border-gray-200 bg-[#F8FAFC] p-4">
                   <p className="font-semibold">Paiement</p>
-                  <p className="mt-1">Méthode: {method === "orange_money" ? "Orange Money" : method === "mobile_money" ? "Mobile Money" : "Carte"}</p>
+                  <p className="mt-1">
+                    Méthode:{" "}
+                    {paymentMode === "MANUAL"
+                      ? "Règlement hors plateforme"
+                      : paymentMode === "PAYDUNYA"
+                        ? "PayDunya"
+                        : method === "orange_money"
+                          ? "Orange Money"
+                          : method === "mobile_money"
+                            ? "Mobile Money"
+                            : "Carte"}
+                  </p>
                 </div>
               </div>
 
@@ -184,20 +204,32 @@ export default function CheckoutSubscriptionClient() {
                 </ul>
               ) : null}
 
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="md:col-span-1">
-                  <label className="text-xs text-gray-500">Méthode</label>
-                  <select className="input-field" value={method} onChange={(e) => setMethod(e.target.value as any)}>
-                    <option value="orange_money">Orange Money</option>
-                    <option value="mobile_money">Mobile Money</option>
-                    <option value="card">Carte</option>
-                  </select>
+              {paymentMode === "MANUAL" ? (
+                <div className="mt-6 rounded-xl border border-gray-200 bg-[#F8FAFC] p-4 text-sm text-gray-700">
+                  <p className="font-semibold">Règlement hors plateforme</p>
+                  <p className="mt-2">{instructions}</p>
                 </div>
-                <div className="md:col-span-2">
-                  <label className="text-xs text-gray-500">Téléphone (optionnel)</label>
-                  <input className="input-field" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="Ex: 70 00 00 00" />
+              ) : (
+                <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="md:col-span-1">
+                    <label className="text-xs text-gray-500">Méthode</label>
+                    <select className="input-field" value={method} onChange={(e) => setMethod(e.target.value as any)}>
+                      {paymentMode === "PAYDUNYA" ? <option value="paydunya">PayDunya</option> : null}
+                      {paymentMode === "PROVIDER" ? (
+                        <>
+                          <option value="orange_money">Orange Money</option>
+                          <option value="mobile_money">Mobile Money</option>
+                          <option value="card">Carte</option>
+                        </>
+                      ) : null}
+                    </select>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="text-xs text-gray-500">Téléphone (optionnel)</label>
+                    <input className="input-field" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="Ex: 70 00 00 00" />
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="mt-6">
                 <button
@@ -206,7 +238,7 @@ export default function CheckoutSubscriptionClient() {
                   disabled={submitting}
                   className="w-full inline-flex items-center justify-center rounded-xl bg-[#F97316] text-white px-5 py-3 text-sm font-semibold hover:bg-[#EA580C] transition-colors disabled:opacity-50"
                 >
-                  {submitting ? "Initialisation…" : "Payer et activer"}
+                  {submitting ? "Enregistrement…" : paymentMode === "MANUAL" ? "Confirmer la demande" : "Payer et activer"}
                 </button>
               </div>
             </div>

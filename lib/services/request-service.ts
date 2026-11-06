@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { createTransportRequestSchema, CreateTransportRequestInput } from '@/lib/validations';
 import { TransportRequest, RequestStatus } from '@prisma/client';
 import { maskEmail, maskPhoneNumber } from '@/lib/auth';
+import { maskContactUser } from '@/lib/contact-privacy';
 import { sanitizeOptionalString } from '@/lib/anti-leak';
 
 const customerSelect = {
@@ -180,7 +181,7 @@ export const requestService = {
       prisma.transportRequest.findMany({
         where,
         include: {
-          quotes: { select: { id: true, truckerId: true, status: true, totalPrice: true } },
+          quotes: { select: { id: true, status: true } },
           matches: { select: { id: true, truckerId: true } },
         },
         orderBy: { createdAt: 'desc' },
@@ -309,8 +310,9 @@ export const requestService = {
     dropoffCity?: string;
     skip?: number;
     take?: number;
+    viewerUserId?: string;
   }) {
-    const { skip = 0, take = 20 } = filters;
+    const { skip = 0, take = 20, viewerUserId } = filters;
 
     const where: any = {
       status: 'PUBLISHED',
@@ -333,8 +335,28 @@ export const requestService = {
       prisma.transportRequest.count({ where }),
     ]);
 
+    const unlocks = viewerUserId
+      ? await prisma.contactUnlock.findMany({
+          where: { unlockedByUserId: viewerUserId, requestId: { in: requests.map((item) => item.id) } },
+          select: { requestId: true },
+        })
+      : [];
+    const unlockedIds = new Set(unlocks.map((item) => item.requestId));
+
+    const visible = requests.map((item) => {
+      const ownRequest = item.customer.user.id === viewerUserId;
+      if (ownRequest || unlockedIds.has(item.id)) return item;
+      return {
+        ...item,
+        customer: {
+          ...item.customer,
+          user: maskContactUser(item.customer.user, true),
+        },
+      };
+    });
+
     return {
-      requests,
+      requests: visible,
       total,
       page: Math.floor(skip / take) + 1,
       pages: Math.ceil(total / take),

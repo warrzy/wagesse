@@ -13,7 +13,7 @@ export async function GET(
   try {
     const { id: requestId } = await params;
 
-    const auth = getAuthContext(request);
+    const auth = await getAuthContext(request);
     if (!auth) return unauthorized();
 
     const customerId = await getCustomerProfileId(auth.userId);
@@ -57,7 +57,7 @@ export async function PUT(
   try {
     const { id: requestId } = await params;
 
-    const auth = getAuthContext(request);
+    const auth = await getAuthContext(request);
     if (!auth) return unauthorized();
 
     const customerId = await getCustomerProfileId(auth.userId);
@@ -106,7 +106,7 @@ export async function DELETE(
   try {
     const { id: requestId } = await params;
 
-    const auth = getAuthContext(request);
+    const auth = await getAuthContext(request);
     if (!auth) return unauthorized();
 
     const customerId = await getCustomerProfileId(auth.userId);

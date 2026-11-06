@@ -24,7 +24,9 @@ export default function CheckoutClient() {
   const [pack, setPack] = useState<Pack | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [phoneNumber, setPhoneNumber] = useState("")
-  const [method, setMethod] = useState<"orange_money" | "mobile_money" | "card">("orange_money")
+  const [method, setMethod] = useState<"orange_money" | "mobile_money" | "card" | "paydunya">("orange_money")
+  const [paymentMode, setPaymentMode] = useState<"MANUAL" | "PAYDUNYA" | "PROVIDER">("MANUAL")
+  const [instructions, setInstructions] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
   const unitPrice = useMemo(() => {
@@ -40,6 +42,12 @@ export default function CheckoutClient() {
     }
 
     const load = async () => {
+      const modeRes = await apiClient.getPaymentMode()
+      if (modeRes.success && modeRes.data) {
+        setPaymentMode(modeRes.data.mode)
+        setInstructions(modeRes.data.instructions)
+        if (modeRes.data.mode === "PAYDUNYA") setMethod("paydunya")
+      }
       const res = await apiClient.getCreditPacks()
       if (!res.success) {
         setError(res.error || "Impossible de charger les packs")
@@ -164,24 +172,38 @@ export default function CheckoutClient() {
                 <div className="mt-5 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-xs">{error}</div>
               ) : null}
 
-              <div className="mt-6">
-                <label className="text-sm font-medium mb-1 block">Méthode de paiement</label>
-                <select className="input-field" value={method} onChange={(e) => setMethod(e.target.value as any)}>
-                  <option value="orange_money">Orange Money</option>
-                  <option value="mobile_money">Mobile Money</option>
-                  <option value="card">Carte</option>
-                </select>
-              </div>
+              {paymentMode === "MANUAL" ? (
+                <div className="mt-6 rounded-xl border border-gray-200 bg-[#F8FAFC] p-4 text-sm text-gray-700">
+                  <p className="font-semibold text-[#0F172A]">Règlement hors plateforme</p>
+                  <p className="mt-2">{instructions}</p>
+                </div>
+              ) : (
+                <>
+                  <div className="mt-6">
+                    <label className="text-sm font-medium mb-1 block">Méthode de paiement</label>
+                    <select className="input-field" value={method} onChange={(e) => setMethod(e.target.value as any)}>
+                      {paymentMode === "PAYDUNYA" ? <option value="paydunya">PayDunya</option> : null}
+                      {paymentMode === "PROVIDER" ? (
+                        <>
+                          <option value="orange_money">Orange Money</option>
+                          <option value="mobile_money">Mobile Money</option>
+                          <option value="card">Carte</option>
+                        </>
+                      ) : null}
+                    </select>
+                  </div>
 
-              <div className="mt-4">
-                <label className="text-sm font-medium mb-1 block">Numéro Mobile Money (optionnel)</label>
-                <input
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="Ex: 70xxxxxx"
-                  className="input-field"
-                />
-              </div>
+                  <div className="mt-4">
+                    <label className="text-sm font-medium mb-1 block">Numéro Mobile Money (optionnel)</label>
+                    <input
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      placeholder="Ex: 70xxxxxx"
+                      className="input-field"
+                    />
+                  </div>
+                </>
+              )}
 
               <div className="mt-6 flex gap-3">
                 <Link
@@ -196,7 +218,7 @@ export default function CheckoutClient() {
                   disabled={submitting}
                   className="flex-1 inline-flex items-center justify-center rounded-xl bg-[#F97316] text-white px-5 py-3 text-sm font-semibold hover:bg-[#EA580C] transition-colors disabled:opacity-50"
                 >
-                  {submitting ? "Initialisation…" : "Payer"}
+                  {submitting ? "Enregistrement…" : paymentMode === "MANUAL" ? "Confirmer la demande" : "Payer"}
                 </button>
               </div>
             </div>

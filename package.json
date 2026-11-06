@@ -11,6 +11,8 @@
     "typecheck": "tsc --noEmit --incremental false",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "test:unit": "node --import tsx --test --test-reporter spec tests/unit/*.test.ts",
+    "test:integration": "node --import tsx --import ./tests/register-alias.mjs --test --test-reporter spec --test-concurrency=1 tests/integration/*.test.ts",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:report": "playwright show-report playwright-report",

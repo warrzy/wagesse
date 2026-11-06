@@ -33,6 +33,7 @@ const sections: NavSection[] = [
     items: [
       { label: "Transactions", href: "/admin/transactions" },
       { label: "Paiements", href: "/admin/paiements" },
+      { label: "Commandes", href: "/admin/commandes" },
       { label: "Wallet / Crédits", href: "/admin/wallet" },
       { label: "Abonnements", href: "/admin/abonnements" },
       { label: "Tarifs", href: "/admin/tarifs" },

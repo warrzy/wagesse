@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getAuthContext, getTruckerProfileId, unauthorized } from "@/lib/api-auth"
+import { getAuthContext, getTruckerProfileId, requireVerifiedPhone, unauthorized } from "@/lib/api-auth"
 import { prisma } from "@/lib/prisma"
-import { spendCredit } from "@/lib/services/credit-service"
+import { consumeCreditForUnlock } from "@/lib/services/credit-service"
 import { getUnlockCostCreditsForUser } from "@/lib/services/subscription-service"
 
 /**
@@ -16,7 +16,7 @@ export async function POST(
   try {
     const { id: requestId } = await params
 
-    const auth = getAuthContext(request)
+    const auth = await getAuthContext(request)
     if (!auth) return unauthorized()
 
     const truckerId = await getTruckerProfileId(auth.userId)
@@ -33,49 +33,38 @@ export async function POST(
       return NextResponse.json({ error: "Request not found" }, { status: 404 })
     }
 
-    const existingUnlock = await prisma.contactUnlock.findFirst({
-      where: { requestId, unlockedByUserId: auth.userId },
-      select: { id: true },
-    })
-
-    if (existingUnlock) {
-      return NextResponse.json({ success: true, data: { alreadyUnlocked: true } })
-    }
+    const phoneGate = await requireVerifiedPhone(auth.userId)
+    if (phoneGate) return phoneGate
 
     const unlockCost = await getUnlockCostCreditsForUser(auth.userId)
-
-    const spend = await spendCredit({
+    const spend = await consumeCreditForUnlock({
       userId: auth.userId,
+      requestId,
       amount: unlockCost,
-      type: "UNLOCK_CONTACT",
-      metadata: { requestId },
-    })
-
-    if (!spend.success) {
-      return NextResponse.json(
-        { success: false, error: "Vous n'avez plus suffisamment de crédits.", code: "INSUFFICIENT_CREDITS" },
-        { status: 402 }
-      )
-    }
-
-    const customer = await prisma.customerProfile.findUnique({
-      where: { id: transportRequest.customerId },
-      select: { id: true, user: { select: { id: true, phone: true, email: true, firstName: true, lastName: true } } },
-    })
-
-    await prisma.contactUnlock.create({
-      data: {
-        requestId,
-        unlockedByUserId: auth.userId,
-        unlockedContacts: [
+      resolveContacts: async (tx) => {
+        const customer = await tx.customerProfile.findUnique({
+          where: { id: transportRequest.customerId },
+          select: { id: true, user: { select: { phone: true, email: true } } },
+        })
+        return [
           {
             customerId: transportRequest.customerId,
             phone: customer?.user?.phone,
             email: customer?.user?.email,
           },
-        ],
+        ]
       },
     })
+
+    if (spend.alreadyUnlocked) {
+      return NextResponse.json({ success: true, data: { alreadyUnlocked: true } })
+    }
+    if ("insufficient" in spend && spend.insufficient) {
+      return NextResponse.json(
+        { success: false, error: "Vous n'avez plus suffisamment de crédits.", code: "INSUFFICIENT_CREDITS" },
+        { status: 402 }
+      )
+    }
 
     return NextResponse.json({ success: true, data: { alreadyUnlocked: false, unlocked: true } })
   } catch (error: any) {

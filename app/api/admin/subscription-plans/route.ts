@@ -7,7 +7,7 @@ function forbid() {
 }
 
 export async function GET(request: NextRequest) {
-  const auth = getAuthContext(request)
+  const auth = await getAuthContext(request)
   if (!auth) return unauthorized()
   if (auth.role !== "ADMIN") return forbid()
 
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const auth = getAuthContext(request)
+    const auth = await getAuthContext(request)
     if (!auth) return unauthorized()
     if (auth.role !== "ADMIN") return forbid()
 

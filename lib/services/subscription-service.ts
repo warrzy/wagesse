@@ -50,11 +50,16 @@ export async function topupSubscriptionCredits(params: {
   cycleStart: Date
   cycleEnd: Date
   credits: number
+  idempotencyKey?: string
+  tx?: any
 }) {
-  const { userId, subscriptionId, planId, cycleStart, cycleEnd, credits } = params
-  const d = db()
+  const { userId, subscriptionId, planId, cycleStart, cycleEnd, credits, idempotencyKey } = params
+  const run = async (tx: any) => {
+    if (idempotencyKey) {
+      const byKey = await tx.creditTransaction.findUnique({ where: { idempotencyKey } })
+      if (byKey) return { alreadyApplied: true as const }
+    }
 
-  return await d.$transaction(async (tx: any) => {
     const wallet = await tx.creditWallet.upsert({
       where: { userId },
       update: {},
@@ -67,22 +72,30 @@ export async function topupSubscriptionCredits(params: {
       },
     })
 
-    const existing = await tx.creditTransaction.findFirst({
-      where: {
-        walletId: wallet.id,
-        type: "SUBSCRIPTION_MONTHLY_TOPUP",
-        metadata: { path: ["subscriptionId"], equals: subscriptionId },
-      } as any,
-      orderBy: { createdAt: "desc" },
-    })
-
-    const currentCycleKey = `${cycleStart.toISOString()}_${cycleEnd.toISOString()}`
-    const existingCycleKey = (existing?.metadata as any)?.cycleKey
-    if (existing && existingCycleKey === currentCycleKey) {
-      return { alreadyApplied: true as const }
+    await tx.$queryRaw`SELECT id FROM CreditWallet WHERE id = ${wallet.id} FOR UPDATE`
+    if (idempotencyKey) {
+      const byKey = await tx.creditTransaction.findUnique({ where: { idempotencyKey } })
+      if (byKey) return { alreadyApplied: true as const }
     }
 
-    const purchased = wallet.purchasedBalance ?? wallet.balance ?? 0
+    const locked = await tx.creditWallet.findUnique({ where: { id: wallet.id } })
+    const currentCycleKey = `${cycleStart.toISOString()}_${cycleEnd.toISOString()}`
+    if (!idempotencyKey) {
+      const existing = await tx.creditTransaction.findFirst({
+        where: {
+          walletId: wallet.id,
+          type: "SUBSCRIPTION_MONTHLY_TOPUP",
+          metadata: { path: ["subscriptionId"], equals: subscriptionId },
+        } as any,
+        orderBy: { createdAt: "desc" },
+      })
+      const existingCycleKey = (existing?.metadata as any)?.cycleKey
+      if (existing && existingCycleKey === currentCycleKey) {
+        return { alreadyApplied: true as const }
+      }
+    }
+
+    const purchased = locked.purchasedBalance ?? locked.balance ?? 0
     const newSubscription = credits
     const newBalance = purchased + newSubscription
 
@@ -101,6 +114,7 @@ export async function topupSubscriptionCredits(params: {
         type: "SUBSCRIPTION_MONTHLY_TOPUP",
         amount: credits,
         balanceAfter: newBalance,
+        idempotencyKey: idempotencyKey || null,
         metadata: {
           subscriptionId,
           planId,
@@ -112,29 +126,57 @@ export async function topupSubscriptionCredits(params: {
     })
 
     return { alreadyApplied: false as const }
-  })
+  }
+
+  if (params.tx) return run(params.tx)
+  return db().$transaction(run)
 }
 
 export async function activateOrRenewSubscription(params: {
   userId: string
   planCode: string
+  idempotencyKey?: string
+  tx?: any
+  credits?: number
+  cycleDays?: number
+  requireActivePlan?: boolean
 }) {
-  const { userId, planCode } = params
+  const { userId, planCode, idempotencyKey } = params
+  const requireActivePlan = params.requireActivePlan !== false
   const d = db()
 
-  const plan = await d.subscriptionPlan.findUnique({ where: { code: planCode } })
-  if (!plan || !plan.isActive) throw new Error("Plan indisponible")
+  const run = async (tx: any) => {
+    if (idempotencyKey) {
+      const existingGrant = await tx.creditTransaction.findUnique({ where: { idempotencyKey } })
+      if (existingGrant) {
+        const customer = await tx.customerProfile.findUnique({ where: { userId }, select: { id: true } })
+        const trucker = await tx.truckerProfile.findUnique({ where: { userId }, select: { id: true } })
+        const existingSub = customer
+          ? await tx.subscription.findFirst({ where: { customerId: customer.id }, orderBy: { createdAt: "desc" } })
+          : trucker
+            ? await tx.subscription.findFirst({ where: { truckerId: trucker.id }, orderBy: { createdAt: "desc" } })
+            : null
+        return existingSub
+      }
+    }
 
-  const customer = await d.customerProfile.findUnique({ where: { userId }, select: { id: true } })
-  const trucker = await d.truckerProfile.findUnique({ where: { userId }, select: { id: true } })
+    const plan = await tx.subscriptionPlan.findUnique({ where: { code: planCode } })
+    if (!plan || (requireActivePlan && !plan.isActive)) throw new Error("Plan indisponible")
 
-  if (!customer && !trucker) throw new Error("Profil introuvable")
+    const customer = await tx.customerProfile.findUnique({ where: { userId }, select: { id: true } })
+    const trucker = await tx.truckerProfile.findUnique({ where: { userId }, select: { id: true } })
+    if (!customer && !trucker) throw new Error("Profil introuvable")
 
-  const now = new Date()
-  const cycleDays = typeof plan.cycleDays === "number" && plan.cycleDays > 0 ? plan.cycleDays : 30
-  const cycleEnd = new Date(now.getTime() + cycleDays * 24 * 60 * 60 * 1000)
+    const now = new Date()
+    const cycleDays =
+      typeof params.cycleDays === "number" && params.cycleDays > 0
+        ? params.cycleDays
+        : typeof plan.cycleDays === "number" && plan.cycleDays > 0
+          ? plan.cycleDays
+          : 30
+    const cycleEnd = new Date(now.getTime() + cycleDays * 24 * 60 * 60 * 1000)
+    const credits = typeof params.credits === "number" ? params.credits : (plan.monthlyCredits ?? 0)
 
-  const subscription = await d.$transaction(async (tx: any) => {
     const existing = customer
       ? await tx.subscription.findFirst({ where: { customerId: customer.id }, orderBy: { createdAt: "desc" } })
       : await tx.subscription.findFirst({ where: { truckerId: trucker.id }, orderBy: { createdAt: "desc" } })
@@ -172,11 +214,16 @@ export async function activateOrRenewSubscription(params: {
       planId: plan.id,
       cycleStart: now,
       cycleEnd,
-      credits: plan.monthlyCredits ?? 0,
+      credits,
+      idempotencyKey,
+      tx,
     })
 
     return createdOrUpdated
-  })
+  }
 
-  return await d.subscription.findUnique({ where: { id: subscription.id }, include: { plan: true } })
+  const subscription = params.tx ? await run(params.tx) : await d.$transaction(run)
+  if (!subscription) return null
+  if (params.tx) return subscription
+  return d.subscription.findUnique({ where: { id: subscription.id }, include: { plan: true } })
 }

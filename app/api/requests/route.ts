@@ -9,7 +9,7 @@ import { RequestStatus } from '@prisma/client';
  */
 export async function GET(request: NextRequest) {
   try {
-    const auth = getAuthContext(request);
+    const auth = await getAuthContext(request);
     if (!auth) return unauthorized();
 
     const customerId = await getCustomerProfileId(auth.userId);
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const auth = getAuthContext(request);
+    const auth = await getAuthContext(request);
     if (!auth) return unauthorized();
 
     const customerId = await getCustomerProfileId(auth.userId);

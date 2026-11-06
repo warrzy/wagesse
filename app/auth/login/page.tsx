@@ -53,6 +53,11 @@ export default function LoginPage() {
         apiClient.setUser(response.data.user)
       }
 
+      if (response.data?.user && response.data.user.phoneVerified == null) {
+        router.push(`/auth/verify?phone=${encodeURIComponent(response.data.user.phone)}`)
+        return
+      }
+
       const role = response.data?.user?.role
       router.push(getDashboardRouteByRole(role))
     } catch (err) {
@@ -85,6 +90,7 @@ export default function LoginPage() {
               <input
                 type="tel"
                 name="phone"
+                aria-label="Numéro de téléphone"
                 placeholder="Numéro de téléphone"
                 value={formData.phone}
                 onChange={handleInputChange}
@@ -95,6 +101,7 @@ export default function LoginPage() {
               <input
                 type="password"
                 name="password"
+                aria-label="Mot de passe"
                 placeholder="Mot de passe"
                 value={formData.password}
                 onChange={handleInputChange}

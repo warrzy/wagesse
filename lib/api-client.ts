@@ -8,7 +8,9 @@ interface AuthResponseData {
     firstName: string | null
     lastName: string | null
     role: string
+    phoneVerified?: string | null
   }
+  phoneVerificationRequired?: boolean
 }
 
 export type StoredUser = AuthResponseData["user"]
@@ -615,6 +617,49 @@ class APIClient {
 
   async verifyOTP(phone: string, code: string) {
     return this.request("POST", "/auth/verify-otp", { phone, code })
+  }
+
+  async resendOTP(phone: string) {
+    return this.request("POST", "/auth/resend-otp", { phone })
+  }
+
+  async getPaymentMode() {
+    return this.request<{ mode: "MANUAL" | "PAYDUNYA" | "PROVIDER"; instructions: string | null }>("GET", "/payments/mode")
+  }
+
+  async getCommercialOrders() {
+    return this.request("GET", "/commercial-orders")
+  }
+
+  async getCommercialOrder(id: string) {
+    return this.request("GET", `/commercial-orders/${id}`)
+  }
+
+  async adminListCommandes(params: { page?: number; pageSize?: number; q?: string; status?: string; kind?: string }) {
+    const sp = new URLSearchParams()
+    if (params.page) sp.set("page", String(params.page))
+    if (params.pageSize) sp.set("pageSize", String(params.pageSize))
+    if (params.q) sp.set("q", params.q)
+    if (params.status) sp.set("status", params.status)
+    if (params.kind) sp.set("kind", params.kind)
+    const qs = sp.toString()
+    return this.request("GET", `/admin/commandes${qs ? `?${qs}` : ""}`)
+  }
+
+  async adminGetCommande(id: string) {
+    return this.request("GET", `/admin/commandes/${id}`)
+  }
+
+  async adminApproveCommande(id: string, note?: string) {
+    return this.request("POST", `/admin/commandes/${id}/approve`, { note })
+  }
+
+  async adminRejectCommande(id: string, note: string) {
+    return this.request("POST", `/admin/commandes/${id}/reject`, { note })
+  }
+
+  async adminAdjustWallet(id: string, data: { amount: number; reason: string; idempotencyKey: string }) {
+    return this.request("POST", `/admin/wallet/${id}`, data)
   }
 
   async logout() {
