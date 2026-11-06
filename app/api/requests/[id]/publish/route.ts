@@ -13,7 +13,7 @@ export async function POST(
   try {
     const { id: requestId } = await params;
 
-    const auth = getAuthContext(request);
+    const auth = await getAuthContext(request);
     if (!auth) return unauthorized();
 
     const customerId = await getCustomerProfileId(auth.userId);

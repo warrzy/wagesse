@@ -14,7 +14,7 @@ function toInt(s: string | null, fallback: number) {
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = getAuthContext(request)
+    const auth = await getAuthContext(request)
     if (!auth) return unauthorized()
     if (!isAdmin(auth.role)) return unauthorized("Forbidden")
 
@@ -142,7 +142,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = getAuthContext(request)
+    const auth = await getAuthContext(request)
     if (!auth) return unauthorized()
     if (!isAdmin(auth.role)) return unauthorized("Forbidden")
 

@@ -69,6 +69,11 @@ export default function SignupClient() {
         apiClient.setUser(response.data.user)
       }
 
+      if (response.data?.phoneVerificationRequired) {
+        router.push(`/auth/verify?phone=${encodeURIComponent(formData.phone)}`)
+        return
+      }
+
       const userRole = response.data?.user?.role
       router.push(getDashboardRouteByRole(userRole))
     } catch (err) {

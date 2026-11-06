@@ -11,7 +11,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const auth = getAuthContext(request)
+    const auth = await getAuthContext(request)
     if (!auth) return unauthorized()
     if (!isAdmin(auth.role)) return unauthorized("Forbidden")
 
@@ -70,7 +70,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const auth = getAuthContext(request)
+    const auth = await getAuthContext(request)
     if (!auth) return unauthorized()
     if (!isAdmin(auth.role)) return unauthorized("Forbidden")
 

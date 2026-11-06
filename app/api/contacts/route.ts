@@ -3,7 +3,7 @@ import { getAuthContext, unauthorized } from "@/lib/api-auth"
 import { prisma } from "@/lib/prisma"
 
 export async function GET(request: NextRequest) {
-  const auth = getAuthContext(request)
+  const auth = await getAuthContext(request)
   if (!auth) return unauthorized()
 
   const unlocks = await prisma.contactUnlock.findMany({

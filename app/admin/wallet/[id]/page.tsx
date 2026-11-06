@@ -29,6 +29,45 @@ function txTypeBadgeClass(type: string) {
   }
 }
 
+function AdjustCredits({ walletId, onDone }: { walletId: string; onDone: () => Promise<void> }) {
+  const [amount, setAmount] = useState("")
+  const [reason, setReason] = useState("")
+  const [message, setMessage] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [idempotencyKey] = useState(() => (typeof crypto !== "undefined" ? crypto.randomUUID() : String(Date.now())))
+
+  const submit = async () => {
+    setBusy(true)
+    setMessage(null)
+    const res = await apiClient.adminAdjustWallet(walletId, {
+      amount: Number(amount),
+      reason,
+      idempotencyKey,
+    })
+    setBusy(false)
+    if (!res.success) {
+      setMessage(res.error || "Ajustement refusé")
+      return
+    }
+    setMessage("Ajustement enregistré")
+    await onDone()
+  }
+
+  return (
+    <div className="card">
+      <p className="text-sm font-semibold">Ajuster les crédits achetés</p>
+      <div className="mt-4 space-y-2">
+        <input className="input-field" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Montant (+ ou -)" />
+        <textarea className="input-field min-h-20" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Justification" />
+        <button type="button" disabled={busy} onClick={submit} className="w-full px-4 py-2 rounded-lg bg-[#E8714D] text-white text-sm font-semibold disabled:opacity-50">
+          Enregistrer l'ajustement
+        </button>
+        {message ? <p className="text-xs text-gray-600">{message}</p> : null}
+      </div>
+    </div>
+  )
+}
+
 export default function AdminWalletDetailsPage() {
   const params = useParams<{ id: string }>()
   const id = params.id
@@ -37,23 +76,24 @@ export default function AdminWalletDetailsPage() {
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<any>(null)
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true)
-      setError(null)
+  const load = async () => {
+    setLoading(true)
+    setError(null)
 
-      const res = await apiClient.adminGetWallet(id)
-      if (!res.success) {
-        setError(res.error || "Erreur lors du chargement")
-        setLoading(false)
-        return
-      }
-
-      setData(res.data)
+    const res = await apiClient.adminGetWallet(id)
+    if (!res.success) {
+      setError(res.error || "Erreur lors du chargement")
       setLoading(false)
+      return
     }
 
+    setData(res.data)
+    setLoading(false)
+  }
+
+  useEffect(() => {
     if (id) load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   if (loading) {
@@ -194,21 +234,7 @@ export default function AdminWalletDetailsPage() {
             </div>
           </div>
 
-          <div className="card">
-            <p className="text-sm font-semibold">Actions admin</p>
-            <div className="mt-4 space-y-2">
-              <button
-                type="button"
-                disabled
-                className="w-full px-4 py-2 rounded-lg bg-gray-100 text-gray-500 text-sm font-semibold cursor-not-allowed"
-              >
-                Ajuster crédits (à venir)
-              </button>
-              <p className="text-xs text-gray-500">
-                Les actions sensibles seront activées après mise en place de l'audit log.
-              </p>
-            </div>
-          </div>
+          <AdjustCredits walletId={id} onDone={load} />
 
           <div className="card">
             <p className="text-sm font-semibold">JSON wallet</p>

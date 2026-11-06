@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server"
 import { getAuthContext, unauthorized } from "@/lib/api-auth"
 import { activateOrRenewSubscription } from "@/lib/services/subscription-service"
 import { prisma } from "@/lib/prisma"
+import { isPaidPlanPrice } from "@/lib/payment-policy"
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = getAuthContext(request)
+    const auth = await getAuthContext(request)
     if (!auth) return unauthorized()
 
     const body = await request.json()
@@ -19,6 +20,17 @@ export async function POST(request: NextRequest) {
     const plan = await db.subscriptionPlan.findUnique({ where: { code: planCode } })
     if (!plan || !plan.isActive) {
       return NextResponse.json({ success: false, error: "Plan invalide" }, { status: 400 })
+    }
+
+    if (isPaidPlanPrice(plan.monthlyPrice)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Ce forfait payant ne peut pas être activé directement. Confirmez une demande de règlement.",
+          code: "PAYMENT_REQUIRED",
+        },
+        { status: 403 }
+      )
     }
 
     const sub = await activateOrRenewSubscription({ userId: auth.userId, planCode })

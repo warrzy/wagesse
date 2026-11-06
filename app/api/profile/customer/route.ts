@@ -9,7 +9,7 @@ import { sanitizeOptionalString } from '@/lib/anti-leak';
  */
 export async function GET(request: NextRequest) {
   try {
-    const auth = getAuthContext(request);
+    const auth = await getAuthContext(request);
     if (!auth) return unauthorized();
 
     const profile = await prisma.customerProfile.findUnique({
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
-    const auth = getAuthContext(request);
+    const auth = await getAuthContext(request);
     if (!auth) return unauthorized();
 
     const body = await request.json();

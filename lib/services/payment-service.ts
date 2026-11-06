@@ -1,11 +1,15 @@
 import { prisma } from '@/lib/prisma';
 import { PaymentService, PaymentResponse } from '@/lib/payment-provider';
+import { PayDunyaProvider } from '@/lib/paydunya';
 import { generateReference } from '@/lib/auth';
 import { CreatePaymentInput } from '@/lib/validations';
 import { Payment, PaymentStatus } from '@prisma/client';
 import { activateOrRenewSubscription } from '@/lib/services/subscription-service';
+import { grantPurchasedCredits } from '@/lib/services/credit-service';
+import { getPaymentMode } from '@/lib/payment-mode';
+import { isOrangeSandboxProvider, sandboxAttributionBlocked } from '@/lib/payment-policy';
 
-const paymentService = new PaymentService();
+const orangePaymentService = new PaymentService();
 
 function mapProviderStatus(status: PaymentResponse['status']): PaymentStatus {
   switch (status) {
@@ -21,91 +25,94 @@ function mapProviderStatus(status: PaymentResponse['status']): PaymentStatus {
 }
 
 const providerNameFor = (method: string) =>
-  method === 'orange_money' ? 'orange_money' : method === 'mobile_money' ? 'mobile_money' : 'stripe';
+  method === 'orange_money' ? 'orange_money' : method === 'mobile_money' ? 'mobile_money' : method === 'paydunya' ? 'paydunya' : 'stripe';
 
 function appUrl(path: string): string {
   const base = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   return `${base}${path}`;
 }
 
-/**
- * Runs whatever side effect a successful payment is supposed to trigger.
- * Shared between the user-facing sandbox confirm flow, the real Orange
- * Money browser return, and the Orange Money server-to-server webhook —
- * all three must be safe to call more than once for the same payment.
- */
-async function applySideEffects(payment: Payment) {
+function paymentMetadata(payment: Payment): { sandbox?: boolean; credits?: number; packCode?: string; planCode?: string; notifToken?: string } {
+  return (payment.metadata as { sandbox?: boolean; credits?: number; packCode?: string; planCode?: string; notifToken?: string } | null) || {};
+}
+
+export function assertSandboxCanGrant(payment: Payment) {
+  if (sandboxAttributionBlocked(process.env, paymentMetadata(payment))) {
+    throw new Error('SANDBOX_DISABLED');
+  }
+}
+
+async function applySideEffects(tx: any, payment: Payment) {
+  assertSandboxCanGrant(payment);
+  const metadata = paymentMetadata(payment);
+
   if (payment.type === 'CREDIT_PURCHASE') {
-    const metadata = payment.metadata as { credits?: number; packCode?: string } | null;
-    const credits = metadata?.credits;
+    const credits = metadata.credits;
     if (!credits || credits <= 0) return;
-
-    const existing = await prisma.creditTransaction.findFirst({
-      where: {
-        type: 'PURCHASE',
-        wallet: { userId: payment.payer },
-        metadata: { path: ['paymentId'], equals: payment.id },
-      } as any,
+    await grantPurchasedCredits(tx, {
+      userId: payment.payer,
+      credits,
+      idempotencyKey: `payment:${payment.id}:purchase`,
+      metadata: { paymentId: payment.id, packCode: metadata.packCode ?? null },
     });
-    if (existing) return;
-
-    await prisma.$transaction(async (tx) => {
-      const wallet = await (tx as any).creditWallet.upsert({
-        where: { userId: payment.payer },
-        update: {},
-        create: {
-          userId: payment.payer,
-          balance: 0,
-          purchasedBalance: 0,
-          subscriptionBalance: 0,
-          subscriptionBalanceExpiresAt: null,
-        },
-      });
-
-      const purchased = wallet.purchasedBalance ?? wallet.balance ?? 0;
-      const subscription = wallet.subscriptionBalance ?? 0;
-      const newPurchased = purchased + credits;
-      const newBalance = newPurchased + subscription;
-
-      await (tx as any).creditWallet.update({
-        where: { id: wallet.id },
-        data: { purchasedBalance: newPurchased, balance: newBalance },
-      });
-
-      await (tx as any).creditTransaction.create({
-        data: {
-          walletId: wallet.id,
-          type: 'PURCHASE',
-          amount: credits,
-          balanceAfter: newBalance,
-          metadata: { paymentId: payment.id, packCode: metadata?.packCode ?? null },
-        },
-      });
-    });
-
     return;
   }
 
   if (payment.type === 'SUBSCRIPTION') {
-    const metadata = payment.metadata as { planCode?: string } | null;
-    const planCode = metadata?.planCode;
+    const planCode = metadata.planCode;
     if (!planCode) return;
-    await activateOrRenewSubscription({ userId: payment.payer, planCode });
-    return;
+    await activateOrRenewSubscription({
+      userId: payment.payer,
+      planCode,
+      idempotencyKey: `payment:${payment.id}:subscription`,
+      tx,
+      requireActivePlan: true,
+    });
+  }
+}
+
+async function settleVerifiedPayment(payment: Payment, verifyResponse: PaymentResponse) {
+  assertSandboxCanGrant(payment);
+  const status = mapProviderStatus(verifyResponse.status);
+
+  try {
+    return await prisma.$transaction(async (tx) => {
+      const current = await tx.payment.findUnique({ where: { id: payment.id } });
+      if (!current) throw new Error('Payment not found');
+      if (current.status === 'SUCCESSFUL' || current.status === 'FAILED' || current.status === 'REFUNDED') {
+        return current;
+      }
+
+      if (status !== 'SUCCESSFUL') {
+        return tx.payment.update({
+          where: { id: payment.id },
+          data: {
+            status,
+            ...(status === 'FAILED' && { failedAt: new Date() }),
+          },
+        });
+      }
+
+      const claimed = await tx.payment.updateMany({
+        where: { id: payment.id, status: { notIn: ['SUCCESSFUL', 'FAILED', 'REFUNDED'] } },
+        data: { status: 'SUCCESSFUL', confirmedAt: new Date() },
+      });
+      const updated = await tx.payment.findUnique({ where: { id: payment.id } });
+      if (!updated) throw new Error('Payment not found');
+      if (claimed.count !== 1) return updated;
+      await applySideEffects(tx, updated);
+      return updated;
+    });
+  } catch (error: any) {
+    if (error?.code === 'P2002') {
+      const current = await prisma.payment.findUnique({ where: { id: payment.id } });
+      if (current) return current;
+    }
+    throw error;
   }
 }
 
 export const paymentServiceLayer = {
-  /**
-   * Start a payment.
-   * - Sandbox provider: stays PENDING until the user confirms it on our
-   *   internal mock screen (redirectUrl points there).
-   * - Real Orange Money: the provider itself returns a hosted `payment_url`;
-   *   the customer completes payment on Orange's site, not ours.
-   *
-   * `returnTo` is the in-app page to bounce back to once the payment (real
-   * or simulated) is confirmed.
-   */
   async initialize(
     userId: string,
     customerId: string | null,
@@ -113,7 +120,17 @@ export const paymentServiceLayer = {
     metadata: Record<string, unknown> | undefined,
     returnTo: string
   ) {
+    const mode = getPaymentMode();
+    if (mode === 'MANUAL' && (data.type === 'CREDIT_PURCHASE' || data.type === 'SUBSCRIPTION')) {
+      throw new Error('MANUAL_MODE');
+    }
+    if (mode === 'PAYDUNYA' && process.env.NODE_ENV === 'production' && process.env.PAYDUNYA_ENABLED !== 'true') {
+      throw new Error('PAYDUNYA_DISABLED');
+    }
+
     const reference = generateReference('PAY');
+    const usePaydunya = mode === 'PAYDUNYA';
+    const sandbox = !usePaydunya && isOrangeSandboxProvider();
 
     const payment = await prisma.payment.create({
       data: {
@@ -123,23 +140,35 @@ export const paymentServiceLayer = {
         currency: data.currency,
         type: data.type,
         reference,
-        providerName: providerNameFor(data.paymentMethod),
+        providerName: usePaydunya ? 'paydunya' : providerNameFor(data.paymentMethod),
         status: 'INITIATED',
-        metadata: metadata as object | undefined,
+        metadata: { ...(metadata || {}), sandbox, provider: usePaydunya ? 'paydunya' : 'orange' } as object,
       },
     });
 
     const ourReturnUrl = appUrl(
-      `/api/payments/orange-money/return/${payment.id}?returnTo=${encodeURIComponent(returnTo)}`
+      usePaydunya
+        ? `/api/payments/paydunya/return/${payment.id}?returnTo=${encodeURIComponent(returnTo)}`
+        : `/api/payments/orange-money/return/${payment.id}?returnTo=${encodeURIComponent(returnTo)}`
     );
 
-    const providerResponse = await paymentService.processPayment({
-      amount: data.amount,
-      reference,
-      currency: data.currency,
-      customerPhone: data.phoneNumber,
-      callbackUrl: ourReturnUrl,
-    });
+    const provider = usePaydunya ? new PayDunyaProvider() : null;
+    const providerResponse = usePaydunya
+      ? await provider!.charge({
+          amount: data.amount,
+          reference,
+          currency: data.currency,
+          customerPhone: data.phoneNumber,
+          callbackUrl: ourReturnUrl,
+          description: data.type,
+        })
+      : await orangePaymentService.processPayment({
+          amount: data.amount,
+          reference,
+          currency: data.currency,
+          customerPhone: data.phoneNumber,
+          callbackUrl: ourReturnUrl,
+        });
 
     const status = mapProviderStatus(providerResponse.status);
 
@@ -151,7 +180,9 @@ export const paymentServiceLayer = {
         lastAttemptAt: new Date(),
         ...(status === 'FAILED' && { failedAt: new Date() }),
         metadata: {
-          ...(metadata as object | undefined),
+          ...(metadata || {}),
+          sandbox,
+          provider: usePaydunya ? 'paydunya' : 'orange',
           ...(providerResponse.raw?.notifToken ? { notifToken: providerResponse.raw.notifToken } : {}),
         },
       },
@@ -166,18 +197,15 @@ export const paymentServiceLayer = {
       },
     });
 
-    // Real Orange Money hands us its own hosted payment_url; fall back to
-    // our sandbox confirmation screen when the provider doesn't give one.
     const redirectUrl =
       providerResponse.redirectUrl ||
-      `/payments/${payment.id}/confirm?returnTo=${encodeURIComponent(returnTo)}`;
+      (usePaydunya
+        ? `/dashboard/client?payment=pending`
+        : `/payments/${payment.id}/confirm?returnTo=${encodeURIComponent(returnTo)}`);
 
     return { payment: updated, redirectUrl };
   },
 
-  /**
-   * Read-only fetch — no provider calls, no side effects.
-   */
   async getById(paymentId: string, userId: string) {
     const payment = await prisma.payment.findUnique({
       where: { id: paymentId },
@@ -195,10 +223,6 @@ export const paymentServiceLayer = {
     return payment;
   },
 
-  /**
-   * Sandbox confirmation screen: the user themself confirms, authenticated
-   * by their session.
-   */
   async confirm(paymentId: string, userId: string) {
     const payment = await prisma.payment.findUnique({ where: { id: paymentId } });
 
@@ -208,85 +232,69 @@ export const paymentServiceLayer = {
     if (payment.payer !== userId) {
       throw new Error('Unauthorized');
     }
+    if (payment.providerName === 'paydunya') {
+      throw new Error('PAYDUNYA_CONFIRM');
+    }
+    assertSandboxCanGrant(payment);
 
     if (payment.status === 'SUCCESSFUL' || payment.status === 'FAILED') {
       return payment;
     }
 
-    const verifyResponse = await paymentService.verifyPayment(
+    const verifyResponse = await orangePaymentService.verifyPayment(
       payment.providerReference || payment.reference
     );
-    const status = mapProviderStatus(verifyResponse.status);
-
-    const updated = await prisma.payment.update({
-      where: { id: paymentId },
-      data: {
-        status,
-        ...(status === 'SUCCESSFUL' && { confirmedAt: new Date() }),
-        ...(status === 'FAILED' && { failedAt: new Date() }),
-      },
-    });
-
-    if (status === 'SUCCESSFUL') {
-      await applySideEffects(updated);
-    }
-
-    return updated;
+    return settleVerifiedPayment(payment, verifyResponse);
   },
 
-  /**
-   * Real Orange Money browser return: the customer is bounced back from
-   * Orange's hosted payment page. No user auth context is available here
-   * (it's a plain redirect), so we verify server-side against Orange's
-   * transaction-status API using the payment's own reference/amount.
-   */
   async finalizeFromReturn(paymentId: string) {
     const payment = await prisma.payment.findUnique({ where: { id: paymentId } });
     if (!payment) {
       throw new Error('Payment not found');
     }
+    if (payment.providerName === 'paydunya') {
+      return this.finalizePaydunya(payment.id);
+    }
+    assertSandboxCanGrant(payment);
 
     if (payment.status === 'SUCCESSFUL' || payment.status === 'FAILED') {
       return payment;
     }
 
-    const verifyResponse = await paymentService.verifyPayment(
+    const verifyResponse = await orangePaymentService.verifyPayment(
       payment.providerReference || payment.reference,
       { orderId: payment.reference, amount: payment.amount }
     );
-    const status = mapProviderStatus(verifyResponse.status);
-
-    const updated = await prisma.payment.update({
-      where: { id: paymentId },
-      data: {
-        status,
-        ...(status === 'SUCCESSFUL' && { confirmedAt: new Date() }),
-        ...(status === 'FAILED' && { failedAt: new Date() }),
-      },
-    });
-
-    if (status === 'SUCCESSFUL') {
-      await applySideEffects(updated);
-    }
-
-    return updated;
+    return settleVerifiedPayment(payment, verifyResponse);
   },
 
-  /**
-   * Real Orange Money server-to-server webhook (notif_url). Orange sends
-   * the final status directly, so no extra verify call is needed — but we
-   * do check the notif_token we stored at creation time before trusting it.
-   */
+  async finalizePaydunya(paymentId: string) {
+    const payment = await prisma.payment.findUnique({ where: { id: paymentId } });
+    if (!payment) throw new Error('Payment not found');
+    if (payment.providerName !== 'paydunya' || !payment.providerReference) {
+      throw new Error('Paiement PayDunya introuvable');
+    }
+    if (process.env.NODE_ENV === 'production' && process.env.PAYDUNYA_ENABLED !== 'true') {
+      throw new Error('PAYDUNYA_DISABLED');
+    }
+    if (payment.status === 'SUCCESSFUL' || payment.status === 'FAILED') return payment;
+
+    const provider = new PayDunyaProvider();
+    const verifyResponse = await provider.verify(payment.providerReference, payment.amount);
+    return settleVerifiedPayment(payment, verifyResponse);
+  },
+
   async finalizeFromWebhook(orderId: string, orangeStatus: string, notifToken: string) {
     const payment = await prisma.payment.findUnique({ where: { reference: orderId } });
     if (!payment) {
       throw new Error('Payment not found for this order_id');
     }
 
-    const storedToken = (payment.metadata as { notifToken?: string } | null)?.notifToken;
+    const storedToken = paymentMetadata(payment).notifToken;
     if (!storedToken || storedToken !== notifToken) {
       throw new Error('Invalid notif_token');
     }
+    assertSandboxCanGrant(payment);
 
     if (payment.status === 'SUCCESSFUL' || payment.status === 'FAILED') {
       return payment;
@@ -300,19 +308,9 @@ export const paymentServiceLayer = {
           : 'pending'
     );
 
-    const updated = await prisma.payment.update({
-      where: { id: payment.id },
-      data: {
-        status,
-        ...(status === 'SUCCESSFUL' && { confirmedAt: new Date() }),
-        ...(status === 'FAILED' && { failedAt: new Date() }),
-      },
+    return settleVerifiedPayment(payment, {
+      success: status === 'SUCCESSFUL',
+      status: status === 'SUCCESSFUL' ? 'success' : status === 'FAILED' ? 'failed' : 'pending',
     });
-
-    if (status === 'SUCCESSFUL') {
-      await applySideEffects(updated);
-    }
-
-    return updated;
   },
 };

@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma"
 // GET /api/auth/me
 export async function GET(request: NextRequest) {
   try {
-    const auth = getAuthContext(request)
+    const auth = await getAuthContext(request)
     if (!auth) return unauthorized()
 
     const user = await prisma.user.findUnique({

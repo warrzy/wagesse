@@ -37,11 +37,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    if (user.lockedUntil && user.lockedUntil.getTime() > Date.now()) {
+      return NextResponse.json(
+        { success: false, error: "Compte temporairement verrouillé. Réessayez plus tard.", code: "ACCOUNT_LOCKED" },
+        { status: 423 }
+      )
+    }
+
     const passwordValid = await verifyPassword(password, user.password)
     if (!passwordValid) {
+      const attempts = user.loginAttempts + 1
       await prisma.user.update({
         where: { id: user.id },
-        data: { loginAttempts: { increment: 1 } },
+        data: {
+          loginAttempts: attempts,
+          lockedUntil: attempts >= 5 ? new Date(Date.now() + 15 * 60 * 1000) : null,
+        },
       })
       return NextResponse.json(
         { success: false, error: "Identifiants incorrects", code: "INVALID_CREDENTIALS" },
@@ -51,7 +62,7 @@ export async function POST(request: NextRequest) {
 
     await prisma.user.update({
       where: { id: user.id },
-      data: { lastLoginAt: new Date(), loginAttempts: 0 },
+      data: { lastLoginAt: new Date(), loginAttempts: 0, lockedUntil: null },
     })
 
     const token = generateToken(user.id, user.email, user.role)
@@ -66,6 +77,7 @@ export async function POST(request: NextRequest) {
           firstName: user.firstName,
           lastName: user.lastName,
           role: user.role,
+          phoneVerified: user.phoneVerified,
         },
       },
       message: "Connexion réussie",

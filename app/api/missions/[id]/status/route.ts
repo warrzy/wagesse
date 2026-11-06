@@ -22,7 +22,7 @@ export async function PATCH(
   try {
     const { id: missionId } = await params;
 
-    const auth = getAuthContext(request);
+    const auth = await getAuthContext(request);
     if (!auth) return unauthorized();
 
     const body = await request.json();

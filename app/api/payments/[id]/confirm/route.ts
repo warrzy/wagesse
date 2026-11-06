@@ -13,7 +13,7 @@ export async function POST(
   try {
     const { id: paymentId } = await params;
 
-    const auth = getAuthContext(request);
+    const auth = await getAuthContext(request);
     if (!auth) return unauthorized();
 
     const payment = await paymentServiceLayer.confirm(paymentId, auth.userId);
@@ -27,6 +27,12 @@ export async function POST(
     }
     if (error.message === 'Unauthorized') {
       return NextResponse.json({ error: error.message }, { status: 403 });
+    }
+    if (error.message === 'SANDBOX_DISABLED') {
+      return NextResponse.json(
+        { success: false, error: "Le paiement simulé ne peut pas attribuer de crédits en production.", code: "SANDBOX_DISABLED" },
+        { status: 403 }
+      );
     }
 
     return NextResponse.json(

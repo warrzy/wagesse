@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { quoteService } from '@/lib/services/quote-service';
-import { getAuthContext, getTruckerProfileId, unauthorized } from '@/lib/api-auth';
+import { getAuthContext, getCustomerProfileId, getTruckerProfileId, isAdminRole, unauthorized } from '@/lib/api-auth';
+import { prisma } from '@/lib/prisma';
+import { lockedQuoteView, maskContactUser } from '@/lib/contact-privacy';
 import { z } from 'zod';
 
 const updateQuotePriceSchema = z.object({
@@ -18,7 +20,7 @@ export async function PUT(
   try {
     const { id: quoteId } = await params;
 
-    const auth = getAuthContext(request);
+    const auth = await getAuthContext(request);
     if (!auth) return unauthorized();
 
     const truckerId = await getTruckerProfileId(auth.userId);
@@ -67,12 +69,49 @@ export async function GET(
   try {
     const { id: quoteId } = await params;
 
-    const auth = getAuthContext(request);
+    const auth = await getAuthContext(request);
     if (!auth) return unauthorized();
 
     const quote = await quoteService.getById(quoteId);
     if (!quote) {
       return NextResponse.json({ error: 'Quote not found' }, { status: 404 });
+    }
+
+    if (isAdminRole(auth.role)) {
+      return NextResponse.json({ success: true, data: quote });
+    }
+
+    const customerId = await getCustomerProfileId(auth.userId);
+    const truckerId = await getTruckerProfileId(auth.userId);
+    const ownsRequest = customerId !== null && quote.request.customerId === customerId;
+    const authored = truckerId !== null && quote.truckerId === truckerId;
+    if (!ownsRequest && !authored) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const unlock = await prisma.contactUnlock.findFirst({
+      where: { requestId: quote.requestId, unlockedByUserId: auth.userId },
+      select: { id: true },
+    });
+
+    if (ownsRequest && !unlock) {
+      return NextResponse.json({ success: true, data: lockedQuoteView(quote) });
+    }
+
+    if (authored && !unlock && quote.request.customer?.user) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          ...quote,
+          request: {
+            ...quote.request,
+            customer: {
+              ...quote.request.customer,
+              user: maskContactUser(quote.request.customer.user, true),
+            },
+          },
+        },
+      });
     }
 
     return NextResponse.json({ success: true, data: quote });

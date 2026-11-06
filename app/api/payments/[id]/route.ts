@@ -12,7 +12,7 @@ export async function GET(
   try {
     const { id: paymentId } = await params;
 
-    const auth = getAuthContext(request);
+    const auth = await getAuthContext(request);
     if (!auth) return unauthorized();
 
     const payment = await paymentServiceLayer.getById(paymentId, auth.userId);

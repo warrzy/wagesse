@@ -1,49 +1,49 @@
 /*
   Warnings:
 
-  - You are about to drop the column `paymentId` on the `contactunlock` table. All the data in the column will be lost.
+  - You are about to drop the column `paymentId` on the `ContactUnlock` table. All the data in the column will be lost.
   - A unique constraint covering the columns `[requestId,unlockedByUserId]` on the table `ContactUnlock` will be added. If there are existing duplicate values, this will fail.
   - A unique constraint covering the columns `[code]` on the table `SubscriptionPlan` will be added. If there are existing duplicate values, this will fail.
   - Added the required column `unlockedByUserId` to the `ContactUnlock` table without a default value. This is not possible if the table is not empty.
 
 */
 -- DropForeignKey
-ALTER TABLE `contactunlock` DROP FOREIGN KEY `ContactUnlock_paymentId_fkey`;
+ALTER TABLE `ContactUnlock` DROP FOREIGN KEY `ContactUnlock_paymentId_fkey`;
 
 -- DropForeignKey
-ALTER TABLE `contactunlock` DROP FOREIGN KEY `ContactUnlock_requestId_fkey`;
+ALTER TABLE `ContactUnlock` DROP FOREIGN KEY `ContactUnlock_requestId_fkey`;
 
 -- DropIndex
-DROP INDEX `ContactUnlock_paymentId_key` ON `contactunlock`;
+DROP INDEX `ContactUnlock_paymentId_key` ON `ContactUnlock`;
 
 -- DropIndex
-DROP INDEX `ContactUnlock_requestId_paymentId_key` ON `contactunlock`;
+DROP INDEX `ContactUnlock_requestId_paymentId_key` ON `ContactUnlock`;
 
 -- DropIndex
-DROP INDEX `SubscriptionPlan_name_key` ON `subscriptionplan`;
+DROP INDEX `SubscriptionPlan_name_key` ON `SubscriptionPlan`;
 
 -- AlterTable (safe backfill): add unlockedByUserId as NULL first
-ALTER TABLE `contactunlock` DROP COLUMN `paymentId`,
+ALTER TABLE `ContactUnlock` DROP COLUMN `paymentId`,
     ADD COLUMN `unlockedByUserId` VARCHAR(191) NULL;
 
 -- Backfill existing rows (customer who owns the request becomes unlocker)
-UPDATE `contactunlock` cu
-INNER JOIN `transportrequest` tr ON tr.`id` = cu.`requestId`
-INNER JOIN `customerprofile` cp ON cp.`id` = tr.`customerId`
+UPDATE `ContactUnlock` cu
+INNER JOIN `TransportRequest` tr ON tr.`id` = cu.`requestId`
+INNER JOIN `CustomerProfile` cp ON cp.`id` = tr.`customerId`
 SET cu.`unlockedByUserId` = cp.`userId`
 WHERE cu.`unlockedByUserId` IS NULL;
 
 -- Now enforce NOT NULL
-ALTER TABLE `contactunlock` MODIFY `unlockedByUserId` VARCHAR(191) NOT NULL;
+ALTER TABLE `ContactUnlock` MODIFY `unlockedByUserId` VARCHAR(191) NOT NULL;
 
 -- AlterTable
-ALTER TABLE `payment` MODIFY `type` ENUM('CONTACT_UNLOCK', 'CREDIT_PURCHASE', 'MISSION_PAYMENT', 'SUBSCRIPTION', 'PLATFORM_FEE', 'REFUND') NOT NULL;
+ALTER TABLE `Payment` MODIFY `type` ENUM('CONTACT_UNLOCK', 'CREDIT_PURCHASE', 'MISSION_PAYMENT', 'SUBSCRIPTION', 'PLATFORM_FEE', 'REFUND') NOT NULL;
 
 -- AlterTable
-ALTER TABLE `subscription` MODIFY `status` ENUM('ACTIVE', 'PAUSED', 'CANCELLED', 'EXPIRED', 'PAST_DUE') NOT NULL DEFAULT 'ACTIVE';
+ALTER TABLE `Subscription` MODIFY `status` ENUM('ACTIVE', 'PAUSED', 'CANCELLED', 'EXPIRED', 'PAST_DUE') NOT NULL DEFAULT 'ACTIVE';
 
 -- AlterTable
-ALTER TABLE `subscriptionplan` ADD COLUMN `benefits` JSON NOT NULL,
+ALTER TABLE `SubscriptionPlan` ADD COLUMN `benefits` JSON NOT NULL,
     ADD COLUMN `code` VARCHAR(191) NULL,
     ADD COLUMN `cycleDays` INTEGER NOT NULL DEFAULT 30,
     ADD COLUMN `monthlyBoosts` INTEGER NOT NULL DEFAULT 0,

@@ -3,7 +3,7 @@ import { getAuthContext, unauthorized } from "@/lib/api-auth"
 import { getCreditBalances } from "@/lib/services/credit-service"
 
 export async function GET(request: NextRequest) {
-  const auth = getAuthContext(request)
+  const auth = await getAuthContext(request)
   if (!auth) return unauthorized()
 
   const balances = await getCreditBalances(auth.userId)

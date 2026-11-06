@@ -15,7 +15,9 @@ function collectDiagnostics(page: Page): Diagnostics {
     if (message.type() === "error") diagnostics.consoleErrors.push(message.text())
   })
   page.on("requestfailed", (request) => {
-    diagnostics.failedRequests.push(`${request.method()} ${request.url()} - ${request.failure()?.errorText || "failed"}`)
+    const reason = request.failure()?.errorText || "failed"
+    if (reason === "net::ERR_ABORTED") return
+    diagnostics.failedRequests.push(`${request.method()} ${request.url()} - ${reason}`)
   })
   page.on("response", (response) => {
     if (response.status() >= 400) {

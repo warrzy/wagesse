@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 import Header from "@/components/Header"
 import Footer from "@/components/Footer"
 import { apiClient } from "@/lib/api-client"
@@ -33,6 +34,7 @@ function formatPrice(x: number) {
 }
 
 export default function AbonnementPage() {
+  const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [plans, setPlans] = useState<Plan[]>([])
   const [current, setCurrent] = useState<Subscription | null>(null)
@@ -65,7 +67,7 @@ export default function AbonnementPage() {
     return [...plans].sort((a, b) => (Number(a.sortOrder ?? 0) - Number(b.sortOrder ?? 0)) || a.monthlyPrice - b.monthlyPrice)
   }, [plans])
 
-  const activate = async (code: string | null) => {
+  const activate = async (code: string | null, monthlyPrice: number) => {
     if (!code) {
       setError("Ce plan ne peut pas être activé car il n'a pas de code.")
       return
@@ -73,7 +75,12 @@ export default function AbonnementPage() {
 
     const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null
     if (!token) {
-      window.location.href = "/auth/login"
+      router.push("/auth/login")
+      return
+    }
+
+    if (monthlyPrice > 0) {
+      router.push(`/pricing/subscription-checkout?plan=${encodeURIComponent(code)}`)
       return
     }
 
@@ -159,7 +166,7 @@ export default function AbonnementPage() {
                       ) : (
                         <button
                           type="button"
-                          onClick={() => activate(p.code)}
+                          onClick={() => activate(p.code, Number(p.monthlyPrice || 0))}
                           disabled={submitting !== null || !p.code}
                           className={
                             "w-full inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold transition-colors disabled:opacity-50 " +
@@ -168,7 +175,7 @@ export default function AbonnementPage() {
                               : "border border-gray-200 bg-white text-[#0F172A] hover:bg-[#F8FAFC]")
                           }
                         >
-                          {submitting === p.code ? "Activation…" : !p.code ? "Non activable" : "Activer"}
+                          {submitting === p.code ? "Activation…" : !p.code ? "Non activable" : Number(p.monthlyPrice || 0) > 0 ? "Choisir ce plan" : "Activer"}
                         </button>
                       )}
                     </div>

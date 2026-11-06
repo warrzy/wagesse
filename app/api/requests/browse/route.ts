@@ -8,7 +8,7 @@ import { getAuthContext, unauthorized } from '@/lib/api-auth';
  */
 export async function GET(request: NextRequest) {
   try {
-    const auth = getAuthContext(request);
+    const auth = await getAuthContext(request);
     if (!auth) return unauthorized();
 
     const { searchParams } = new URL(request.url);
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const skip = parseInt(searchParams.get('skip') || '0', 10);
     const take = parseInt(searchParams.get('take') || '20', 10);
 
-    const result = await requestService.search({ pickupCity, dropoffCity, skip, take });
+    const result = await requestService.search({ pickupCity, dropoffCity, skip, take, viewerUserId: auth.userId });
 
     return NextResponse.json({ success: true, data: result });
   } catch (error: any) {

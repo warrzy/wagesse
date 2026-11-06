@@ -3,6 +3,7 @@ import { quoteService } from '@/lib/services/quote-service';
 import { getAuthContext, getCustomerProfileId, getTruckerProfileId, unauthorized } from '@/lib/api-auth';
 import { prisma } from '@/lib/prisma';
 import { QuoteStatus } from '@prisma/client';
+import { lockedQuoteView, maskContactUser } from '@/lib/contact-privacy';
 
 /**
  * GET /api/quotes?requestId=xxx  -> quotes on one of the caller's own requests
@@ -10,7 +11,7 @@ import { QuoteStatus } from '@prisma/client';
  */
 export async function GET(request: NextRequest) {
   try {
-    const auth = getAuthContext(request);
+    const auth = await getAuthContext(request);
     if (!auth) return unauthorized();
 
     const { searchParams } = new URL(request.url);
@@ -31,7 +32,12 @@ export async function GET(request: NextRequest) {
       const customerId = await getCustomerProfileId(auth.userId);
       if (customerId && transportRequest.customerId === customerId) {
         const result = await quoteService.getByRequestId(requestId);
-        return NextResponse.json({ success: true, data: result });
+        const unlock = await prisma.contactUnlock.findFirst({
+          where: { requestId, unlockedByUserId: auth.userId },
+          select: { id: true },
+        });
+        const data = unlock ? result : result.map((quote) => lockedQuoteView(quote));
+        return NextResponse.json({ success: true, data });
       }
 
       const ownTruckerId = await getTruckerProfileId(auth.userId);
@@ -56,7 +62,27 @@ export async function GET(request: NextRequest) {
       take,
     });
 
-    return NextResponse.json({ success: true, data: result });
+    const requestIds = result.quotes.map((quote) => quote.requestId);
+    const unlocks = await prisma.contactUnlock.findMany({
+      where: { unlockedByUserId: auth.userId, requestId: { in: requestIds } },
+      select: { requestId: true },
+    });
+    const unlockedIds = new Set(unlocks.map((item) => item.requestId));
+    const quotes = result.quotes.map((quote) => {
+      if (unlockedIds.has(quote.requestId) || !quote.request?.customer?.user) return quote;
+      return {
+        ...quote,
+        request: {
+          ...quote.request,
+          customer: {
+            ...quote.request.customer,
+            user: maskContactUser(quote.request.customer.user, true),
+          },
+        },
+      };
+    });
+
+    return NextResponse.json({ success: true, data: { ...result, quotes } });
   } catch (error: any) {
     console.error('[GET /api/quotes]', error);
     return NextResponse.json(
@@ -72,7 +98,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const auth = getAuthContext(request);
+    const auth = await getAuthContext(request);
     if (!auth) return unauthorized();
 
     const truckerId = await getTruckerProfileId(auth.userId);

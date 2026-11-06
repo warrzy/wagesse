@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { hashPassword, generateToken, generateOTP, storeOTP } from "@/lib/auth"
+import { hashPassword, generateToken, generateOTP, storeOTP, assertOtpSendAllowed, recordOtpSend, exposeOtpForTests } from "@/lib/auth"
 import { signupSchema } from "@/lib/validations"
 import { prisma } from "@/lib/prisma"
 
@@ -71,10 +71,17 @@ export async function POST(request: NextRequest) {
       return createdUser
     })
 
-    // Send a phone verification OTP (dev: logged to console, no SMS provider wired yet)
+    const send = assertOtpSendAllowed(data.phone)
+    if (!send.ok) {
+      return NextResponse.json(
+        { success: false, error: "Trop de demandes de code. Réessayez plus tard.", code: "OTP_RATE_LIMIT" },
+        { status: 429 }
+      )
+    }
     const otp = generateOTP()
     storeOTP(data.phone, otp)
-    console.log(`[OTP] Code de vérification pour ${data.phone}: ${otp}`)
+    recordOtpSend(data.phone)
+    const debugOtp = exposeOtpForTests(otp)
 
     const token = generateToken(user.id, user.email, user.role)
 
@@ -83,15 +90,18 @@ export async function POST(request: NextRequest) {
         success: true,
         data: {
           token,
+          phoneVerificationRequired: true,
+          ...(debugOtp ? { debugOtp } : {}),
           user: {
             id: user.id,
             phone: user.phone,
             firstName: user.firstName,
             lastName: user.lastName,
             role: user.role,
+            phoneVerified: user.phoneVerified,
           },
         },
-        message: "Inscription réussie",
+        message: "Inscription réussie. Vérifiez votre numéro pour les opérations payantes.",
       },
       { status: 201 }
     )
