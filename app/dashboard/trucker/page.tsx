@@ -292,6 +292,13 @@ export default function TruckerDashboard() {
                 >
                   Mes commandes
                 </Link>
+
+                <Link
+                  href="/dashboard/trucker/profil"
+                  className="w-full py-3 px-4 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:border-[#E8714D] transition-colors flex items-center justify-center"
+                >
+                  Mon profil
+                </Link>
               </div>
 
               <div className="mt-6 pt-6 border-t border-gray-200">

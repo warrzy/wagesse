@@ -60,6 +60,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    if (user.deletedAt || user.status !== "ACTIVE") {
+      return NextResponse.json(
+        { success: false, error: "Ce compte n'est pas actif.", code: "ACCOUNT_DISABLED" },
+        { status: 403 }
+      )
+    }
+
     await prisma.user.update({
       where: { id: user.id },
       data: { lastLoginAt: new Date(), loginAttempts: 0, lockedUntil: null },

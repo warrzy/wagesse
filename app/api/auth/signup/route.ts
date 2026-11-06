@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { hashPassword, generateToken, generateOTP, storeOTP, assertOtpSendAllowed, recordOtpSend, exposeOtpForTests } from "@/lib/auth"
+import { hashPassword, generateToken } from "@/lib/auth"
+import { issueOtp } from "@/lib/otp-delivery"
 import { signupSchema } from "@/lib/validations"
 import { prisma } from "@/lib/prisma"
 
@@ -71,17 +72,13 @@ export async function POST(request: NextRequest) {
       return createdUser
     })
 
-    const send = assertOtpSendAllowed(data.phone)
-    if (!send.ok) {
+    const issued = await issueOtp(data.phone, "verify")
+    if (!issued.ok) {
       return NextResponse.json(
         { success: false, error: "Trop de demandes de code. Réessayez plus tard.", code: "OTP_RATE_LIMIT" },
         { status: 429 }
       )
     }
-    const otp = generateOTP()
-    storeOTP(data.phone, otp)
-    recordOtpSend(data.phone)
-    const debugOtp = exposeOtpForTests(otp)
 
     const token = generateToken(user.id, user.email, user.role)
 
@@ -91,7 +88,8 @@ export async function POST(request: NextRequest) {
         data: {
           token,
           phoneVerificationRequired: true,
-          ...(debugOtp ? { debugOtp } : {}),
+          smsDelivered: issued.delivered,
+          ...(issued.debugOtp ? { debugOtp: issued.debugOtp } : {}),
           user: {
             id: user.id,
             phone: user.phone,

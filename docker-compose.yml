@@ -46,6 +46,7 @@ services:
       NEXT_PUBLIC_APP_NAME: Wagesse
       NEXT_PUBLIC_APP_URL: http://localhost:3000
       PAYMENT_MODE: MANUAL
+      SMS_PROVIDER: simulate
       PAYMENT_PROVIDER: orange_money_sandbox
     ports:
       - "3000:3000"

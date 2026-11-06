@@ -11,6 +11,7 @@ interface AuthResponseData {
     phoneVerified?: string | null
   }
   phoneVerificationRequired?: boolean
+  smsDelivered?: boolean
 }
 
 export type StoredUser = AuthResponseData["user"]
@@ -331,6 +332,18 @@ class APIClient {
     return this.request("PATCH", `/admin/camionneurs/${id}`, data)
   }
 
+  async adminListLogs() {
+    return this.request("GET", "/admin/logs")
+  }
+
+  async adminListNotifications() {
+    return this.request("GET", "/admin/notifications")
+  }
+
+  async adminGetSettings() {
+    return this.request("GET", "/admin/parametres")
+  }
+
   async adminListPaiements(params: {
     page?: number
     pageSize?: number
@@ -617,6 +630,14 @@ class APIClient {
 
   async verifyOTP(phone: string, code: string) {
     return this.request("POST", "/auth/verify-otp", { phone, code })
+  }
+
+  async forgotPassword(phone: string) {
+    return this.request("POST", "/auth/forgot-password", { phone })
+  }
+
+  async resetPassword(data: { phone: string; code: string; password: string }) {
+    return this.request("POST", "/auth/reset-password", data)
   }
 
   async resendOTP(phone: string) {

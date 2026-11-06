@@ -47,8 +47,13 @@ function VerifyForm() {
         <div className="bg-white rounded-lg shadow-lg p-8">
           <h1 className="text-3xl font-bold mb-2 text-center">Vérifier le numéro</h1>
           <p className="text-gray-600 text-center mb-8">
-            Saisissez le code reçu pour débloquer les achats et les contacts.
+            Saisissez le code SMS reçu pour débloquer les achats et les contacts.
           </p>
+          {params.get("sent") === "0" ? (
+            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm">
+              Le SMS n&apos;a pas pu être envoyé. Utilisez « Renvoyer un code » lorsque le canal est disponible.
+            </div>
+          ) : null}
           {error ? <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">{error}</div> : null}
           {info ? <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">{info}</div> : null}
           <form onSubmit={submit} className="space-y-4">

@@ -3,6 +3,7 @@ import { createQuoteSchema, CreateQuoteInput } from '@/lib/validations';
 import { Quote, QuoteStatus } from '@prisma/client';
 import { generateReference } from '@/lib/auth';
 import { sanitizeOptionalString } from '@/lib/anti-leak';
+import { notifyUser } from '@/lib/notify';
 
 const truckerSelect = {
   id: true,
@@ -94,6 +95,23 @@ export const quoteService = {
         trucker: { select: truckerSelect },
       },
     });
+
+    try {
+      const owner = await prisma.customerProfile.findUnique({
+        where: { id: request.customerId },
+        select: { userId: true },
+      });
+      if (owner) {
+        await notifyUser(owner.userId, {
+          type: 'NEW_QUOTE_RECEIVED',
+          title: 'Nouveau devis',
+          message: `Un devis de ${validated.totalPrice} XOF a été reçu.`,
+          actionUrl: `/dashboard/client/requests/${request.id}`,
+        });
+      }
+    } catch (error) {
+      console.error('[notify quote]', error instanceof Error ? error.message : 'notify failed');
+    }
 
     return quote;
   },
@@ -263,8 +281,34 @@ export const quoteService = {
         },
       });
 
+      await tx.missionStatusHistory.create({
+        data: {
+          missionId: newMission.id,
+          previousStatus: null,
+          newStatus: 'ACCEPTED',
+          changedBy: unlockedByUserId,
+        },
+      });
+
       return newMission;
     });
+
+    try {
+      const trucker = await prisma.truckerProfile.findUnique({
+        where: { id: quote.truckerId },
+        select: { userId: true },
+      });
+      if (trucker) {
+        await notifyUser(trucker.userId, {
+          type: 'QUOTE_ACCEPTED',
+          title: 'Devis accepté',
+          message: `Votre devis est accepté. Mission ${mission.missionReference}.`,
+          actionUrl: `/dashboard/missions/${mission.id}`,
+        });
+      }
+    } catch (error) {
+      console.error('[notify accept]', error instanceof Error ? error.message : 'notify failed');
+    }
 
     return mission;
   },

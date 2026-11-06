@@ -69,7 +69,7 @@ export async function PATCH(
       return NextResponse.json({ error: error.message }, { status: 403 });
     }
 
-    if (error.message.includes('Cannot change status')) {
+    if (error.message.includes('Cannot change status') || error.message === 'Invalid transition') {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 

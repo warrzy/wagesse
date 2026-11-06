@@ -1,0 +1,30 @@
+export type MissionActor = "CLIENT" | "TRUCKER"
+
+const NEXT: Record<string, string[]> = {
+  ACCEPTED: ["TRUCK_EN_ROUTE_PICKUP", "CANCELLED", "DISPUTED"],
+  TRUCK_EN_ROUTE_PICKUP: ["ARRIVED_PICKUP", "CANCELLED", "DISPUTED"],
+  ARRIVED_PICKUP: ["LOADING_IN_PROGRESS", "CANCELLED", "DISPUTED"],
+  LOADING_IN_PROGRESS: ["EN_ROUTE_DELIVERY", "CANCELLED", "DISPUTED"],
+  EN_ROUTE_DELIVERY: ["ARRIVED_DELIVERY", "CANCELLED", "DISPUTED"],
+  ARRIVED_DELIVERY: ["DELIVERED", "CANCELLED", "DISPUTED"],
+  DELIVERED: ["PENDING_CONFIRMATION", "DISPUTED"],
+  PENDING_CONFIRMATION: ["COMPLETED", "DISPUTED"],
+  DISPUTED: ["CANCELLED", "REFUNDED", "COMPLETED"],
+}
+
+const TRUCKER_STEPS = new Set([
+  "TRUCK_EN_ROUTE_PICKUP",
+  "ARRIVED_PICKUP",
+  "LOADING_IN_PROGRESS",
+  "EN_ROUTE_DELIVERY",
+  "ARRIVED_DELIVERY",
+  "DELIVERED",
+  "PENDING_CONFIRMATION",
+])
+
+export function missionTransitionAllowed(role: MissionActor, from: string, to: string): boolean {
+  if (!NEXT[from]?.includes(to)) return false
+  if (to === "COMPLETED") return role === "CLIENT"
+  if (TRUCKER_STEPS.has(to)) return role === "TRUCKER"
+  return true
+}

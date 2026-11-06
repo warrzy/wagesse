@@ -1,4 +1,6 @@
 import { prisma } from '@/lib/prisma';
+import { missionTransitionAllowed } from '@/lib/mission-transitions';
+import { notifyUser } from '@/lib/notify';
 import { MissionStatus } from '@prisma/client';
 
 const truckerSelect = {
@@ -87,7 +89,11 @@ export const missionService = {
       throw new Error(`Cannot change status of a ${mission.status} mission`);
     }
 
-    return await prisma.$transaction(async (tx) => {
+    if (!missionTransitionAllowed(role, mission.status, newStatus)) {
+      throw new Error('Invalid transition');
+    }
+
+    const updatedMission = await prisma.$transaction(async (tx) => {
       const updated = await tx.mission.update({
         where: { id: missionId },
         data: {
@@ -107,5 +113,24 @@ export const missionService = {
 
       return updated;
     });
+
+    try {
+      const customer = await prisma.customerProfile.findUnique({ where: { id: mission.customerId }, select: { userId: true } });
+      const trucker = await prisma.truckerProfile.findUnique({ where: { id: mission.truckerId }, select: { userId: true } });
+      const targetUserId = role === 'CLIENT' ? trucker?.userId : customer?.userId;
+      if (targetUserId) {
+        const type = newStatus === 'COMPLETED' || newStatus === 'DELIVERED' ? 'DELIVERY_COMPLETED' : newStatus === 'TRUCK_EN_ROUTE_PICKUP' ? 'TRUCK_EN_ROUTE' : 'SYSTEM_ALERT';
+        await notifyUser(targetUserId, {
+          type,
+          title: 'Mission mise à jour',
+          message: `Le statut est maintenant ${newStatus}.`,
+          actionUrl: `/dashboard/missions/${missionId}`,
+        });
+      }
+    } catch (error) {
+      console.error('[notify mission]', error instanceof Error ? error.message : 'notify failed');
+    }
+
+    return updatedMission;
   },
 };
