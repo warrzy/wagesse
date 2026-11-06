@@ -70,7 +70,8 @@ export default function SignupClient() {
       }
 
       if (response.data?.phoneVerificationRequired) {
-        router.push(`/auth/verify?phone=${encodeURIComponent(formData.phone)}`)
+        const sent = response.data.smsDelivered === false ? "0" : "1"
+        router.push(`/auth/verify?phone=${encodeURIComponent(formData.phone)}&sent=${sent}`)
         return
       }
 

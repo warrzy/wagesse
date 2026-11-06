@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getAuthContext, unauthorized } from "@/lib/api-auth"
 import { hashPassword } from "@/lib/auth"
+import { writeAudit } from "@/lib/audit"
+
+const ACCOUNT_ROLES = new Set(["VISITOR", "CLIENT", "TRUCKER", "OPERATOR", "ADMIN"])
+const ACCOUNT_STATUSES = new Set(["ACTIVE", "BLOCKED", "SUSPENDED", "DELETED"])
 
 function isAdmin(role: string | null | undefined) {
   return role === "ADMIN" || role === "SUPER_ADMIN"
@@ -182,6 +186,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       }
     }
 
+    if (data.role && !ACCOUNT_ROLES.has(data.role)) {
+      return NextResponse.json({ success: false, error: "Rôle inconnu" }, { status: 400 })
+    }
+    if (data.status && !ACCOUNT_STATUSES.has(data.status)) {
+      return NextResponse.json({ success: false, error: "Statut inconnu" }, { status: 400 })
+    }
+
     if (Object.keys(data).length === 0) {
       return NextResponse.json({ success: false, error: "Aucune modification" }, { status: 400 })
     }
@@ -202,6 +213,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         deletedAt: true,
       },
     })
+
+    if (data.status || data.role || archive) {
+      await writeAudit(auth.userId, archive ? "archive_user" : "update_user", "User", id, {
+        status: data.status || null,
+        role: data.role || null,
+      })
+    }
 
     return NextResponse.json({ success: true, data: updated })
   } catch (error: any) {

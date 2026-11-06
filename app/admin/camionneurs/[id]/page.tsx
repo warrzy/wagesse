@@ -550,14 +550,42 @@ export default function AdminCamionneurDetailsPage() {
             <div className="mt-4 space-y-2">
               <button
                 type="button"
-                disabled
-                className="w-full px-4 py-2 rounded-lg bg-gray-100 text-gray-500 text-sm font-semibold cursor-not-allowed"
+                disabled={saveLoading}
+                onClick={async () => {
+                  setSaveLoading(true)
+                  setSaveError(null)
+                  const res = await apiClient.adminUpdateCamionneur(id, { verificationStatus: "VERIFIED" })
+                  setSaveLoading(false)
+                  if (!res.success) {
+                    setSaveError(res.error || "Validation impossible")
+                    return
+                  }
+                  setData(res.data)
+                  setSaveSuccess("Profil validé")
+                }}
+                className="w-full px-4 py-2 rounded-lg bg-[#E8714D] text-white text-sm font-semibold disabled:opacity-50"
               >
-                Valider / Rejeter (à venir)
+                Valider le profil
               </button>
-              <p className="text-xs text-gray-500">
-                Les actions sensibles seront activées après mise en place de l'audit log.
-              </p>
+              <button
+                type="button"
+                disabled={saveLoading}
+                onClick={async () => {
+                  setSaveLoading(true)
+                  setSaveError(null)
+                  const res = await apiClient.adminUpdateCamionneur(id, { verificationStatus: "REJECTED" })
+                  setSaveLoading(false)
+                  if (!res.success) {
+                    setSaveError(res.error || "Refus impossible")
+                    return
+                  }
+                  setData(res.data)
+                  setSaveSuccess("Profil refusé")
+                }}
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 text-sm font-semibold disabled:opacity-50"
+              >
+                Refuser le profil
+              </button>
             </div>
           </div>
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
-import { assertOtpSendAllowed, exposeOtpForTests, generateOTP, recordOtpSend, storeOTP } from "@/lib/auth"
+import { issueOtp } from "@/lib/otp-delivery"
 
 const schema = z.object({
   phone: z.string().regex(/^[0-9]{8,}$/, "Numéro de téléphone invalide"),
@@ -27,23 +27,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, message: "Ce numéro est déjà vérifié." })
     }
 
-    const allowed = assertOtpSendAllowed(phone)
-    if (!allowed.ok) {
+    const issued = await issueOtp(phone, "verify")
+    if (!issued.ok) {
       return NextResponse.json(
         { success: false, error: "Trop de demandes de code. Réessayez plus tard.", code: "OTP_RATE_LIMIT" },
         { status: 429 }
       )
     }
 
-    const otp = generateOTP()
-    storeOTP(phone, otp)
-    recordOtpSend(phone)
-    const debugOtp = exposeOtpForTests(otp)
-
     return NextResponse.json({
       success: true,
-      message: "Un nouveau code a été préparé.",
-      ...(debugOtp ? { debugOtp } : {}),
+      message: issued.delivered
+        ? "Un code a été envoyé par SMS."
+        : "Le SMS n'a pas pu être envoyé. Réessayez plus tard.",
+      data: {
+        smsDelivered: issued.delivered,
+        ...(issued.debugOtp ? { debugOtp: issued.debugOtp } : {}),
+      },
+      ...(issued.debugOtp ? { debugOtp: issued.debugOtp } : {}),
     })
   } catch (error) {
     console.error("Resend OTP error:", error)

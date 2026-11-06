@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getAuthContext, unauthorized } from "@/lib/api-auth"
+import { writeAudit } from "@/lib/audit"
+import { notifyUser } from "@/lib/notify"
+
+const VERIFICATION = new Set(["PENDING", "UNDER_REVIEW", "VERIFIED", "REJECTED", "EXPIRED"])
 
 function isAdmin(role: string | null | undefined) {
   return role === "ADMIN" || role === "SUPER_ADMIN"
@@ -256,6 +260,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if ((body as any).userLastName !== undefined) userUpdate.lastName = (body as any).userLastName === null ? null : String((body as any).userLastName || "").trim() || null
     if ((body as any).userStatus !== undefined) userUpdate.status = String((body as any).userStatus || "").trim()
 
+    if (data.verificationStatus && !VERIFICATION.has(data.verificationStatus)) {
+      return NextResponse.json({ success: false, error: "Statut de vérification inconnu" }, { status: 400 })
+    }
+
     if (Object.keys(data).length === 0 && Object.keys(userUpdate).length === 0) {
       return NextResponse.json({ success: false, error: "Aucune modification" }, { status: 400 })
     }
@@ -357,6 +365,22 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         },
       },
     })
+
+    if (data.verificationStatus) {
+      await writeAudit(auth.userId, "verify_trucker", "TruckerProfile", id, {
+        verificationStatus: data.verificationStatus,
+      })
+      if (data.verificationStatus === "VERIFIED" || data.verificationStatus === "REJECTED") {
+        await notifyUser(updated.userId, {
+          type: data.verificationStatus === "VERIFIED" ? "PROFILE_VALIDATED" : "PROFILE_REJECTED",
+          title: data.verificationStatus === "VERIFIED" ? "Profil validé" : "Profil refusé",
+          message: data.verificationStatus === "VERIFIED"
+            ? "Votre profil transporteur est validé."
+            : "Votre profil transporteur a été refusé.",
+          actionUrl: "/dashboard/trucker",
+        })
+      }
+    }
 
     return NextResponse.json({ success: true, data: updated })
   } catch (error: any) {

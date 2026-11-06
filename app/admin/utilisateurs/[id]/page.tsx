@@ -62,7 +62,7 @@ export default function AdminUserDetailsPage() {
   const [fStatus, setFStatus] = useState("ACTIVE")
   const [fPassword, setFPassword] = useState("")
 
-  const roleOptions = useMemo(() => ["VISITOR", "CLIENT", "TRUCKER", "OPERATOR", "ADMIN", "SUPER_ADMIN"], [])
+  const roleOptions = useMemo(() => ["VISITOR", "CLIENT", "TRUCKER", "OPERATOR", "ADMIN"], [])
   const statusOptions = useMemo(() => ["ACTIVE", "SUSPENDED", "BLOCKED", "DELETED"], [])
 
   useEffect(() => {

@@ -3,6 +3,7 @@ import { createTransportRequestSchema, CreateTransportRequestInput } from '@/lib
 import { TransportRequest, RequestStatus } from '@prisma/client';
 import { maskEmail, maskPhoneNumber } from '@/lib/auth';
 import { maskContactUser } from '@/lib/contact-privacy';
+import { notifyAdmins, notifyUser } from '@/lib/notify';
 import { sanitizeOptionalString } from '@/lib/anti-leak';
 
 const customerSelect = {
@@ -269,13 +270,55 @@ export const requestService = {
       throw new Error('Can only publish requests in DRAFT status');
     }
 
-    return await prisma.transportRequest.update({
+    const published = await prisma.transportRequest.update({
       where: { id: requestId },
       data: {
         status: 'PUBLISHED',
         publishedAt: new Date(),
       },
     });
+
+    try {
+      const owner = await prisma.customerProfile.findUnique({
+        where: { id: customerId },
+        select: { userId: true },
+      });
+      if (owner) {
+        await notifyUser(owner.userId, {
+          type: 'SYSTEM_ALERT',
+          title: 'Demande publiée',
+          message: `${existing.pickupCity} → ${existing.dropoffCity}`,
+          actionUrl: `/dashboard/client/requests/${requestId}`,
+        });
+      }
+      const truckers = await prisma.truckerProfile.findMany({
+        where: {
+          city: { contains: existing.pickupCity },
+          user: { status: 'ACTIVE', deletedAt: null },
+        },
+        select: { userId: true },
+        take: 200,
+      });
+      await Promise.all(
+        truckers.map((trucker) =>
+          notifyUser(trucker.userId, {
+            type: 'NEW_REQUEST_AVAILABLE',
+            title: 'Nouvelle demande',
+            message: `${existing.pickupCity} → ${existing.dropoffCity}`,
+            actionUrl: `/dashboard/trucker/requests/${requestId}`,
+          })
+        )
+      );
+      await notifyAdmins(
+        'Nouvelle demande publiée',
+        `${existing.pickupCity} → ${existing.dropoffCity}`,
+        `/admin/annonces/${requestId}`
+      );
+    } catch (error) {
+      console.error('[notify publish]', error instanceof Error ? error.message : 'notify failed');
+    }
+
+    return published;
   },
 
   /**
@@ -319,8 +362,8 @@ export const requestService = {
       deletedAt: null,
     };
 
-    if (filters.pickupCity) where.pickupCity = filters.pickupCity;
-    if (filters.dropoffCity) where.dropoffCity = filters.dropoffCity;
+    if (filters.pickupCity) where.pickupCity = { contains: filters.pickupCity };
+    if (filters.dropoffCity) where.dropoffCity = { contains: filters.dropoffCity };
 
     const [requests, total] = await Promise.all([
       prisma.transportRequest.findMany({
