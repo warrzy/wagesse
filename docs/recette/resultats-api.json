@@ -1,0 +1,722 @@
+[
+  {
+    "id": "ADM-CLIENT",
+    "fonctionnalite": "Tableau de bord admin avec un client",
+    "profil": "client",
+    "statut": "PASS",
+    "attendu": "refus",
+    "observe": "HTTP 401 Forbidden",
+    "preuve": ""
+  },
+  {
+    "id": "ADM-NOAUTH",
+    "fonctionnalite": "Tableau de bord admin sans jeton",
+    "profil": "anonyme",
+    "statut": "PASS",
+    "attendu": "HTTP 401",
+    "observe": "HTTP 401 Unauthorized",
+    "preuve": ""
+  },
+  {
+    "id": "ADM-TRUCKER",
+    "fonctionnalite": "Liste utilisateurs avec un transporteur",
+    "profil": "trucker",
+    "statut": "PASS",
+    "attendu": "refus",
+    "observe": "HTTP 401 Forbidden",
+    "preuve": ""
+  },
+  {
+    "id": "AUTH-BAD",
+    "fonctionnalite": "Mot de passe incorrect",
+    "profil": "client",
+    "statut": "PASS",
+    "attendu": "HTTP 401",
+    "observe": "HTTP 401 Identifiants incorrects",
+    "preuve": ""
+  },
+  {
+    "id": "AUTH-FORGOT",
+    "fonctionnalite": "Mot de passe oublié",
+    "profil": "client",
+    "statut": "PASS",
+    "attendu": "Limite de renvoi, puis réponse générique sans code",
+    "observe": "HTTP 429 dans la minute qui suit l'OTP d'inscription. Après 65 secondes : HTTP 200, smsDelivered false, aucun code dans la réponse.",
+    "preuve": ""
+  },
+  {
+    "id": "AUTH-ME",
+    "fonctionnalite": "Session courante",
+    "profil": "client",
+    "statut": "PASS",
+    "attendu": "rôle CLIENT",
+    "observe": "HTTP 200  status=ACTIVE id=cmw6rb2vy0003lbwxy7j18lsc role=CLIENT",
+    "preuve": ""
+  },
+  {
+    "id": "AUTH-RESET",
+    "fonctionnalite": "Réinitialisation avec un code faux",
+    "profil": "client",
+    "statut": "PASS",
+    "attendu": "refus",
+    "observe": "HTTP 400 Code invalide ou expiré",
+    "preuve": ""
+  },
+  {
+    "id": "AUTH-ROLE",
+    "fonctionnalite": "Refus du rôle admin à l'inscription",
+    "profil": "visiteur",
+    "statut": "PASS",
+    "attendu": "HTTP 400",
+    "observe": "HTTP 400 Invalid option: expected one of \"CLIENT\"|\"TRUCKER\"",
+    "preuve": ""
+  },
+  {
+    "id": "AUTH-STILL",
+    "fonctionnalite": "Mot de passe inchangé après faux code",
+    "profil": "client",
+    "statut": "PASS",
+    "attendu": "connexion encore possible",
+    "observe": "HTTP 200 Connexion réussie",
+    "preuve": ""
+  },
+  {
+    "id": "AUTH-VAL",
+    "fonctionnalite": "Validation inscription",
+    "profil": "visiteur",
+    "statut": "PASS",
+    "attendu": "HTTP 400",
+    "observe": "HTTP 400 Numéro de téléphone invalide",
+    "preuve": ""
+  },
+  {
+    "id": "CONT",
+    "fonctionnalite": "Contacts client",
+    "profil": "client",
+    "statut": "PASS",
+    "attendu": "HTTP 200",
+    "observe": "HTTP 200",
+    "preuve": ""
+  },
+  {
+    "id": "CRD-BAL",
+    "fonctionnalite": "Solde de crédits",
+    "profil": "client",
+    "statut": "PASS",
+    "attendu": "solde lisible",
+    "observe": "HTTP 200 data_keys=['balance', 'purchased', 'subscription', 'subscriptionExpiresAt']",
+    "preuve": ""
+  },
+  {
+    "id": "CRD-PHONE",
+    "fonctionnalite": "Achat de crédits sans téléphone vérifié",
+    "profil": "client",
+    "statut": "PASS",
+    "attendu": "HTTP 403, aucun crédit",
+    "observe": "HTTP 403 Vérifiez votre numéro de téléphone avant cette opération.",
+    "preuve": ""
+  },
+  {
+    "id": "LOGIN-client-a",
+    "fonctionnalite": "Connexion client-a",
+    "profil": "CLIENT",
+    "statut": "PASS",
+    "attendu": "200 et téléphone non vérifié",
+    "observe": "HTTP 200 Connexion réussie verified=None",
+    "preuve": ""
+  },
+  {
+    "id": "LOGIN-client-b",
+    "fonctionnalite": "Connexion client-b",
+    "profil": "CLIENT",
+    "statut": "PASS",
+    "attendu": "200 et téléphone non vérifié",
+    "observe": "HTTP 200 Connexion réussie verified=None",
+    "preuve": ""
+  },
+  {
+    "id": "LOGIN-trucker-a",
+    "fonctionnalite": "Connexion trucker-a",
+    "profil": "TRUCKER",
+    "statut": "PASS",
+    "attendu": "200 et téléphone non vérifié",
+    "observe": "HTTP 200 Connexion réussie verified=None",
+    "preuve": ""
+  },
+  {
+    "id": "LOGIN-trucker-b",
+    "fonctionnalite": "Connexion trucker-b",
+    "profil": "TRUCKER",
+    "statut": "PASS",
+    "attendu": "200 et téléphone non vérifié",
+    "observe": "HTTP 200 Connexion réussie verified=None",
+    "preuve": ""
+  },
+  {
+    "id": "PAGE/",
+    "fonctionnalite": "Page /",
+    "profil": "visiteur",
+    "statut": "PASS",
+    "attendu": "HTTP attendu selon la page",
+    "observe": "HTTP 200 titre=Wagesse - Marketplace de Fret Burkina Faso octets=85390",
+    "preuve": "/"
+  },
+  {
+    "id": "PAGE/abonnement",
+    "fonctionnalite": "Page /abonnement",
+    "profil": "visiteur",
+    "statut": "PASS",
+    "attendu": "HTTP attendu selon la page",
+    "observe": "HTTP 200 titre=Wagesse - Marketplace de Fret Burkina Faso octets=15214",
+    "preuve": "/abonnement"
+  },
+  {
+    "id": "PAGE/admin",
+    "fonctionnalite": "Page /admin",
+    "profil": "visiteur",
+    "statut": "PASS",
+    "attendu": "HTTP attendu selon la page",
+    "observe": "HTTP 200 titre=Wagesse - Marketplace de Fret Burkina Faso octets=8353",
+    "preuve": "/admin"
+  },
+  {
+    "id": "PAGE/auth/forgot",
+    "fonctionnalite": "Page /auth/forgot",
+    "profil": "visiteur",
+    "statut": "PASS",
+    "attendu": "HTTP attendu selon la page",
+    "observe": "HTTP 200 titre=Wagesse - Marketplace de Fret Burkina Faso octets=15942",
+    "preuve": "/auth/forgot"
+  },
+  {
+    "id": "PAGE/auth/login",
+    "fonctionnalite": "Page /auth/login",
+    "profil": "visiteur",
+    "statut": "PASS",
+    "attendu": "HTTP attendu selon la page",
+    "observe": "HTTP 200 titre=Wagesse - Marketplace de Fret Burkina Faso octets=16608",
+    "preuve": "/auth/login"
+  },
+  {
+    "id": "PAGE/auth/signup",
+    "fonctionnalite": "Page /auth/signup",
+    "profil": "visiteur",
+    "statut": "PASS",
+    "attendu": "HTTP attendu selon la page",
+    "observe": "HTTP 200 titre=Wagesse - Marketplace de Fret Burkina Faso octets=8062",
+    "preuve": "/auth/signup"
+  },
+  {
+    "id": "PAGE/cette-page-n-existe-pas",
+    "fonctionnalite": "Page /cette-page-n-existe-pas",
+    "profil": "visiteur",
+    "statut": "PASS",
+    "attendu": "réponse HTTP",
+    "observe": "HTTP 404 octets=8723",
+    "preuve": "/cette-page-n-existe-pas"
+  },
+  {
+    "id": "PAGE/contact",
+    "fonctionnalite": "Page /contact",
+    "profil": "visiteur",
+    "statut": "PASS",
+    "attendu": "HTTP attendu selon la page",
+    "observe": "HTTP 200 titre=Wagesse - Marketplace de Fret Burkina Faso octets=16232",
+    "preuve": "/contact"
+  },
+  {
+    "id": "PAGE/dashboard/client",
+    "fonctionnalite": "Page /dashboard/client",
+    "profil": "visiteur",
+    "statut": "PASS",
+    "attendu": "HTTP attendu selon la page",
+    "observe": "HTTP 200 titre=Wagesse - Marketplace de Fret Burkina Faso octets=23712",
+    "preuve": "/dashboard/client"
+  },
+  {
+    "id": "PAGE/pricing",
+    "fonctionnalite": "Page /pricing",
+    "profil": "visiteur",
+    "statut": "PASS",
+    "attendu": "HTTP attendu selon la page",
+    "observe": "HTTP 200 titre=Wagesse - Marketplace de Fret Burkina Faso octets=35045",
+    "preuve": "/pricing"
+  },
+  {
+    "id": "PAY-MODE",
+    "fonctionnalite": "Mode de paiement",
+    "profil": "public",
+    "statut": "PASS",
+    "attendu": "MANUAL",
+    "observe": "HTTP 200  mode=MANUAL",
+    "preuve": ""
+  },
+  {
+    "id": "PAY-PACKS",
+    "fonctionnalite": "Catalogue de packs",
+    "profil": "public",
+    "statut": "PASS",
+    "attendu": "liste non vide",
+    "observe": "HTTP 200 count=4",
+    "preuve": ""
+  },
+  {
+    "id": "PAY-WEBHOOK",
+    "fonctionnalite": "Webhook PayDunya forgé",
+    "profil": "public",
+    "statut": "PASS",
+    "attendu": "401 ou 403",
+    "observe": "HTTP 403 PayDunya désactivé",
+    "preuve": ""
+  },
+  {
+    "id": "PROF-C",
+    "fonctionnalite": "Lecture profil client",
+    "profil": "client",
+    "statut": "PASS",
+    "attendu": "HTTP 200",
+    "observe": "HTTP 200  id=cmw6rb2w00005lbwxsnqmpcjh",
+    "preuve": ""
+  },
+  {
+    "id": "PROF-C-UPD",
+    "fonctionnalite": "Mise à jour profil client",
+    "profil": "client",
+    "statut": "PASS",
+    "attendu": "HTTP 200",
+    "observe": "HTTP 200  id=cmw6rb2w00005lbwxsnqmpcjh",
+    "preuve": ""
+  },
+  {
+    "id": "PROF-ISO",
+    "fonctionnalite": "Profil client demandé par un transporteur",
+    "profil": "trucker",
+    "statut": "PASS",
+    "attendu": "refus",
+    "observe": "HTTP 404 Customer profile not found",
+    "preuve": ""
+  },
+  {
+    "id": "PROF-T",
+    "fonctionnalite": "Mise à jour profil transporteur",
+    "profil": "trucker",
+    "statut": "PASS",
+    "attendu": "HTTP 200",
+    "observe": "HTTP 200  id=cmw6rb3go000blbwx7107ggc2",
+    "preuve": ""
+  },
+  {
+    "id": "QUO-A",
+    "fonctionnalite": "Proposition de devis",
+    "profil": "trucker",
+    "statut": "PASS",
+    "attendu": "HTTP 201",
+    "observe": "HTTP 201  status=PENDING id=cmw6rb8wy000tlbwxui588oqq",
+    "preuve": ""
+  },
+  {
+    "id": "QUO-ACC",
+    "fonctionnalite": "Acceptation sans déblocage de contact",
+    "profil": "client",
+    "statut": "PASS",
+    "attendu": "HTTP 402, aucune mission créée",
+    "observe": "HTTP 402 You must unlock the quotes on this request before accepting one",
+    "preuve": ""
+  },
+  {
+    "id": "QUO-B",
+    "fonctionnalite": "Second devis",
+    "profil": "trucker",
+    "statut": "PASS",
+    "attendu": "HTTP 201",
+    "observe": "HTTP 201  status=PENDING id=cmw6rb94g000xlbwxp7od7ass",
+    "preuve": ""
+  },
+  {
+    "id": "QUO-DUP",
+    "fonctionnalite": "Second devis du même transporteur",
+    "profil": "trucker",
+    "statut": "PASS",
+    "attendu": "refus du doublon",
+    "observe": "HTTP 400 You have already quoted on this request",
+    "preuve": ""
+  },
+  {
+    "id": "QUO-IDOR",
+    "fonctionnalite": "Refus d'un devis par un autre client",
+    "profil": "client",
+    "statut": "PASS",
+    "attendu": "refus",
+    "observe": "HTTP 403 Unauthorized",
+    "preuve": ""
+  },
+  {
+    "id": "QUO-MASK",
+    "fonctionnalite": "Devis visibles avec contacts masqués",
+    "profil": "client",
+    "statut": "PASS",
+    "attendu": "devis sans numéro de transporteur",
+    "observe": "HTTP 200 count=2 phone_leak=False",
+    "preuve": ""
+  },
+  {
+    "id": "QUO-REJ",
+    "fonctionnalite": "Refus d'un devis par le client propriétaire",
+    "profil": "client",
+    "statut": "PASS",
+    "attendu": "HTTP 200",
+    "observe": "HTTP 200  status=REJECTED id=cmw6rb94g000xlbwxp7od7ass",
+    "preuve": ""
+  },
+  {
+    "id": "QUO-WD",
+    "fonctionnalite": "Retrait du devis restant",
+    "profil": "trucker",
+    "statut": "PASS",
+    "attendu": "HTTP 200",
+    "observe": "HTTP 200  status=WITHDRAWN id=cmw6rb8wy000tlbwxui588oqq",
+    "preuve": ""
+  },
+  {
+    "id": "REQ-BROWSE",
+    "fonctionnalite": "Consultation des demandes publiées",
+    "profil": "trucker",
+    "statut": "PASS",
+    "attendu": "demande visible",
+    "observe": "HTTP 200 found=True",
+    "preuve": ""
+  },
+  {
+    "id": "REQ-CREATE",
+    "fonctionnalite": "Création d'une demande",
+    "profil": "client",
+    "statut": "PASS",
+    "attendu": "HTTP 201",
+    "observe": "HTTP 201  status=DRAFT id=cmw6rb772000ilbwxsd3ea9nt status=DRAFT",
+    "preuve": ""
+  },
+  {
+    "id": "REQ-IDOR",
+    "fonctionnalite": "Lecture d'une demande d'un autre client",
+    "profil": "client",
+    "statut": "PASS",
+    "attendu": "refus",
+    "observe": "HTTP 403 Forbidden",
+    "preuve": ""
+  },
+  {
+    "id": "REQ-ISO",
+    "fonctionnalite": "Isolation des demandes entre clients",
+    "profil": "client",
+    "statut": "PASS",
+    "attendu": "la demande de A est absente de B",
+    "observe": "HTTP 200 count=0 leak=False",
+    "preuve": ""
+  },
+  {
+    "id": "REQ-PUB",
+    "fonctionnalite": "Publication de la demande",
+    "profil": "client",
+    "statut": "PASS",
+    "attendu": "PUBLISHED",
+    "observe": "HTTP 200  status=PUBLISHED id=cmw6rb772000ilbwxsd3ea9nt status=PUBLISHED",
+    "preuve": ""
+  },
+  {
+    "id": "REQ-VAL",
+    "fonctionnalite": "Demande invalide",
+    "profil": "client",
+    "statut": "PASS",
+    "attendu": "HTTP 400",
+    "observe": "HTTP 400 Validation failed",
+    "preuve": ""
+  },
+  {
+    "id": "SIGNUP-client-a",
+    "fonctionnalite": "Inscription client-a",
+    "profil": "CLIENT",
+    "statut": "PASS",
+    "attendu": "201, SMS non délivré, pas de code en clair",
+    "observe": "HTTP 201 Inscription réussie. Vérifiez votre numéro pour les opérations payantes. smsDelivered=False phoneVerificationRequired=True",
+    "preuve": ""
+  },
+  {
+    "id": "SIGNUP-client-b",
+    "fonctionnalite": "Inscription client-b",
+    "profil": "CLIENT",
+    "statut": "PASS",
+    "attendu": "201, SMS non délivré, pas de code en clair",
+    "observe": "HTTP 201 Inscription réussie. Vérifiez votre numéro pour les opérations payantes. smsDelivered=False phoneVerificationRequired=True",
+    "preuve": ""
+  },
+  {
+    "id": "SIGNUP-trucker-a",
+    "fonctionnalite": "Inscription trucker-a",
+    "profil": "TRUCKER",
+    "statut": "PASS",
+    "attendu": "201, SMS non délivré, pas de code en clair",
+    "observe": "HTTP 201 Inscription réussie. Vérifiez votre numéro pour les opérations payantes. smsDelivered=False phoneVerificationRequired=True",
+    "preuve": ""
+  },
+  {
+    "id": "SIGNUP-trucker-b",
+    "fonctionnalite": "Inscription trucker-b",
+    "profil": "TRUCKER",
+    "statut": "PASS",
+    "attendu": "201, SMS non délivré, pas de code en clair",
+    "observe": "HTTP 201 Inscription réussie. Vérifiez votre numéro pour les opérations payantes. smsDelivered=False phoneVerificationRequired=True",
+    "preuve": ""
+  },
+  {
+    "id": "SUB-PHONE",
+    "fonctionnalite": "Achat de forfait sans téléphone vérifié",
+    "profil": "trucker",
+    "statut": "PASS",
+    "attendu": "HTTP 403",
+    "observe": "HTTP 403 Vérifiez votre numéro de téléphone avant cette opération.",
+    "preuve": ""
+  },
+  {
+    "id": "SUB-PLANS",
+    "fonctionnalite": "Catalogue de forfaits",
+    "profil": "public",
+    "statut": "PASS",
+    "attendu": "liste non vide",
+    "observe": "HTTP 200 count=3",
+    "preuve": ""
+  },
+  {
+    "id": "UI-404",
+    "fonctionnalite": "Page inconnue",
+    "profil": "visiteur",
+    "statut": "PASS",
+    "attendu": "404",
+    "observe": "404 en anglais, sans l'habillage WAGESSE. Capture 04-404.png.",
+    "preuve": "docs/recette/preuves/04-404.png"
+  },
+  {
+    "id": "UI-ADMIN-ROLE",
+    "fonctionnalite": "Page /admin avec un transporteur",
+    "profil": "trucker",
+    "statut": "PASS",
+    "attendu": "Pas d'écran d'administration",
+    "observe": "Retour au tableau de bord transporteur. L'API admin répond 401. Capture 21-admin-refuse.png.",
+    "preuve": "docs/recette/preuves/21-admin-refuse.png"
+  },
+  {
+    "id": "UI-BROWSE",
+    "fonctionnalite": "Liste transporteur",
+    "profil": "trucker",
+    "statut": "PASS",
+    "attendu": "La demande de recette est visible",
+    "observe": "Gravier de recette, 18 tonnes, Ouagadougou vers Koudougou. Capture 19-transporteur-demandes.png.",
+    "preuve": "docs/recette/preuves/19-transporteur-demandes.png"
+  },
+  {
+    "id": "UI-BUY",
+    "fonctionnalite": "Confirmation d'achat sans numéro vérifié",
+    "profil": "client",
+    "statut": "PASS",
+    "attendu": "Aucun crédit attribué",
+    "observe": "La page explique le règlement manuel. Le bouton affiche : vérifiez votre numéro. Capture 22-achat-refuse.png.",
+    "preuve": "docs/recette/preuves/22-achat-refuse.png"
+  },
+  {
+    "id": "UI-DASH",
+    "fonctionnalite": "Tableau de bord client avec session",
+    "profil": "client",
+    "statut": "PASS",
+    "attendu": "Demandes, crédits à 0, plan FREE",
+    "observe": "1 demande publiée, 0 mission, solde 0. Capture 10-client-tableau.png.",
+    "preuve": "docs/recette/preuves/10-client-tableau.png"
+  },
+  {
+    "id": "UI-FORM",
+    "fonctionnalite": "Formulaire de demande",
+    "profil": "client",
+    "statut": "PASS",
+    "attendu": "Matériau, lieux, quantité, date",
+    "observe": "Formulaire affiché. Capture 12-client-nouvelle-demande.png.",
+    "preuve": "docs/recette/preuves/12-client-nouvelle-demande.png"
+  },
+  {
+    "id": "UI-MOBILE",
+    "fonctionnalite": "Accueil mobile 390 px",
+    "profil": "visiteur",
+    "statut": "PASS",
+    "attendu": "Page utilisable",
+    "observe": "Capture 05-accueil-mobile.png, Chromium.",
+    "preuve": "docs/recette/preuves/05-accueil-mobile.png"
+  },
+  {
+    "id": "UI-TABLET",
+    "fonctionnalite": "Tarifs tablette 768 px",
+    "profil": "visiteur",
+    "statut": "PASS",
+    "attendu": "Page utilisable",
+    "observe": "Capture 06-tarifs-tablette.png, Chromium.",
+    "preuve": "docs/recette/preuves/06-tarifs-tablette.png"
+  },
+  {
+    "id": "UI-VEH",
+    "fonctionnalite": "Véhicule dans l'interface",
+    "profil": "trucker",
+    "statut": "PASS",
+    "attendu": "Le véhicule créé par l'API apparaît",
+    "observe": "RC-A-D47F, benne, 20 t. Capture 18-transporteur-vehicules.png.",
+    "preuve": "docs/recette/preuves/18-transporteur-vehicules.png"
+  },
+  {
+    "id": "UNL-PHONE",
+    "fonctionnalite": "Déblocage de contacts sans téléphone vérifié",
+    "profil": "client",
+    "statut": "PASS",
+    "attendu": "HTTP 403 PHONE_NOT_VERIFIED",
+    "observe": "HTTP 403 Vérifiez votre numéro de téléphone avant cette opération.",
+    "preuve": ""
+  },
+  {
+    "id": "VEH-A",
+    "fonctionnalite": "Ajout d'un véhicule",
+    "profil": "trucker",
+    "statut": "PASS",
+    "attendu": "HTTP 201",
+    "observe": "HTTP 201  id=cmw6rb88y000plbwxfow229jd",
+    "preuve": ""
+  },
+  {
+    "id": "VEH-B",
+    "fonctionnalite": "Ajout d'un second véhicule",
+    "profil": "trucker",
+    "statut": "PASS",
+    "attendu": "HTTP 201",
+    "observe": "HTTP 201  id=cmw6rb8hj000rlbwxsvwlt5qp",
+    "preuve": ""
+  },
+  {
+    "id": "VEH-ISO",
+    "fonctionnalite": "Isolation des véhicules",
+    "profil": "trucker",
+    "statut": "PASS",
+    "attendu": "seul le véhicule du compte",
+    "observe": "own=1 hasA=True hasB=False",
+    "preuve": ""
+  },
+  {
+    "id": "SEC-HDR",
+    "fonctionnalite": "En-têtes HTTP de durcissement",
+    "profil": "public",
+    "statut": "FAIL",
+    "attendu": "HSTS, nosniff, frame denial, sans X-Powered-By",
+    "observe": "Réponse nginx/1.24 avec x-powered-by: Next.js. Pas de strict-transport-security, x-content-type-options ni x-frame-options.",
+    "preuve": "curl -I"
+  },
+  {
+    "id": "UI-LOGIN",
+    "fonctionnalite": "Connexion dans le navigateur",
+    "profil": "client",
+    "statut": "FAIL",
+    "attendu": "Ouverture du tableau de bord. Le SMS ne sert qu'aux achats et aux contacts.",
+    "observe": "Le jeton est créé, puis l'interface ouvre /auth/verify. Le SMS n'est pas parti. Capture 08-verification-sms.png.",
+    "preuve": "docs/recette/preuves/08-verification-sms.png"
+  },
+  {
+    "id": "ADM-AUTH",
+    "fonctionnalite": "Connexion administrateur de recette",
+    "profil": "admin",
+    "statut": "BLOCKED",
+    "attendu": "Session admin distincte",
+    "observe": "L'inscription publique refuse le rôle ADMIN. Le mot de passe de l'administrateur déjà en place n'a pas été modifié ni lu.",
+    "preuve": "AUTH-ROLE"
+  },
+  {
+    "id": "ADM-DASH",
+    "fonctionnalite": "Tableau de bord et écrans admin authentifiés",
+    "profil": "admin",
+    "statut": "BLOCKED",
+    "attendu": "KPI, utilisateurs, commandes",
+    "observe": "Pas de session administrateur disponible.",
+    "preuve": "ADM-AUTH"
+  },
+  {
+    "id": "BKP",
+    "fonctionnalite": "Sauvegarde et restauration MariaDB",
+    "profil": "exploitation",
+    "statut": "BLOCKED",
+    "attendu": "Restauration vérifiée",
+    "observe": "Non exécutée : elle exigerait un accès root et une base jetable. La base de préproduction n'a pas été restaurée ni effacée.",
+    "preuve": "permissions"
+  },
+  {
+    "id": "BRW-OTHER",
+    "fonctionnalite": "Firefox et Safari",
+    "profil": "visiteur",
+    "statut": "BLOCKED",
+    "attendu": "Mêmes parcours",
+    "observe": "Seul Chromium, livré avec Playwright, a été utilisé.",
+    "preuve": "environnement agent"
+  },
+  {
+    "id": "MIS-ACC",
+    "fonctionnalite": "Acceptation d'un devis et création de mission",
+    "profil": "client",
+    "statut": "BLOCKED",
+    "attendu": "Mission créée une seule fois",
+    "observe": "HTTP 402 : le déblocage du contact est exigé. Ce déblocage exige un téléphone vérifié (HTTP 403).",
+    "preuve": "QUO-ACC, UNL-PHONE"
+  },
+  {
+    "id": "PAY-CYCLE",
+    "fonctionnalite": "Cycle complet de paiement manuel",
+    "profil": "client et admin",
+    "statut": "BLOCKED",
+    "attendu": "Commande, validation, crédit unique, refus sans crédit",
+    "observe": "L'achat est refusé tant que le téléphone n'est pas vérifié. Le SMS n'est pas délivré et la simulation est interdite. La validation admin n'a donc pas été exécutée.",
+    "preuve": "CRD-PHONE, 22-achat-refuse.png"
+  },
+  {
+    "id": "ADM-STUB",
+    "fonctionnalite": "Rôles, contenus, matériaux, promotions, types de camions",
+    "profil": "admin",
+    "statut": "NOT IMPLEMENTED",
+    "attendu": "Écrans de gestion",
+    "observe": "Les pages du code affichent « en cours de construction ». Non ouvertes avec un admin.",
+    "preuve": "code"
+  },
+  {
+    "id": "LEG-PRIV",
+    "fonctionnalite": "Confidentialité /privacy et /legal/privacy",
+    "profil": "visiteur",
+    "statut": "NOT IMPLEMENTED",
+    "attendu": "Page lisible",
+    "observe": "HTTP 404 sur la préproduction déployée.",
+    "preuve": "curl"
+  },
+  {
+    "id": "LEG-TERMS",
+    "fonctionnalite": "Mentions légales /terms et /legal/terms",
+    "profil": "visiteur",
+    "statut": "NOT IMPLEMENTED",
+    "attendu": "Page lisible",
+    "observe": "HTTP 404 sur la préproduction déployée.",
+    "preuve": "curl"
+  },
+  {
+    "id": "NOTIF-USER",
+    "fonctionnalite": "Notifications côté client",
+    "profil": "client",
+    "statut": "NOT IMPLEMENTED",
+    "attendu": "Liste des notifications",
+    "observe": "Pas de route /api/notifications. L'écran existe seulement dans l'administration.",
+    "preuve": "NOTIF"
+  },
+  {
+    "id": "ROLE-OP",
+    "fonctionnalite": "Profil opérateur",
+    "profil": "operator",
+    "statut": "NOT IMPLEMENTED",
+    "attendu": "Parcours propre",
+    "observe": "Le rôle existe dans le schéma. L'inscription ne propose que CLIENT et TRUCKER. L'opérateur est routé comme un client.",
+    "preuve": "schema Role"
+  }
+]

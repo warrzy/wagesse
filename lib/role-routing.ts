@@ -18,3 +18,9 @@ export function getDashboardRouteByRole(role: AppRole | null | undefined): strin
 export function isAdminRole(role: AppRole | null | undefined): boolean {
   return role === "ADMIN" || role === "SUPER_ADMIN"
 }
+
+/** Après connexion ou inscription, l'espace du rôle s'ouvre.
+ * La vérification du numéro reste exigée seulement pour les opérations payantes. */
+export function destinationAfterAuthentication(role: AppRole | null | undefined): string {
+  return getDashboardRouteByRole(role)
+}

@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { signupFormSchema } from "@/lib/validations"
 import { apiClient } from "@/lib/api-client"
-import { getDashboardRouteByRole } from "@/lib/role-routing"
+import { destinationAfterAuthentication } from "@/lib/role-routing"
 import Header from "@/components/Header"
 import Footer from "@/components/Footer"
 
@@ -69,14 +69,8 @@ export default function SignupClient() {
         apiClient.setUser(response.data.user)
       }
 
-      if (response.data?.phoneVerificationRequired) {
-        const sent = response.data.smsDelivered === false ? "0" : "1"
-        router.push(`/auth/verify?phone=${encodeURIComponent(formData.phone)}&sent=${sent}`)
-        return
-      }
-
       const userRole = response.data?.user?.role
-      router.push(getDashboardRouteByRole(userRole))
+      router.push(destinationAfterAuthentication(userRole))
     } catch (err) {
       setError("Une erreur est survenue")
       console.error(err)

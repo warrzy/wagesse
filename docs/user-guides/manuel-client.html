@@ -1,0 +1,47 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>Manuel client WAGESSE</title><style>
+@page { size: A4; margin: 14mm; }
+body { font-family: 'Liberation Sans', sans-serif; color: #0f172a; font-size: 11pt; line-height: 1.45; }
+h1 { font-size: 20pt; } h2 { font-size: 14pt; border-bottom: 2px solid #f97316; }
+.brand { color: #f97316; font-weight: 800; }
+img.shot { width: 92%; border: 1px solid #e2e8f0; }
+</style></head><body>
+<p class="brand">WAGESSE</p>
+<h1>Manuel client</h1>
+<p>Préproduction https://preprod.wagesse.fr, 7 novembre 2026. Les captures viennent du serveur déployé. Aucun mot de passe n'est montré.</p>
+<h2>1. Créer un compte</h2>
+<ol>
+<li>Ouvrir Créer un compte.</li>
+<li>Choisir Client. Le rôle administrateur n'est pas proposé.</li>
+<li>Renseigner un numéro d'au moins huit chiffres, le nom et un mot de passe d'au moins huit caractères.</li>
+</ol>
+<img class="shot" src="../recette/preuves/campagne3/inscription.png" alt="Inscription client ou camionneur">
+<p>Le compte s'ouvre sur l'espace client. Un bandeau rappelle que le numéro n'est pas vérifié. La publication d'une demande et la lecture des devis restent possibles. L'achat, le forfait et le déblocage des contacts attendent le code SMS.</p>
+<p><strong>Erreur fréquente.</strong> Moins de huit chiffres, ou un numéro déjà inscrit.</p>
+<h2>2. Se connecter</h2>
+<img class="shot" src="../recette/preuves/campagne3/connexion.png" alt="Connexion">
+<p>Une connexion réussie ouvre <code>/dashboard/client</code>. Elle n'ouvre plus l'écran de saisie du code.</p>
+<h2>3. Acheter des crédits</h2>
+<img class="shot" src="../recette/preuves/campagne3/tarifs.png" alt="Tarifs affichés sur la préproduction">
+<ol>
+<li>Choisir un pack. Le règlement se fait hors de la plateforme, avec la référence de la commande.</li>
+<li>Avant la validation d'un administrateur, le solde ne change pas.</li>
+<li>Après une validation, les crédits du pack sont ajoutés une seule fois.</li>
+<li>Sans numéro vérifié, l'achat est refusé et aucun crédit n'est créé.</li>
+</ol>
+<p>Le cycle de préproduction a vérifié ces quatre points, puis le refus d'une seconde commande.</p>
+<h2>4. Publier, débloquer, accepter</h2>
+<ol>
+<li>Créer une demande : matériau, quantité, ville de départ, ville d'arrivée, date.</li>
+<li>La publier. Un autre client ne peut pas la lire.</li>
+<li>Lire les devis. Les numéros des transporteurs restent masqués.</li>
+<li>Accepter sans déblocage est refusé.</li>
+<li>Débloquer les contacts. Un crédit est consommé. Un second déblocage de la même demande n'en consomme pas un autre.</li>
+<li>Accepter le devis. Une mission est créée.</li>
+<li>Suivre les étapes du transporteur, puis confirmer la fin. Seul le client peut passer la mission à terminée.</li>
+</ol>
+<p>La demande « Sable de recette finale » a produit la mission <code>cmw6ykr8q001plbcf2wt7gjic</code>, terminée en base.</p>
+<h2>5. Pages légales</h2>
+<img class="shot" src="../recette/preuves/campagne3/mentions.png" alt="Mentions légales servies">
+<p>Les conditions et la confidentialité sont liées depuis l'inscription et le pied de page. Une adresse inconnue affiche une page française.</p>
+<img class="shot" src="../recette/preuves/campagne3/page-absente.png" alt="Page absente en français">
+</body></html>

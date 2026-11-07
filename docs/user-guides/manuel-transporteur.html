@@ -1,0 +1,48 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>Manuel transporteur WAGESSE</title><style>
+@page { size: A4; margin: 14mm; }
+body { font-family: 'Liberation Sans', sans-serif; color: #0f172a; font-size: 11pt; line-height: 1.45; }
+h1 { font-size: 20pt; } h2 { font-size: 14pt; border-bottom: 2px solid #f97316; }
+.brand { color: #f97316; font-weight: 800; }
+img.shot { width: 92%; border: 1px solid #e2e8f0; }
+ol.steps li { margin: 0.15em 0; }
+</style></head><body>
+<p class="brand">WAGESSE</p>
+<h1>Manuel transporteur</h1>
+<p>Préproduction https://preprod.wagesse.fr, 7 novembre 2026. Les captures viennent du serveur déployé.</p>
+<h2>1. Créer le compte et se connecter</h2>
+<ol>
+<li>Ouvrir Créer un compte et choisir Camionneur.</li>
+<li>Renseigner le numéro, le nom et le mot de passe.</li>
+<li>Se connecter. L'adresse devient <code>/dashboard/trucker</code>.</li>
+</ol>
+<img class="shot" src="../recette/preuves/campagne3/inscription.png" alt="Le profil camionneur est proposé à l'inscription">
+<img class="shot" src="../recette/preuves/campagne3/connexion.png" alt="Connexion">
+<p>Le bandeau de numéro non vérifié n'empêche pas de consulter les demandes ni d'envoyer un devis. L'administration n'est pas accessible : l'API répond HTTP 401.</p>
+<h2>2. Véhicule et devis</h2>
+<ol>
+<li>Enregistrer un véhicule. Il n'apparaît pas dans la liste d'un autre transporteur.</li>
+<li>Ouvrir une demande publiée et envoyer un devis : véhicule, prix, date proposée, date de validité.</li>
+<li>Un second devis du même transporteur sur la même demande est refusé.</li>
+<li>Le client ne voit pas le numéro du transporteur tant qu'il n'a pas débloqué le contact.</li>
+</ol>
+<p>Dans le cycle final, le transporteur de recette a envoyé un devis de 150&nbsp;000 XOF sur la demande de sable. L'acceptation a été refusée tant que le client n'avait pas débloqué le contact.</p>
+<h2>3. Conduire la mission</h2>
+<p>Après l'acceptation, le transporteur avance la mission dans cet ordre :</p>
+<ol class="steps">
+<li>En route vers le chargement</li>
+<li>Arrivé au chargement</li>
+<li>Chargement en cours</li>
+<li>En route vers la livraison</li>
+<li>Arrivé à la livraison</li>
+<li>Livré</li>
+<li>En attente de confirmation du client</li>
+</ol>
+<p>Le client confirme ensuite la fin. Si le transporteur tente de terminer la mission lui-même, le serveur répond HTTP 400 et le statut ne change pas.</p>
+<p>La mission <code>cmw6ykr8q001plbcf2wt7gjic</code> a suivi cet enchaînement et reste COMPLETED en base.</p>
+<h2>4. Erreurs fréquentes</h2>
+<ul>
+<li>Proposer un devis sans véhicule enregistré.</li>
+<li>Croire que l'envoi du devis débloque déjà le numéro du client.</li>
+<li>Vouloir clôturer la mission à la place du client.</li>
+</ul>
+</body></html>

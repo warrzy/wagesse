@@ -29,21 +29,20 @@ export function generateToken(userId: string, email: string, role: string): stri
   return jwt.sign(
     { userId, email, role },
     jwtSecret(),
-    { expiresIn: JWT_EXPIRATION }
+    { expiresIn: JWT_EXPIRATION, algorithm: "HS256" }
   )
 }
 
 // Verify JWT token
 export function verifyToken(token: string): { userId: string; email: string; role: string } | null {
   try {
-    const decoded = jwt.verify(token, jwtSecret()) as {
+    const decoded = jwt.verify(token, jwtSecret(), { algorithms: ["HS256"] }) as {
       userId: string
       email: string
       role: string
     }
     return decoded
-  } catch (error) {
-    console.error("Token verification failed:", error)
+  } catch {
     return null
   }
 }

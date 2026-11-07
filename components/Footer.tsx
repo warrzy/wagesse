@@ -124,7 +124,7 @@ export default function Footer() {
 
         <div className="mt-12 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-white/60">&copy; {currentYear} {BRAND_CONFIG.name}. Tous droits réservés.</p>
-          <p className="text-xs text-white/50">Orange Money | Mobile Money | Cartes</p>
+          <p className="text-xs text-white/50">Le mode de paiement est indiqué au moment de la commande.</p>
         </div>
       </div>
     </footer>

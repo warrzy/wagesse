@@ -1,0 +1,143 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>Manuel d'utilisation WAGESSE</title><style>
+@page { size: A4; margin: 16mm 14mm 18mm; }
+body { font-family: 'Liberation Sans', sans-serif; color: #0f172a; font-size: 11pt; line-height: 1.45; }
+h1 { font-size: 22pt; margin-bottom: 0.2em; }
+h2 { font-size: 15pt; margin-top: 1.3em; border-bottom: 2px solid #f97316; padding-bottom: 0.15em; }
+h3 { font-size: 12.5pt; margin-top: 1em; }
+.cover { page-break-after: always; min-height: 250mm; }
+.brand { color: #f97316; font-weight: 800; letter-spacing: 0.08em; }
+.muted { color: #475569; }
+table { width: 100%; border-collapse: collapse; margin: 0.6em 0 1em; font-size: 9pt; }
+th, td { border: 1px solid #e2e8f0; padding: 4px 6px; vertical-align: top; }
+th { background: #fff7ed; text-align: left; }
+img.shot { width: 100%; border: 1px solid #e2e8f0; margin: 0.4em 0 0.8em; }
+.pass { color: #166534; font-weight: 700; }
+.fail { color: #991b1b; font-weight: 700; }
+.blocked { color: #9a3412; font-weight: 700; }
+footer, .footer-note { page-break-before: avoid; }
+</style></head><body>
+<section class="cover">
+<p class="brand">WAGESSE</p>
+<h1>Manuel d'utilisation</h1>
+<p>Préproduction observée le 7 novembre 2026</p>
+<p class="muted">Ce document décrit la première campagne. Les manuels à jour sont manuel-administrateur, manuel-client et manuel-transporteur, illustrés sur le commit 627cb4f.</p>
+</section>
+<h2>Sommaire</h2>
+<ol>
+<li>Manuel administrateur</li>
+<li>Manuel client</li>
+<li>Manuel transporteur</li>
+<li>Glossaire</li>
+<li>Questions fréquentes</li>
+</ol>
+<h2>1. Manuel administrateur</h2>
+<h3>1.1 Connexion</h3>
+<p><strong>Objectif.</strong> Entrer dans l'administration.</p>
+<p><strong>Prérequis.</strong> Un compte de rôle ADMIN, distinct des comptes de recette. Ce manuel n'a pas de capture de cet écran : la recette n'a pas ouvert de session administrateur.</p>
+<ol>
+<li>Ouvrir https://preprod.wagesse.fr/auth/login.</li>
+<li>Saisir le numéro et le mot de passe administrateur.</li>
+<li>Contrôler que l'adresse devient /admin et que le tableau de bord affiche les indicateurs.</li>
+</ol>
+<p><strong>Résultat attendu.</strong> Les menus utilisateurs, commandes, paiements et transporteurs sont visibles.</p>
+<p><strong>Erreur fréquente.</strong> Un client ou un transporteur qui ouvre /admin revient à son propre tableau de bord. L'API répond 401.</p>
+<img class="shot" src="../recette/preuves/21-admin-refuse.png" alt="Un transporteur ne voit pas l'administration">
+<h3>1.2 Paiements manuels</h3>
+<p><strong>Objectif.</strong> Valider ou refuser une commande sans attribuer deux fois les crédits.</p>
+<p><strong>Prérequis.</strong> Une commande créée par un utilisateur dont le numéro est vérifié. Cette étape n'a pas été exécutée.</p>
+<ol>
+<li>Ouvrir la liste des commandes.</li>
+<li>Lire la référence, le montant et le compte.</li>
+<li>Valider une fois. Le solde du client augmente du nombre de crédits du pack.</li>
+<li>Tenter une seconde validation. Le solde ne doit pas changer.</li>
+<li>Refuser une autre commande avec un motif. Le solde ne change pas.</li>
+</ol>
+<p><strong>Erreur fréquente.</strong> Croire que la confirmation du client a déjà crédité le portefeuille. Tant que l'administrateur n'a pas validé, le solde reste identique.</p>
+<h2>2. Manuel client</h2>
+<h3>2.1 Créer un compte</h3>
+<p><strong>Objectif.</strong> Ouvrir un espace expéditeur.</p>
+<p><strong>Prérequis.</strong> Un numéro à au moins 8 chiffres, non déjà utilisé, et un mot de passe d'au moins 8 caractères.</p>
+<ol>
+<li>Ouvrir Créer un compte.</li>
+<li>Choisir le profil client. Le profil administrateur n'est pas proposé.</li>
+<li>Renseigner le numéro, le nom et le mot de passe.</li>
+</ol>
+<p><strong>Résultat observé le 7 novembre sur le serveur.</strong> Le compte est créé, le SMS n'est pas envoyé, et l'écran de code s'affiche. Dans la version corrigée, la connexion ouvre le tableau de bord du rôle. Un bandeau rappelle que le numéro devra être vérifié avant un achat ou un déblocage de contact. La capture ci-dessous montre encore l'écran servi par le commit déployé.</p>
+<img class="shot" src="../recette/preuves/09-inscription.png" alt="Formulaire d'inscription">
+<img class="shot" src="../recette/preuves/08-verification-sms.png" alt="Écran de code SMS">
+<p><strong>Erreur fréquente.</strong> Saisir moins de 8 chiffres, ou un numéro déjà inscrit.</p>
+<h3>2.2 Tableau de bord</h3>
+<p><strong>Objectif.</strong> Voir les demandes, les missions et le solde.</p>
+<ol>
+<li>Se connecter.</li>
+<li>Lire le solde. Pour le compte de recette il est à 0.</li>
+<li>Lire le nombre de demandes publiées.</li>
+</ol>
+<img class="shot" src="../recette/preuves/10-client-tableau.png" alt="Tableau de bord client">
+<h3>2.3 Publier une demande</h3>
+<p><strong>Objectif.</strong> Décrire un transport de matériau.</p>
+<ol>
+<li>Choisir Nouvelle demande.</li>
+<li>Indiquer le matériau, la quantité, la ville de départ, la ville d'arrivée et une date du jour ou ultérieure.</li>
+<li>Ne pas écrire de numéro de téléphone dans le commentaire : le texte est masqué s'il en contient.</li>
+<li>Publier. La demande passe de brouillon à publiée et devient visible des transporteurs.</li>
+</ol>
+<img class="shot" src="../recette/preuves/12-client-nouvelle-demande.png" alt="Formulaire de demande">
+<p><strong>Résultat observé.</strong> Une demande « Gravier de recette », 18 tonnes, Ouagadougou vers Koudougou, a été publiée par l'API puis affichée au transporteur.</p>
+<p><strong>Erreur fréquente.</strong> Une date passée ou une quantité négative est refusée.</p>
+<h3>2.4 Devis et missions</h3>
+<p><strong>Objectif.</strong> Lire les devis, en refuser, puis en accepter un.</p>
+<ol>
+<li>Ouvrir la demande.</li>
+<li>Les numéros des transporteurs restent masqués.</li>
+<li>Refuser un devis qui ne convient pas.</li>
+<li>Pour accepter, débloquer d'abord le contact. Cela exige un numéro vérifié et un crédit.</li>
+</ol>
+<p><strong>Résultat observé.</strong> Deux devis ont été reçus, l'un a été refusé, l'acceptation a répondu qu'il faut débloquer le contact. Aucune mission n'a été créée. Le solde est resté à 0.</p>
+<img class="shot" src="../recette/preuves/19-transporteur-demandes.png" alt="Demande visible côté transporteur">
+<h3>2.5 Crédits</h3>
+<p><strong>Objectif.</strong> Commander un pack sans paiement automatique.</p>
+<ol>
+<li>Ouvrir Tarifs, puis un pack.</li>
+<li>Lire le règlement hors plateforme : rien n'est crédité tant qu'un administrateur n'a pas confirmé.</li>
+<li>Confirmer la demande seulement si le numéro est vérifié.</li>
+</ol>
+<img class="shot" src="../recette/preuves/02-tarifs.png" alt="Page des tarifs">
+<img class="shot" src="../recette/preuves/16-achat-credits.png" alt="Commande manuelle de crédits">
+<img class="shot" src="../recette/preuves/22-achat-refuse.png" alt="Refus tant que le numéro n'est pas vérifié">
+<p><strong>Erreur fréquente.</strong> Confirmer sans numéro vérifié. Le message « Vérifiez votre numéro de téléphone avant cette opération » s'affiche et aucun crédit n'est ajouté.</p>
+<h2>3. Manuel transporteur</h2>
+<h3>3.1 Inscription et profil</h3>
+<p><strong>Objectif.</strong> Ouvrir un espace camionneur et indiquer la ville d'activité.</p>
+<ol>
+<li>Créer un compte avec le rôle transporteur.</li>
+<li>Ouvrir le profil.</li>
+<li>Indiquer la ville et les zones. Le compte de recette a été placé à Bobo-Dioulasso.</li>
+</ol>
+<img class="shot" src="../recette/preuves/20-transporteur-profil.png" alt="Profil transporteur">
+<h3>3.2 Véhicule</h3>
+<ol>
+<li>Ouvrir Mes véhicules.</li>
+<li>Ajouter la plaque, la marque, l'année, le type et la capacité.</li>
+<li>Une plaque déjà utilisée est refusée.</li>
+</ol>
+<img class="shot" src="../recette/preuves/18-transporteur-vehicules.png" alt="Véhicule de recette">
+<h3>3.3 Devis</h3>
+<ol>
+<li>Ouvrir les demandes disponibles.</li>
+<li>Choisir la demande, un véhicule et un prix.</li>
+<li>Envoyer le devis. Un second devis sur la même demande est refusé.</li>
+<li>Retirer un devis encore en attente si besoin.</li>
+</ol>
+<img class="shot" src="../recette/preuves/17-transporteur-tableau.png" alt="Tableau de bord transporteur">
+<p><strong>Résultat observé.</strong> Deux transporteurs ont déposé un devis. Le doublon a été refusé. Le devis restant a été retiré après le refus de l'autre.</p>
+<h3>3.4 Contacts et forfait</h3>
+<p>Le déblocage du contact client et l'achat d'un forfait exigent un numéro vérifié. Sans SMS délivré, ces deux actions répondent 403. Le forfait affiché est FREE.</p>
+<h2>Glossaire</h2>
+<p><strong>Demande.</strong> Besoin de transport publié par un client. <strong>Devis.</strong> Prix proposé par un transporteur. <strong>Mission.</strong> Transport créé quand un devis est accepté. <strong>Crédit.</strong> Unité qui débloque un contact. <strong>Commande manuelle.</strong> Intention de paiement en attente d'un administrateur.</p>
+<h2>Questions fréquentes</h2>
+<p><strong>Pourquoi aucun SMS n'arrive ?</strong> Aucun fournisseur SMS du Burkina Faso n'est branché. Orange SMS et Africa's Talking peuvent couvrir le pays, mais ils envoient de vrais messages payants : ils ne sont pas activés. En préproduction seulement, un administrateur peut marquer comme vérifié un compte fictif dont le numéro commence par 7800 et le nom contient « Recette ». Cette route n'existe pas si le drapeau PREPROD_TEST_PHONE_VERIFY n'est pas exactement true. Elle ne renvoie aucun code.</p>
+<p><strong>Mon solde a-t-il augmenté quand j'ai confirmé un pack ?</strong> Non, pas sans numéro vérifié, et pas avant la validation d'un administrateur.</p>
+<p><strong>Puis-je voir le numéro d'un transporteur ?</strong> Non, tant que le contact n'est pas débloqué.</p>
+<p><strong>Où sont les mentions légales ?</strong> Dans la version corrigée, `/terms`, `/privacy`, `/legal/terms` et `/legal/privacy` affichent les pages rédigées. Une adresse inconnue affiche une page 404 en français. Le serveur actuellement déployé répond encore 404 anglais sur ces adresses, jusqu'au redémarrage autorisé.</p>
+</body></html>

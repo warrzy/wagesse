@@ -1,0 +1,58 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>Dossier de mise en production WAGESSE</title><style>
+@page { size: A4; margin: 14mm; }
+body { font-family: 'Liberation Sans', sans-serif; color: #0f172a; font-size: 10.5pt; line-height: 1.4; }
+h1 { font-size: 18pt; } h2 { font-size: 13.5pt; border-bottom: 2px solid #f97316; }
+.nogo { background: #fff7ed; border: 1px solid #fdba74; padding: 8px 10px; }
+table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+th, td { border: 1px solid #e2e8f0; padding: 3px 5px; vertical-align: top; }
+th { background: #fff7ed; text-align: left; }
+</style></head><body>
+<h1>Dossier de mise en production</h1>
+<p>7 novembre 2026, 23:20 (Europe/Paris). Aucun domaine n'a été basculé, aucune base de production n'a été créée, aucun compte administrateur existant n'a été modifié.</p>
+<div class="nogo"><strong>NO-GO.</strong> Le build de préproduction <code>627cb4fc0fcd014e8743db2249b1887fe71dd173</code> a passé le cycle métier. L'ouverture commerciale attend les prérequis bloquants ci-dessous.</div>
+<h2>Prérequis bloquants</h2>
+<table>
+<tr><th>Sujet</th><th>État</th><th>Condition d'ouverture</th></tr>
+<tr><td>SMS réel</td><td>Absent en préproduction. Les achats de vrais numéros resteraient fermés.</td><td><code>SMS_PROVIDER=http</code>, URL et clé hors dépôt. <code>deploy/production/assert-env.mjs</code> doit accepter le fichier.</td></tr>
+<tr><td>Mécanisme de recette</td><td>Ouvert seulement sur la préproduction, par les trois drapeaux et la base <code>wagesse_preprod</code>.</td><td>Ne pas copier <code>preprod.env</code>. Déploiement, drapeau fictif et base de préproduction absents. Host de production différent de <code>preprod.wagesse.fr</code>.</td></tr>
+<tr><td>Base et secrets</td><td>Seule <code>wagesse_preprod</code> existe pour WAGESSE.</td><td>Base neuve, <code>JWT_SECRET</code> et mot de passe MariaDB distincts. <code>prisma migrate deploy</code> sans les données fictives. Pas de <code>migrate reset</code>.</td></tr>
+<tr><td>Administrateur</td><td>L'administrateur existant n'a pas été lu.</td><td>Créer un administrateur de production. Ne pas importer 78003021 ni les comptes 7800.</td></tr>
+<tr><td>Domaine et certificat</td><td><code>wagesse.fr</code> pointe vers LWS. Le certificat de préproduction ne couvre pas ce nom.</td><td>Décision explicite de DNS, certificat au nom du domaine, vhost isolé. Pas de bascule dans cette revue.</td></tr>
+<tr><td>Sauvegarde de production</td><td>La restauration d'essai a réussi sur une base temporaire de préproduction.</td><td>Avant la première migration de production : dump chiffré, hors du serveur, puis restauration sur une base jetable et comparaison des comptes.</td></tr>
+</table>
+<h2>Améliorations reportables</h2>
+<ul>
+<li>Avis npm restants, dont l'exécution de code Next.js limitée à Windows, Prisma, jsonwebtoken 9, nanoid, postcss, sharp, source-map-js et uuid.</li>
+<li>Répondre 403 plutôt que 401 lorsqu'un rôle non administrateur appelle l'API d'administration.</li>
+<li>Écrans admin encore marqués « en cours de construction », notifications client, parcours opérateur.</li>
+<li>Firefox et Safari. Chromium et le cycle API ont été exécutés.</li>
+<li>Conserver les codes SMS dans un stockage partagé si une seconde instance est ajoutée.</li>
+<li>Activer PayDunya seulement après revue des clés et du webhook. Le mode manuel peut ouvrir le service.</li>
+</ul>
+<h2>Sauvegardes</h2>
+<ul>
+<li>Conserver <code>/var/backups/wagesse-preprod/rollback-20261107T214947Z</code>. C'est le retour arrière de l'échec Prisma, antérieur au déploiement réussi.</li>
+<li>La restauration d'essai a créé une base temporaire, comparé les volumes, puis supprimé seulement cette base. Le dump a été conservé. <code>wagesse_preprod</code> n'a pas été remplacée.</li>
+<li>Avant une production : <code>mysqldump --single-transaction</code> de la future base, fichier root 600, copie chiffrée hors du VPS. Ne pas lancer <code>mysqldump --all-databases</code>.</li>
+</ul>
+<h2>Surveillance</h2>
+<ul>
+<li>Service systemd dédié, distinct de <code>wagesse-preprod</code>. Écoute seulement sur l'interface locale.</li>
+<li>Contrôle HTTP de la page d'accueil et de <code>/api/payments/mode</code>. Le mode attendu au lancement est MANUAL.</li>
+<li>Journal du service filtré : aucune URL de base, aucun code SMS, aucun jeton.</li>
+<li>Espace disque du dossier de sauvegarde avant chaque dump.</li>
+<li>Date d'expiration du certificat du domaine de production.</li>
+<li>Après chaque opération, les autres sites du VPS répondent encore. Ne pas redémarrer nginx globalement, PostgreSQL, ni les services des autres applications.</li>
+</ul>
+<h2>Retour arrière</h2>
+<p>Tant que le DNS n'a pas changé, le retour arrière est de ne pas publier le vhost. Après une bascule autorisée :</p>
+<ol>
+<li>Retirer seulement le vhost de production et recharger nginx après <code>nginx -t</code>.</li>
+<li>Arrêter seulement l'unité de production.</li>
+<li>Si des paiements réels ont été enregistrés, ne pas restaurer un dump par-dessus cette base sans décision explicite. Restaurer le dump sur une base neuve, puis pointer l'application vers elle.</li>
+<li>Revenir au build précédent conservé à côté du dump.</li>
+</ol>
+<p>Le certificat de préproduction et la base <code>wagesse_preprod</code> restent en place. Les comptes de recette ne sont pas copiés.</p>
+<h2>Vérification téléphonique retenue</h2>
+<p>Code à six chiffres, dix minutes, cinq essais, limite d'envoi, SMS HTTP authentifié par une clé hors dépôt, aucun code dans la réponse ni dans les journaux. Le mécanisme fictif reste réservé à l'hôte de préproduction et à la base <code>wagesse_preprod</code>. Le script <code>assert-env.mjs</code> est le contrôle à lancer sur le fichier de production avant le premier démarrage.</p>
+</body></html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>Seconde recette WAGESSE</title><style>
+@page { size: A4; margin: 16mm 14mm 18mm; }
+body { font-family: 'Liberation Sans', sans-serif; color: #0f172a; font-size: 11pt; line-height: 1.45; }
+h1 { font-size: 22pt; margin-bottom: 0.2em; }
+h2 { font-size: 15pt; margin-top: 1.3em; border-bottom: 2px solid #f97316; padding-bottom: 0.15em; }
+.brand { color: #f97316; font-weight: 800; letter-spacing: 0.08em; }
+.muted { color: #475569; }
+table { width: 100%; border-collapse: collapse; margin: 0.6em 0 1em; font-size: 10pt; }
+th, td { border: 1px solid #e2e8f0; padding: 4px 6px; vertical-align: top; }
+th { background: #fff7ed; text-align: left; }
+</style></head><body>
+<p class="brand">WAGESSE</p>
+<h1>Seconde recette comparative</h1>
+<p>7 novembre 2026, 20:50 (Europe/Paris)</p>
+<p class="muted">Serveur encore au commit 91e8235de45f3dfd58be558dc4636147d2a7d8df. Les correctifs sont dans la branche de recette et ne sont pas déployés.</p>
+<p><strong>Recommandation : NO-GO pour la production.</strong></p>
+
+<h2>1. Comparaison avec la première recette</h2>
+<table>
+<tr><th>Première recette</th><th>Cette passe</th></tr>
+<tr><td>80 scénarios, 67 PASS, 2 FAIL, 6 BLOCKED, 5 NOT IMPLEMENTED. Taux conclusif 97,1 % (67/69).</td><td>Aucun scénario de préproduction n'a été relancé. Le taux de couverture du cycle métier reste celui de la première recette. Les deux FAIL et les blocages essentiels sont corrigés dans le code, pas encore observés sur le serveur.</td></tr>
+</table>
+
+<h2>2. Anomalies</h2>
+<table>
+<tr><th>Anomalie</th><th>État</th></tr>
+<tr><td>A1. L'interface s'arrête sur le code SMS.</td><td>Corrigée dans la branche. Test unitaire : client, transporteur et administrateur ouvrent leur espace. Pas revu dans le navigateur de préproduction.</td></tr>
+<tr><td>A2. Pages légales absentes.</td><td>Rédigées dans la branche. Le serveur répond encore 404.</td></tr>
+<tr><td>A3. Page 404 en anglais.</td><td>Page française ajoutée. La capture 04-404.png montre encore l'ancienne page.</td></tr>
+<tr><td>A4. En-têtes de sécurité absents.</td><td>Déclarés dans Next.js, sans modifier nginx. Pas encore servis.</td></tr>
+<tr><td>Registre de comptes publié avec sa phrase secrète.</td><td>Le fichier chiffré est retiré du sommet de la branche et du dossier de déploiement. Les mots de passe d'origine restent valides tant que le script root n'a pas tourné.</td></tr>
+</table>
+
+<h2>3. Scénarios qui restent bloqués</h2>
+<table>
+<tr><th>Scénario</th><th>Pourquoi il n'est pas relancé</th></tr>
+<tr><td>Administrateur de recette, tableau de bord, utilisateurs, commandes, forfaits, journaux, permissions.</td><td>Le compte 78003021 est créé par le script root. L'administrateur déjà en place n'est pas modifié. L'inscription publique ne propose toujours pas ADMIN.</td></tr>
+<tr><td>Vérification du numéro, achat, attribution unique, déblocage, acceptation, mission, états en base.</td><td>Aucun SMS réel n'est branché. La procédure de test n'existe que pour un administrateur, un compte fictif 7800 nommé Recette, et le drapeau de préproduction. Elle n'est pas sur le serveur.</td></tr>
+<tr><td>Sauvegarde et restauration.</td><td>Le script prépare une base jetable wagesse_preprod_restore_*. Il n'a pas été lancé. La base de préproduction n'a pas été écrasée.</td></tr>
+<tr><td>Firefox et Safari.</td><td>Toujours non ouverts. Safari ne peut pas tourner sur cet hôte Linux.</td></tr>
+<tr><td>Vidéos d'administration, de paiement, de crédits et de mission.</td><td>Non tournées. Les filmer maintenant montrerait l'écran SMS, pas le parcours corrigé.</td></tr>
+</table>
+
+<h2>4. Ce qui a été exécuté ici</h2>
+<ul>
+<li>17 tests unitaires, dont la destination après connexion, l'interdiction d'un code fixe, le drapeau de préproduction et la liste des en-têtes.</li>
+<li>axios retiré (aucune importation). zod installé en 4.6.7. Audit production : 1 critique, 8 hautes, 1 modérée. La critique Next.js concerne un serveur Windows.</li>
+<li>Trois scripts root préparés et non lancés : rotation des secrets, déploiement ciblé, restauration d'essai.</li>
+</ul>
+
+<h2>5. Risques résiduels</h2>
+<ul>
+<li>Les quatre mots de passe de recette d'origine fonctionnent encore sur la préproduction.</li>
+<li>L'ancien fichier chiffré reste dans l'historique Git du commit précédent. Il devient inutile seulement après la rotation.</li>
+<li>Le cycle métier essentiel n'a pas été vu de bout en bout : demande, devis, paiement fictif, crédit unique, contact, mission, clôture.</li>
+<li>Prisma, sharp, postcss, nanoid, source-map-js et jsonwebtoken 8 restent signalés. Le code n'utilise pas les options qui rendent ces avis exploitables, et la signature est limitée à HS256.</li>
+<li>Les pages admin « en cours de construction », les notifications utilisateur et le rôle opérateur restent non implémentés.</li>
+</ul>
+
+<h2>6. Décision</h2>
+<p>NO-GO. La plateforme n'est pas encore testée de bout en bout sur la préproduction corrigée. Le déploiement de production n'est pas lancé. Pour lever le blocage, le propriétaire doit autoriser, dans cet ordre, la rotation des comptes, le redémarrage de la seule application WAGESSE, puis la restauration d'essai. Les autres applications du VPS ne sont pas modifiées par les scripts préparés.</p>
+</body></html>

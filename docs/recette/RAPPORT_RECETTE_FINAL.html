@@ -1,0 +1,73 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>Rapport final de recette WAGESSE</title><style>
+@page { size: A4; margin: 14mm 13mm 16mm; }
+body { font-family: 'Liberation Sans', sans-serif; color: #0f172a; font-size: 10.5pt; line-height: 1.4; }
+h1 { font-size: 20pt; margin-bottom: 0.15em; }
+h2 { font-size: 14pt; margin-top: 1.15em; border-bottom: 2px solid #f97316; padding-bottom: 0.12em; }
+h3 { font-size: 12pt; margin-top: 0.9em; }
+.brand { color: #f97316; font-weight: 800; letter-spacing: 0.06em; }
+.nogo { background: #fff7ed; border: 1px solid #fdba74; padding: 8px 10px; }
+table { width: 100%; border-collapse: collapse; margin: 0.5em 0 0.8em; font-size: 8.6pt; }
+th, td { border: 1px solid #e2e8f0; padding: 3px 5px; vertical-align: top; }
+th { background: #fff7ed; text-align: left; }
+img.shot { width: 100%; border: 1px solid #e2e8f0; margin: 0.3em 0 0.6em; }
+.muted { color: #475569; }
+</style></head><body>
+<p class="brand">WAGESSE</p>
+<h1>Rapport final de recette</h1>
+<p>7 novembre 2026, 23:20 (Europe/Paris). Cible observée : https://preprod.wagesse.fr. Commit servi : <code>627cb4fc0fcd014e8743db2249b1887fe71dd173</code>.</p>
+<div class="nogo"><strong>Recommandation : NO-GO pour l'ouverture commerciale.</strong> Le cycle métier de préproduction est réussi. La production n'est pas préparée : pas de SMS réel, pas de base ni de secrets distincts, pas de certificat du domaine public, et le mécanisme de recette ne doit pas quitter la préproduction.</div>
+
+<h2>1. Les trois campagnes</h2>
+<table>
+<tr><th></th><th>Campagne 1</th><th>Campagne 2</th><th>Campagne 3</th></tr>
+<tr><td>Code observé</td><td><code>91e8235</code> en ligne</td><td>Correctifs préparés. Le serveur est revenu à <code>91e8235</code> après deux échecs de déploiement.</td><td><code>627cb4f</code> déployé et redémarré.</td></tr>
+<tr><td>Périmètre</td><td>80 scénarios d'interface et d'API</td><td>Rotation des comptes fictifs, puis déploiements refusés avant un cycle.</td><td>Cycle métier du script de recette, restauration MariaDB, contrôle du site réellement servi.</td></tr>
+<tr><td>Résultat</td><td>67 PASS, 2 FAIL, 6 BLOCKED, 5 NOT IMPLEMENTED. Taux conclusif 97,1 % (67/69).</td><td>Rotation réussie, non rejouée. Déploiement de <code>53dd1fa</code> arrêté par l'identité Git. Déploiement de <code>4079616</code> arrêté par le client Prisma factice, puis retour arrière vers <code>91e8235</code>.</td><td>Tous les contrôles affichés dans le journal sont PASS. Mission <code>cmw6ykr8q001plbcf2wt7gjic</code> au statut COMPLETED. Restauration dans une base temporaire réussie.</td></tr>
+<tr><td>Connexion</td><td>FAIL. Le navigateur ouvrait <code>/auth/verify</code>.</td><td>Correctif écrit, non servi.</td><td>Le JavaScript servi appelle <code>destinationAfterAuthentication</code>. Client, transporteur et administrateur vont vers leur espace. Le code SMS n'est plus l'écran d'arrivée.</td></tr>
+<tr><td>Pages légales et 404</td><td>NOT IMPLEMENTED et 404 anglais.</td><td>Pages écrites, non servies.</td><td>HTTP 200 pour <code>/terms</code>, <code>/privacy</code>, <code>/legal/terms</code>, <code>/legal/privacy</code>. La page absente est française.</td></tr>
+<tr><td>En-têtes</td><td>FAIL. <code>x-powered-by: Next.js</code>, sans HSTS ni nosniff ni DENY.</td><td>Correctif écrit, non servi.</td><td>HSTS, nosniff, DENY, Referrer-Policy et Permissions-Policy présents. <code>X-Powered-By</code> absent.</td></tr>
+<tr><td>Paiement manuel</td><td>BLOCKED. Achat refusé sans téléphone vérifié.</td><td>Non rejoué.</td><td>PASS. Solde inchangé avant validation, un seul crédit attribué, seconde validation <code>alreadyProcessed</code>, refus sans crédit.</td></tr>
+<tr><td>Mission</td><td>BLOCKED. Acceptation en HTTP 402.</td><td>Non rejouée.</td><td>PASS. Déblocage unique, acceptation, étapes transporteur, clôture client, clôture transporteur refusée en HTTP 400.</td></tr>
+<tr><td>Restauration</td><td>BLOCKED.</td><td>Non exécutée.</td><td>Réussie sur une base temporaire, sans remplacement de <code>wagesse_preprod</code>.</td></tr>
+<tr><td>Décision</td><td>NO-GO</td><td>NO-GO</td><td>NO-GO production. Préproduction acceptable comme build candidat.</td></tr>
+</table>
+
+<h2>2. Ce que le dernier cycle a démontré</h2>
+<p>Le script <code>deploy/preprod/recette-cycle.mjs</code> a été exécuté sur le serveur par l'exploitant. Cette revue n'a pas relu les jetons ni les mots de passe. Les faits retenus sont ceux du journal et le statut de mission communiqué.</p>
+<ul>
+<li>Cinq connexions : deux clients, deux transporteurs, un administrateur de recette distinct de l'administrateur déjà en place.</li>
+<li>L'administration refuse un client, un transporteur et l'absence de jeton (HTTP 401). Le tableau, les utilisateurs, les commandes, les forfaits et les journaux répondent HTTP 200 à l'administrateur de recette.</li>
+<li>Un client ne peut pas marquer un téléphone comme vérifié. L'administrateur de recette le peut pour un compte fictif, et le second appel reste idempotent.</li>
+<li>L'achat du second client, encore non vérifié, est refusé.</li>
+<li>Le premier client crée une commande. Le solde ne change pas. La validation ajoute les crédits du pack une seule fois. La validation répétée répond <code>alreadyProcessed</code> et le solde reste stable. Le refus d'une seconde commande n'ajoute rien.</li>
+<li>La demande « Sable de recette finale » est publiée. L'autre client ne peut pas la lire. Un devis est refusé tant que le contact n'est pas débloqué (HTTP 402). Le déblocage consomme un crédit une seule fois.</li>
+<li>L'acceptation crée la mission <code>cmw6ykr8q001plbcf2wt7gjic</code>. Le transporteur avance jusqu'à la confirmation. Le client la passe à COMPLETED. Le transporteur ne peut pas la clôturer.</li>
+</ul>
+<p>Le mode de paiement relu sur le site est MANUAL. PayDunya reste désactivé dans ce parcours.</p>
+
+<h2>3. Contrôle du site réellement déployé</h2>
+<p>Relecture HTTP du 7 novembre 2026, 23:14 (Europe/Paris), sans session et sans secret.</p>
+<table>
+<tr><th>Contrôle</th><th>Résultat</th></tr>
+<tr><td><code>GET /</code></td><td>HTTP 200. En-têtes <code>strict-transport-security</code>, <code>x-content-type-options: nosniff</code>, <code>x-frame-options: DENY</code>, <code>referrer-policy</code>, <code>permissions-policy</code>. Pas de <code>x-powered-by</code>.</td></tr>
+<tr><td>Pages légales</td><td>Les quatre adresses répondent HTTP 200 et affichent les mentions ou la confidentialité.</td></tr>
+<tr><td>Page absente</td><td>HTTP 404. Titre français « Cette page n'existe pas », avec l'en-tête et le pied de page.</td></tr>
+<tr><td>Connexion</td><td>Le formulaire est servi. Le paquet de la page appelle <code>destinationAfterAuthentication</code> et ne redirige plus vers <code>/auth/verify</code> après un succès.</td></tr>
+<tr><td>Inscription</td><td>Seuls les profils Client et Camionneur sont proposés.</td></tr>
+<tr><td><code>GET /api/payments/mode</code></td><td><code>MANUAL</code>. Aucun crédit n'est attribué avant la validation d'un administrateur.</td></tr>
+</table>
+<img class="shot" src="preuves/campagne3/connexion.png" alt="Formulaire de connexion servi en préproduction">
+<img class="shot" src="preuves/campagne3/page-absente.png" alt="Page 404 française">
+<p class="muted">Les tableaux de bord authentifiés n'ont pas été rouverts dans un navigateur : les secrets de session ne sont pas disponibles ici et ne doivent pas être filmés. Le cycle API reste la preuve de ces écrans.</p>
+
+<h2>4. Ce qui reste hors du parcours réussi</h2>
+<ul>
+<li>Firefox n'a pas été ouvert. Safari ne peut pas l'être depuis cet agent Linux.</li>
+<li>Les écrans admin « en cours de construction », les notifications côté client et le rôle opérateur ne font pas partie du produit livré.</li>
+<li>Un client qui appelle l'API d'administration reçoit encore HTTP 401, pas 403. Aucune donnée n'est renvoyée.</li>
+<li>Les vidéos d'administration, de validation manuelle et de mission n'ont pas été tournées : elles exigeraient d'afficher une session. La vidéo <code>docs/tutorials/verification-deploiement.mp4</code> montre seulement les pages publiques du serveur déployé.</li>
+</ul>
+
+<h2>5. Décision</h2>
+<p>La préproduction au commit <code>627cb4f</code> peut rester le build candidat. Elle ne constitue pas une autorisation de bascule. Les prérequis bloquants et les améliorations reportables sont dans le dossier de mise en production.</p>
+</body></html>

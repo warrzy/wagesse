@@ -4,6 +4,7 @@
   "description": "Marketplace de fret pour le Burkina Faso",
   "private": true,
   "scripts": {
+    "postinstall": "prisma generate",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -25,7 +26,6 @@
   "dependencies": {
     "@prisma/client": "^6.10.0",
     "autoprefixer": "^10.5.3",
-    "axios": "^1.6.0",
     "bcryptjs": "^2.4.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

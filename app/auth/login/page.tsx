@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { loginSchema } from "@/lib/validations"
 import { apiClient } from "@/lib/api-client"
-import { getDashboardRouteByRole } from "@/lib/role-routing"
+import { destinationAfterAuthentication } from "@/lib/role-routing"
 import Header from "@/components/Header"
 import Footer from "@/components/Footer"
 
@@ -53,13 +53,8 @@ export default function LoginPage() {
         apiClient.setUser(response.data.user)
       }
 
-      if (response.data?.user && response.data.user.phoneVerified == null) {
-        router.push(`/auth/verify?phone=${encodeURIComponent(response.data.user.phone)}`)
-        return
-      }
-
       const role = response.data?.user?.role
-      router.push(getDashboardRouteByRole(role))
+      router.push(destinationAfterAuthentication(role))
     } catch (err) {
       setError("Une erreur est survenue")
       console.error(err)
