@@ -4,7 +4,23 @@ Statut : préparation seulement. Aucun domaine de production n'a été basculé,
 
 ## Recommandation
 
-NO-GO. La seconde recette n'a pas rejoué le cycle métier sur le serveur : le redémarrage, la rotation des mots de passe et la restauration d'essai attendent l'autorisation du propriétaire. Aucun domaine de production n'est basculé.
+NO-GO pour l'ouverture commerciale. Le cycle métier du 7 novembre 2026 a réussi sur `627cb4fc0fcd014e8743db2249b1887fe71dd173`. La production attend un SMS HTTP réel, une base et des secrets distincts, un administrateur nouveau, un certificat du domaine public, et la fermeture du mécanisme de recette. Aucun domaine n'est basculé.
+
+## Bloquant
+
+- SMS HTTP configuré. `node deploy/production/assert-env.mjs` doit accepter le fichier sans afficher les secrets.
+- Ne pas copier `WAGESSE_DEPLOYMENT=preprod`, `PREPROD_TEST_PHONE_VERIFY=true` ni la base `wagesse_preprod`.
+- Ne pas importer les comptes 7800 ni modifier l'administrateur existant.
+- Dump chiffré hors du serveur avant la première migration, restauré d'abord sur une base jetable.
+- DNS et certificat décidés séparément. `wagesse.fr` pointe encore vers LWS.
+
+## Reportable
+
+Avis npm restants, code HTTP 403 au lieu de 401, écrans admin incomplets, notifications client, rôle opérateur, Firefox, Safari, stockage partagé des codes SMS, PayDunya après revue des clés.
+
+## Sauvegarde, surveillance, retour arrière
+
+Conserver `/var/backups/wagesse-preprod/rollback-20261107T214947Z`. La restauration d'essai de préproduction a réussi sur une base temporaire. Surveiller l'unité dédiée, la page d'accueil, le mode MANUAL, l'espace disque et l'expiration du certificat. Filtrer les journaux. En cas de bascule ultérieure, retirer seulement le vhost de production. Ne pas restaurer un dump par-dessus une base qui aurait déjà reçu des paiements réels sans décision explicite.
 
 ## Checklist de sécurité
 
@@ -12,7 +28,7 @@ NO-GO. La seconde recette n'a pas rejoué le cycle métier sur le serveur : le r
 - Laisser PayDunya désactivé tant que le webhook et les clés ne sont pas revus.
 - Ne pas copier les comptes 78001021, 78001022, 78002021 et 78002022.
 - Ne pas réutiliser la base `wagesse_preprod`.
-- Les en-têtes HSTS, nosniff, DENY et Referrer-Policy, ainsi que le retrait de `X-Powered-By`, sont dans le code. Ils ne sont pas encore visibles sur https://preprod.wagesse.fr.
+- Les en-têtes HSTS, nosniff, DENY et Referrer-Policy, ainsi que le retrait de `X-Powered-By`, sont servis par https://preprod.wagesse.fr depuis le commit `627cb4f`.
 - L'alerte critique Next.js vise Windows. axios, inutilisé, est retiré. zod est à 4.6.7. La signature JWT est limitée à HS256. Prisma, sharp, postcss, nanoid et source-map-js restent des risques résiduels non déclenchés par le code actuel.
 - Ne pas définir `WAGESSE_DEPLOYMENT=preprod` ni `PREPROD_TEST_PHONE_VERIFY=true` en production. La vérification fictive reste fermée si l'un des deux manque ou si la base n'est pas `wagesse_preprod`.
 - Déployer la branche de recette avant toute ouverture : redirection après connexion, pages légales, page 404 française, vérification de téléphone réservée aux comptes fictifs.
@@ -25,7 +41,7 @@ Le domaine de production prévu n'est pas `preprod.wagesse.fr`. `wagesse.fr` poi
 
 - Avant toute migration : `mysqldump` de la future base de production, fichier chiffré, hors du dépôt Git.
 - Restauration à répéter sur une base jetable, puis contrôle du nombre d'utilisateurs et d'une demande.
-- Cette restauration n'a pas été exécutée pendant la recette.
+- La restauration d'essai a réussi le 7 novembre 2026 sur une base temporaire de préproduction. Elle reste à refaire sur la future base de production.
 
 ## Migrations
 
@@ -37,7 +53,7 @@ Fichiers root 600, hors dépôt. `JWT_SECRET`, mot de passe MariaDB et éventuel
 
 ## Déploiement
 
-Même isolation que la préproduction : utilisateur système dédié, port local, vhost nommé, `nginx -t` avant rechargement. Le code n'est pas le commit de préproduction tant que la branche de recette n'est pas acceptée.
+Même isolation que la préproduction : utilisateur système dédié, port local, vhost nommé, `nginx -t` avant rechargement. Le commit candidat est `627cb4fc0fcd014e8743db2249b1887fe71dd173`, plus le contrôle d'hôte de la route de recette ajouté ensuite. Il n'est pas déployé en production.
 
 ## Après déploiement
 

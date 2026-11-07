@@ -1,0 +1,41 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>Manuel administrateur WAGESSE</title><style>
+@page { size: A4; margin: 14mm; }
+body { font-family: 'Liberation Sans', sans-serif; color: #0f172a; font-size: 11pt; line-height: 1.45; }
+h1 { font-size: 20pt; } h2 { font-size: 14pt; border-bottom: 2px solid #f97316; }
+.brand { color: #f97316; font-weight: 800; }
+img.shot { width: 92%; border: 1px solid #e2e8f0; }
+table { width: 100%; border-collapse: collapse; font-size: 10pt; }
+th, td { border: 1px solid #e2e8f0; padding: 4px 6px; vertical-align: top; }
+th { background: #fff7ed; text-align: left; }
+</style></head><body>
+<p class="brand">WAGESSE</p>
+<h1>Manuel administrateur</h1>
+<p>Préproduction https://preprod.wagesse.fr, commit <code>627cb4fc0fcd014e8743db2249b1887fe71dd173</code>, 7 novembre 2026. Ce manuel ne contient aucun mot de passe. L'administrateur déjà en place n'est ni lu ni modifié.</p>
+<h2>1. Entrer dans l'administration</h2>
+<p><strong>Objectif.</strong> Ouvrir le tableau de bord du rôle ADMIN.</p>
+<ol>
+<li>Ouvrir la page Connexion.</li>
+<li>Saisir le numéro et le mot de passe du compte administrateur. Le champ mot de passe reste masqué.</li>
+<li>Contrôler que l'adresse devient <code>/admin</code>.</li>
+</ol>
+<p>Après une connexion réussie, l'application envoie l'administrateur vers <code>/admin</code>, le client vers <code>/dashboard/client</code> et le transporteur vers <code>/dashboard/trucker</code>. L'écran de code SMS n'est plus imposé à ce moment.</p>
+<img class="shot" src="../recette/preuves/campagne3/connexion.png" alt="Page de connexion déployée">
+<p><strong>Erreur fréquente.</strong> Un client ou un transporteur qui ouvre <code>/admin</code> ne reçoit pas les données d'administration. L'API répond HTTP 401.</p>
+<p>Le cycle du 7 novembre a ouvert une session avec l'administrateur de recette 78003021, distinct de l'administrateur initial. Le tableau de bord, les utilisateurs, les commandes, les forfaits et les journaux ont répondu HTTP 200.</p>
+<h2>2. Valider un paiement manuel</h2>
+<p><strong>Objectif.</strong> Attribuer une seule fois les crédits d'une commande déjà créée.</p>
+<ol>
+<li>Laisser le client enregistrer la commande. Tant qu'elle est en attente, son solde ne change pas.</li>
+<li>Ouvrir la commande dans l'administration et lire la référence, le pack et le compte.</li>
+<li>Valider une fois. Le solde augmente du nombre de crédits du pack.</li>
+<li>Valider de nouveau la même commande. La réponse indique que l'opération est déjà traitée et le solde ne bouge pas.</li>
+<li>Refuser une autre commande avec un motif d'au moins trois caractères. Le solde ne change pas.</li>
+</ol>
+<p>Ce scénario est PASS sur la préproduction. Le premier pack du catalogue a servi d'exemple. Aucun paiement PayDunya n'a été lancé. Le mode annoncé par <code>/api/payments/mode</code> est MANUAL.</p>
+<p><strong>Erreur fréquente.</strong> Croire que l'enregistrement de la commande a déjà crédité le portefeuille.</p>
+<h2>3. Téléphone des comptes de recette</h2>
+<p>En préproduction seulement, l'administrateur peut marquer comme vérifié un compte fictif dont le numéro commence par 7800 et dont le nom contient « Recette ». Un administrateur n'est pas accepté. La réponse ne contient pas de code. Un client qui appelle cette route reçoit HTTP 401.</p>
+<p>Cette route doit rester fermée en production. Le contrôle <code>deploy/production/assert-env.mjs</code> refuse un fichier d'environnement qui la laisserait ouverte.</p>
+<h2>4. Ce que l'administrateur ne trouve pas encore</h2>
+<p>Certains écrans du menu affichent « en cours de construction » : rôles, contenus, matériaux, promotions, types de camions. Les notifications visibles par un client ne sont pas livrées. Ces manques sont reportés, ils ne bloquent pas le paiement manuel ni la mission.</p>
+</body></html>

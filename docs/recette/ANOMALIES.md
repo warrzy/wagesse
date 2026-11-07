@@ -6,25 +6,25 @@ Reproduction : créer ou connecter un compte dont le téléphone n'est pas véri
 
 Cause : `app/auth/login/page.tsx` et `app/auth/signup/signup-client.tsx` imposent cet écran, alors que le message affiché réserve le code aux achats et aux contacts. Les routes payantes refusent déjà un numéro non vérifié.
 
-Correctif : `destinationAfterAuthentication` envoie vers l'espace du rôle. Un bandeau rappelle la vérification. Test unitaire `tests/unit/auth-destination.test.ts` réussi. La préproduction déployée (`91e8235`) n'a pas reçu ce correctif : la capture `08-verification-sms.png` montre encore l'ancien écran.
+Correctif : `destinationAfterAuthentication` envoie vers l'espace du rôle. Un bandeau rappelle la vérification. Test unitaire `tests/unit/auth-destination.test.ts` réussi. Le 7 novembre 2026, 23:14 (Europe/Paris), le JavaScript servi par `627cb4f` appelle cette fonction et n'ouvre plus `/auth/verify` après la connexion.
 
 ## A2 — Majeure — Pages légales absentes
 
 Reproduction : `/terms`, `/privacy`, `/legal/terms` et `/legal/privacy` répondent 404. Le pied de page et l'inscription pointent vers ces adresses.
 
-Correctif : pages rédigées dans cette branche. Absentes du serveur tant que la branche n'est pas déployée.
+Correctif vérifié sur le serveur : `/terms`, `/privacy`, `/legal/terms` et `/legal/privacy` répondent HTTP 200.
 
 ## A3 — Mineure — 404 en anglais et sans habillage
 
 Capture `04-404.png`. La page Next.js par défaut dit « This page could not be found. »
 
-Correctif dans cette branche : `app/not-found.tsx` affiche une page française avec l'en-tête et le pied de page. Le serveur déployé (`91e8235`) montre encore la capture d'origine.
+Correctif vérifié sur le serveur : la page absente répond HTTP 404 en français, avec l'en-tête et le pied de page.
 
 ## A4 — Mineure — En-têtes de durcissement absents
 
 `curl -I https://preprod.wagesse.fr/` ne montre ni HSTS, ni `X-Content-Type-Options`, ni `X-Frame-Options`. `x-powered-by: Next.js` est présent.
 
-Correctif dans cette branche : `next.config.js` ajoute ces en-têtes et retire `X-Powered-By`. Aucun vhost nginx n'est modifié. Le contrôle HTTP réel attend le redémarrage autorisé.
+Correctif vérifié le 7 novembre 2026, 23:14 (Europe/Paris) : HSTS, nosniff, DENY, Referrer-Policy et Permissions-Policy sont présents. `X-Powered-By` est absent. Aucun autre vhost n'a été modifié.
 
 ## A5 — Amélioration — Refus admin renvoyé en 401
 

@@ -1,6 +1,8 @@
 # Matrice de recette WAGESSE
 
-Environnement observé le 7 novembre 2026, 19:50 (Europe/Paris) : https://preprod.wagesse.fr, certificat `preprod.wagesse.fr`, code déployé `91e8235de45f3dfd58be558dc4636147d2a7d8df`, paiement manuel.
+Les lignes ci-dessous sont la campagne 1, sur le commit `91e8235de45f3dfd58be558dc4636147d2a7d8df`. La campagne 3, le 7 novembre 2026 au soir (Europe/Paris), a déployé `627cb4fc0fcd014e8743db2249b1887fe71dd173`. Elle a fait passer SEC-HDR, UI-LOGIN, ADM-AUTH, ADM-DASH, BKP, MIS-ACC, PAY-CYCLE, LEG-PRIV et LEG-TERMS. Le détail comparé est dans `RAPPORT_RECETTE_FINAL.html`.
+
+Environnement de la campagne 1, le 7 novembre 2026, 19:50 (Europe/Paris) : https://preprod.wagesse.fr, certificat `preprod.wagesse.fr`, code déployé `91e8235de45f3dfd58be558dc4636147d2a7d8df`, paiement manuel.
 
 Scénarios : 80. PASS 67. FAIL 2. BLOCKED 6. NOT IMPLEMENTED 5. Taux de réussite des scénarios conclusifs : 97.1 % (67/69).
 

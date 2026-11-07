@@ -45,3 +45,7 @@ Pour les outils de développement, la cible `eslint-config-next@15.5.29` indiqu�
 axios n'est importé par aucun fichier du dépôt. La dépendance directe est retirée, ainsi que follow-redirects. zod est résolu en 4.6.7, dans la plage déjà déclarée. Next reste en 16.2 : l'alerte critique décrit une exécution de code sur un serveur Windows, et 16.4.5 est une évolution de framework non essayée sur la préproduction. La signature et la vérification JWT précisent l'algorithme HS256. jsonwebtoken n'est pas passé en version 9.
 
 `npm audit --omit=dev` après ces changements : 1 critique, 8 hautes, 1 modérée. Les hautes restantes sont next (la même alerte Windows), Prisma et deepmerge-ts, jsonwebtoken, nanoid, postcss, sharp/libvips, source-map-js. uuid reste modéré. Le code applicatif n'appelle pas nanoid ni uuid avec un tampon ou une taille fournis par un client.
+
+## Relecture après le cycle réussi
+
+Le 7 novembre 2026, 23:15 (Europe/Paris), le même lockfile donne encore 1 critique, 8 élevées et 1 modérée. Next 16.4.5 corrigerait l'avis Windows mais n'a pas été déployé après la recette. Prisma n'a pas de correctif dans la version majeure actuelle. jsonwebtoken 9 et uuid 14 restent des montées majeures non appliquées.

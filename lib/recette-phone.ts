@@ -21,6 +21,26 @@ export function preprodTestPhoneVerifyEnabled(env: NodeJS.ProcessEnv = process.e
   return databaseName(env.DATABASE_URL) === "wagesse_preprod"
 }
 
+/** Hosts that may reach the preproduction recette route. Any other host is refused. */
+export function isPreprodRecetteHost(hostHeader: string | null | undefined): boolean {
+  const host = (hostHeader || "").split(",")[0].trim().toLowerCase()
+  const name = host.startsWith("[") ? host : host.split(":")[0]
+  return name === "preprod.wagesse.fr" || name === "127.0.0.1" || name === "localhost"
+}
+
+/**
+ * The recette route stays closed unless the process is the preproduction
+ * deployment and the request host is the preproduction site or its loopback.
+ * A copied environment file on wagesse.fr does not open it.
+ */
+export function recettePhoneVerifyRequestAllowed(
+  env: NodeJS.ProcessEnv = process.env,
+  hostHeader: string | null | undefined = null
+): boolean {
+  if (!isPreprodRecetteHost(hostHeader)) return false
+  return preprodTestPhoneVerifyEnabled(env)
+}
+
 /**
  * A fictional recette account may have its phone marked verified by an administrator.
  * Real numbers, administrators, and any account outside the reserved range are refused.

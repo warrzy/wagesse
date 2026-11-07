@@ -1,19 +1,19 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getAuthContext, isAdminRole, unauthorized } from "@/lib/api-auth"
-import { isFictionalRecetteAccount, preprodTestPhoneVerifyEnabled } from "@/lib/recette-phone"
+import { isFictionalRecetteAccount, recettePhoneVerifyRequestAllowed } from "@/lib/recette-phone"
 
 export const dynamic = "force-dynamic"
 
 /**
  * Marks a fictional preproduction account as phone-verified.
  * No code is generated, stored, or returned. The route does not exist unless
- * the deployment is preprod, the flag is exactly true, and the database is
- * wagesse_preprod. A client or a trucker receives the same refusal as any
- * other non-administrator.
+ * the deployment is preprod, the flag is exactly true, the database is
+ * wagesse_preprod, and the host is the preproduction site or loopback.
+ * A client or a trucker receives the same refusal as any other non-administrator.
  */
 export async function POST(request: NextRequest) {
-  if (!preprodTestPhoneVerifyEnabled()) {
+  if (!recettePhoneVerifyRequestAllowed(process.env, request.headers.get("host"))) {
     return NextResponse.json({ error: "Not found" }, { status: 404 })
   }
 

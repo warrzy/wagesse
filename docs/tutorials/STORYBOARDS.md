@@ -9,7 +9,9 @@ Quatre vidéos MP4 ont été enregistrées le 7 novembre 2026 sur https://prepro
 | tutoriel-client.mp4 | 22 s | Tableau de bord, demandes, formulaire, profil, contacts, commandes, achat |
 | tutoriel-transporteur.mp4 | 16 s | Tableau de bord, véhicule, demandes disponibles, profil, refus de l'admin |
 
-Les quatre vidéos demandées pour la seconde recette (administration, validation d'un paiement manuel, achat et attribution de crédits, parcours complet d'une mission) ne sont pas produites. Les filmer avant le déploiement autorisé montrerait l'écran SMS et un achat refusé, pas le parcours corrigé. Les scènes ci-dessous restent le découpage à tourner sur le serveur une fois la branche en place.
+`verification-deploiement.mp4` (10 s, 7 novembre 2026, 23:19 Europe/Paris) montre le serveur déployé : connexion, inscription Client ou Camionneur, mentions, confidentialité, tarifs, page 404 française. Aucun mot de passe ni code n'est lisible.
+
+Les vidéos d'administration, de validation manuelle et de mission complète ne sont pas tournées. Le cycle API les a exécutées, mais les filmer demanderait d'ouvrir une session dont les secrets ne sont pas disponibles et ne doivent pas apparaître à l'image. Les scènes ci-dessous restent le découpage, désormais réalisable sur le commit déployé.
 
 ## Scènes non tournées
 

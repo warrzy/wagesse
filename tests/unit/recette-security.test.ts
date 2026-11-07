@@ -2,7 +2,12 @@ import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import { describe, it } from "node:test"
 import { securityHeaders } from "../../lib/security-headers.js"
-import { isFictionalRecetteAccount, preprodTestPhoneVerifyEnabled } from "../../lib/recette-phone"
+import {
+  isFictionalRecetteAccount,
+  isPreprodRecetteHost,
+  preprodTestPhoneVerifyEnabled,
+  recettePhoneVerifyRequestAllowed,
+} from "../../lib/recette-phone"
 
 describe("security headers", () => {
   it("sets the headers that the live site was missing", () => {
@@ -33,6 +38,14 @@ describe("fictional phone verification", () => {
     assert.equal(preprodTestPhoneVerifyEnabled({ ...enabled, WAGESSE_DEPLOYMENT: undefined }), false)
     assert.equal(preprodTestPhoneVerifyEnabled({ ...enabled, DATABASE_URL: "mysql://user:secret@127.0.0.1:3306/wagesse" }), false)
     assert.equal(preprodTestPhoneVerifyEnabled(enabled), true)
+    assert.equal(isPreprodRecetteHost("preprod.wagesse.fr"), true)
+    assert.equal(isPreprodRecetteHost("127.0.0.1:3020"), true)
+    assert.equal(isPreprodRecetteHost("wagesse.fr"), false)
+    assert.equal(isPreprodRecetteHost(null), false)
+    assert.equal(recettePhoneVerifyRequestAllowed(enabled, "preprod.wagesse.fr"), true)
+    assert.equal(recettePhoneVerifyRequestAllowed(enabled, "127.0.0.1:3020"), true)
+    assert.equal(recettePhoneVerifyRequestAllowed(enabled, "wagesse.fr"), false)
+    assert.equal(recettePhoneVerifyRequestAllowed({ ...enabled, WAGESSE_DEPLOYMENT: "production" }, "preprod.wagesse.fr"), false)
   })
 
   it("accepts only a reserved fictional client or trucker", () => {
@@ -54,7 +67,8 @@ describe("fictional phone verification", () => {
       "utf8"
     )
     assert.doesNotMatch(source, /OTP|debugOtp|123456|SMS_ALLOW_SIMULATE/)
-    assert.match(source, /preprodTestPhoneVerifyEnabled/)
+    assert.match(source, /recettePhoneVerifyRequestAllowed/)
+    assert.match(source, /headers\.get\("host"\)/)
     assert.match(source, /isAdminRole/)
   })
 })
