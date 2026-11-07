@@ -2,6 +2,8 @@ import { randomBytes } from "node:crypto"
 import bcrypt from "bcryptjs"
 import { PrismaClient } from "@prisma/client"
 
+// Ces imports échouent avant toute connexion. Aucun hachage n'est alors modifié.
+
 const fictionalPhones = ["78001021", "78001022", "78002021", "78002022"]
 const recetteAdminPhone = "78003021"
 const prisma = new PrismaClient()
@@ -52,7 +54,7 @@ try {
   const databaseName = new URL(process.env.DATABASE_URL || "").pathname.replace(/^\//, "")
   if (databaseName !== "wagesse_preprod") {
     console.error("Base refusée.")
-    process.exit(1)
+    throw new Error("database")
   }
 
   const before = await prisma.user.findMany({
@@ -61,7 +63,7 @@ try {
   })
   if (before.some((user) => fictionalPhones.includes(user.phone) || user.phone === recetteAdminPhone)) {
     console.error("Refus de modifier un administrateur existant.")
-    process.exit(1)
+    throw new Error("existing-admin")
   }
 
   const chosen = new Set()

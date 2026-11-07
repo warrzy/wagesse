@@ -52,3 +52,46 @@ assert_descendant() {
   git -C "$repo" cat-file -e "${EXPECTED_BASE}^{commit}" || die "Commit de référence ${EXPECTED_BASE} introuvable."
   git -C "$repo" merge-base --is-ancestor "$EXPECTED_BASE" "$ref" || die "Le commit ${ref} ne contient pas ${EXPECTED_BASE}."
 }
+
+assert_bcrypt_declared() {
+  local package_json="$1"
+  node -e '
+    const pkg = require(process.argv[1])
+    if (!pkg.dependencies || !pkg.dependencies.bcryptjs) process.exit(1)
+  ' "$package_json" || die "bcryptjs absent des dépendances applicatives. Arrêt avant rotation."
+}
+
+assert_rotation_layout() {
+  local script="$1"
+  grep -q 'RUNTIME="${APP}/rotate-recette-accounts.mjs"' "$script" || die "Le script de rotation n'est pas copié dans l'application. Arrêt avant rotation."
+  grep -q 'NODE_PATH=' "$script" && die "NODE_PATH ne résout pas un import ESM. Arrêt avant rotation."
+  return 0
+}
+
+probe_rotation_imports() {
+  local app=/opt/wagesse-preprod/app
+  local node_bin=/opt/wagesse-preprod/.node/bin/node
+  local probe="${app}/.recette-import-probe.mjs"
+  if [[ ! -d "$app" ]]; then
+    echo "Pas d'installation locale : le contrôle ESM des modules sera exécuté sur le serveur."
+    return 0
+  fi
+  [[ -d "$app/node_modules/bcryptjs" ]] || die "bcryptjs absent de ${app}/node_modules. Arrêt avant toute modification."
+  [[ -d "$app/node_modules/@prisma/client" ]] || die "Client Prisma absent de ${app}/node_modules. Arrêt avant toute modification."
+  [[ -x "$node_bin" ]] || die "Node de préproduction absent. Arrêt avant toute modification."
+  [[ "$(id -u)" -eq 0 ]] || die "Le contrôle des imports sur le serveur doit être lancé en root."
+  rm -f "$probe"
+  install -m 600 -o wagesse -g wagesse /dev/null "$probe"
+  printf '%s\n' 'import bcrypt from "bcryptjs"; import { PrismaClient } from "@prisma/client"; if (typeof bcrypt.hash !== "function" || typeof PrismaClient !== "function") process.exit(1)' > "$probe"
+  chown wagesse:wagesse "$probe"
+  chmod 600 "$probe"
+  if ! runuser -u wagesse -- env -i \
+    HOME=/opt/wagesse-preprod \
+    PATH=/opt/wagesse-preprod/.node/bin:/usr/bin:/bin \
+    "$node_bin" "$probe"; then
+    rm -f "$probe"
+    die "Les modules ESM ne se résolvent pas depuis l'application. Arrêt avant toute modification."
+  fi
+  rm -f "$probe"
+  echo "Imports ESM résolus depuis l'application, avant toute lecture de la base."
+}

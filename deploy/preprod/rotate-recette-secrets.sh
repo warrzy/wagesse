@@ -21,12 +21,20 @@ ENV_FILE=/etc/wagesse/preprod.env
 OUT=/etc/wagesse/recette-accounts.enc
 PASS_FILE=/root/wagesse-recette.passphrase
 SCRIPT="$DIR/rotate-recette-accounts.mjs"
-RUNTIME=/opt/wagesse-preprod/rotate-recette-accounts.mjs
+# Copié dans l'application : le chargeur ESM remonte vers app/node_modules.
+# Il n'utilise pas NODE_PATH.
+RUNTIME="${APP}/rotate-recette-accounts.mjs"
+PROBE="${APP}/.recette-import-probe.mjs"
 
 [[ -f "$ENV_FILE" ]] || die "Fichier d'environnement absent. Arrêt."
 [[ -x "$NODE" ]] || die "Node de préproduction absent. Arrêt."
-[[ -d "$APP/node_modules/@prisma/client" ]] || die "Client Prisma absent. Arrêt."
 [[ -f "$SCRIPT" ]] || die "Script de rotation absent. Arrêt."
+
+step=modules
+repo=$(git -C "$DIR" rev-parse --show-toplevel)
+assert_bcrypt_declared "$repo/package.json"
+assert_rotation_layout "$0"
+probe_rotation_imports
 
 step=base
 set -a
@@ -40,15 +48,14 @@ tmp=$(mktemp /dev/shm/wagesse-recette.XXXXXX)
 passfile=$(mktemp /dev/shm/wagesse-pass.XXXXXX)
 keep_registry=0
 cleanup() {
-  if [[ "$keep_registry" == 1 ]]; then
+  rm -f "$RUNTIME" "$PROBE"
+  if [[ "$keep_registry" == 1 && -s "${tmp:-}" ]]; then
     install -m 600 "$tmp" /root/wagesse-recette-registry.json
-    rm -f "$passfile"
     echo "Chiffrement interrompu. Registre conservé pour root : /root/wagesse-recette-registry.json" >&2
-    rm -f "$tmp"
-    return
   fi
-  shred -u "$tmp" "$passfile" 2>/dev/null || rm -f "$tmp" "$passfile"
-  rm -f "$RUNTIME"
+  if [[ -n "${tmp:-}" || -n "${passfile:-}" ]]; then
+    shred -u ${tmp:+"$tmp"} ${passfile:+"$passfile"} 2>/dev/null || rm -f ${tmp:+"$tmp"} ${passfile:+"$passfile"}
+  fi
 }
 trap cleanup EXIT
 
@@ -58,13 +65,12 @@ if ! runuser -u wagesse -- env -i \
   HOME=/opt/wagesse-preprod \
   PATH=/opt/wagesse-preprod/.node/bin:/usr/bin:/bin \
   DATABASE_URL="$DATABASE_URL" \
-  NODE_PATH="$APP/node_modules" \
   "$NODE" "$RUNTIME" > "$tmp"; then
-  die "Rotation refusée à l'étape ${step}. Aucun registre n'est écrit."
+  die "Rotation refusée à l'étape ${step}. Aucun registre n'est écrit et aucun hachage n'est conservé modifié."
 fi
 
 step=controle
-if ! node -e '
+if ! admin_count=$(node -e '
 const fs = require("fs")
 const data = JSON.parse(fs.readFileSync(process.argv[1], "utf8"))
 const phones = ["78001021", "78001022", "78002021", "78002022", "78003021"]
@@ -79,12 +85,10 @@ const admin = data.accounts.find((account) => account.phone === "78003021")
 if (!admin || admin.role !== "ADMIN") process.exit(1)
 if (data.accounts.some((account) => account.phone !== "78003021" && (account.role === "ADMIN" || account.role === "SUPER_ADMIN"))) process.exit(1)
 process.stdout.write(String(data.existingAdminCount))
-' "$tmp" > /tmp/wagesse-recette-admin-count; then
+' "$tmp"); then
   keep_registry=1
   die "Contrôle du registre refusé à l'étape ${step}."
 fi
-admin_count=$(cat /tmp/wagesse-recette-admin-count)
-rm -f /tmp/wagesse-recette-admin-count
 
 step=chiffrement
 keep_registry=1

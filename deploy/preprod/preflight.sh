@@ -11,6 +11,9 @@ source "$DIR/lib.sh"
 verify_script_sums "$DIR"
 
 repo=$(git -C "$DIR" rev-parse --show-toplevel)
+assert_bcrypt_declared "$repo/package.json"
+assert_rotation_layout "$DIR/rotate-recette-secrets.sh"
+probe_rotation_imports
 git -C "$repo" cat-file -e "${EXPECTED_BASE}^{commit}" || die "Commit de référence ${EXPECTED_BASE} introuvable."
 echo "Commit de référence présent : ${EXPECTED_BASE}"
 
