@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Rotates the fictional recette passwords and stores the new registry
-# at /etc/wagesse/recette-accounts.enc. The passphrase is printed once
-# on this terminal and is not written next to the ciphertext.
+# at /etc/wagesse/recette-accounts.enc. The passphrase is written only
+# to /root/wagesse-recette.passphrase and is not printed.
 #
 # Do not run until the owner has authorized this privileged operation:
 #   WAGESSE_PREPROD_AUTHORIZE=yes bash deploy/preprod/rotate-recette-secrets.sh
@@ -52,7 +52,8 @@ chmod 600 "$OUT"
 
 rm -f /home/wagesse-deploy/comptes-recette.enc /home/wagesse-deploy/wagesse-recette.passphrase
 
-echo "Registre chiffré : $OUT"
-echo "Phrase secrète, affichée une seule fois :"
-printf '%s\n' "$phrase"
+install -m 600 /dev/null /root/wagesse-recette.passphrase
+printf '%s\n' "$phrase" > /root/wagesse-recette.passphrase
 unset phrase
+echo "Registre chiffré : $OUT"
+echo "Phrase secrète : /root/wagesse-recette.passphrase"
