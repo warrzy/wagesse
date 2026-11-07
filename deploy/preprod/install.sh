@@ -378,8 +378,8 @@ server {
 }
 
 server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    listen 443 ssl;
+    listen [::]:443 ssl;
     server_name preprod.wagesse.fr;
 
     ssl_certificate /etc/letsencrypt/live/preprod.wagesse.fr/fullchain.pem;
