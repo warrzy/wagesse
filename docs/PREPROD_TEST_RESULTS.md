@@ -4,7 +4,7 @@ Exécution le 6 novembre 2026, jusqu’à 19:52 (Europe/Paris).
 
 ## URL publique
 
-Au 7 novembre 2026, 16:14 (Europe/Paris), `https://preprod.wagesse.fr` ne sert pas WAGESSE. L’agent n’a pas pu ouvrir de session sur le VPS. La recette navigateur sur l’URL publique n’a donc pas été exécutée.
+Au 7 novembre 2026, 18:05 (Europe/Paris), `https://preprod.wagesse.fr` ne sert pas WAGESSE. Le certificat présenté reste `ecom-touch.tech`. La recette navigateur de préproduction n’a pas été exécutée : l’installation privilégiée n’est pas autorisée à être relancée.
 
 Le script corrigé refuse de démarrer si les ports 3000, 3001, 3010 ou 5432 sont absents, et il s’arrête si l’un d’eux disparaît. Il n’a pas été lancé sur le serveur.
 
@@ -47,6 +47,24 @@ Base jetable `wagesse_seedcheck`, créée puis supprimée pendant cet essai :
 - `SEED_DEMO_ACCOUNTS=false npm run seed` : 0 utilisateur, 3 forfaits, 4 packs.
 
 Les comptes `72000001`, `72100001` et `72200001` avec le mot de passe `password123` ne sont pas créés dans ce mode.
+
+## Contrôles du 7 novembre 2026, 18:05 (Europe/Paris)
+
+Exécutés depuis l’agent, sans installation privilégiée sur le VPS.
+
+| Contrôle | Résultat |
+| --- | --- |
+| `bash -n deploy/preprod/install.sh` | syntaxe acceptée |
+| `bash deploy/preprod/install.sh --check` | archive incorrecte refusée avant extraction, somme correcte acceptée, aucune commande Git hors de `wagesse` |
+| Injection d’un `git status` en root | refusée par `--check` |
+| Somme officielle Node 22.23.4 | `1805bcd35e6815559bd2eb97db438d3fdb0eb3a5e6a977b7c1badca76337e9ce`, identique au téléchargement de `node-v22.23.4-linux-x64.tar.xz` et à `SHASUMS256.txt` |
+| `node --check deploy/preprod/create-admin.mjs` | syntaxe acceptée |
+| Numéro invalide | message générique, aucun identifiant affiché |
+| Exécution admin sans `DATABASE_URL` | message générique, aucun fichier d’identifiants créé |
+| `https://ecom-touch.tech/`, `https://preprod.ecomschool.fr/`, `https://wendyam-finance.com/`, `https://tme-machinery.com/` | HTTP 200 |
+| Session `wagesse-deploy` | nginx, SSH, PostgreSQL, MariaDB et PM2 actifs ; `wagesse-preprod` inactif ; ports 3000, 3001, 3010, 5432 ouverts ; 3020 fermé ; MariaDB sur `127.0.0.1:3306` |
+
+Un essai local du script admin, lancé avec l’environnement de test déjà présent, a créé puis supprimé une ligne administrateur dans `wagesse_test`. Aucun fichier d’identifiants n’a été conservé. Les parcours métier de https://preprod.wagesse.fr n’ont pas été ouverts.
 
 ## Ce qui reste à exécuter sur le serveur
 

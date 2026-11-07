@@ -4,7 +4,9 @@ Date des contrôles : 6 novembre 2026, 19:47–19:52 (Europe/Paris).
 
 ## Résultat
 
-WAGESSE n’est pas encore en service sur https://preprod.wagesse.fr. Le 7 novembre 2026 à 16:14 (Europe/Paris), SSH depuis l’agent répond encore `Permission denied (publickey,password)`. La console root ouverte sur le serveur (session `169.254.0.1`, 7 novembre 2026 15:59 UTC) a fourni l’inventaire ci-dessous. Aucune commande de cet inventaire n’a été relancée par l’agent, et aucun service du VPS n’a été modifié par l’agent.
+WAGESSE n’est pas encore en service sur https://preprod.wagesse.fr. Le 7 novembre 2026 à 18:05 (Europe/Paris), `http://preprod.wagesse.fr/` sert encore la page nginx par défaut (615 octets) et le certificat HTTPS présenté est celui d’ECOM-TOUCH. L’installation privilégiée n’a pas été relancée.
+
+La première exécution root s’est arrêtée sur `dubious ownership` après l’installation de MariaDB 10.11.14 et le clone du code. Le correctif Git du commit `4dbf02c` est conservé : toute commande `git` du dépôt applicatif passe par `sudo -u wagesse`, sans `safe.directory`. Le script ajoute la vérification SHA-256 de Node.js 22.23.4 (`1805bcd35e6815559bd2eb97db438d3fdb0eb3a5e6a977b7c1badca76337e9ce`, fichier officiel `SHASUMS256.txt`), crée le compte administrateur sous l’utilisateur `wagesse`, et ne demande le certificat que pour `preprod.wagesse.fr`. SHA-256 de `deploy/preprod/install.sh` : `85c24298cbd5aba827f9a4908af5a771cee8c83aba52fe456d656e4edfb534e5`.
 
 ## Inventaire console du 7 novembre 2026
 
@@ -14,18 +16,18 @@ WAGESSE n’est pas encore en service sur https://preprod.wagesse.fr. Le 7 novem
 | Ressources | 7,8 Gio de RAM, charge 0, disque 16 Go utilisés sur 96 Go |
 | Node global | v24.14.0, conservé. WAGESSE utilise Node 22.23.4 dans `/opt/wagesse-preprod/.node` |
 | PostgreSQL | actif sur `127.0.0.1:5432` et `[::1]:5432`. Non modifié |
-| MariaDB | absent. Le script l’installe sans `apt-get upgrade` et exige une écoute localhost |
+| MariaDB | 10.11.14, actif, `127.0.0.1:3306` seulement. La reprise ne le réinstalle pas et ne redémarre pas le service s’il est déjà actif |
 | nginx | actif. Rechargement seulement après `nginx -t`. Jamais `restart` |
 | PM2 | `pm2-deploy.service` actif. Le script ne l’appelle pas |
 | Port 3000 | Wendyam Finance, `0.0.0.0:3000` |
 | Port 3001 | ECOM-SCHOOL, `127.0.0.1:3001` |
 | Port 3010 | ECOM-TOUCH, toutes interfaces. Le script refuse de s’y placer |
-| Port 3020 | libre d’après la console. Seule écoute autorisée : `127.0.0.1:3020` |
+| Port 3020 | libre le 7 novembre 2026 à 18:05 (Europe/Paris). Seule écoute autorisée : `127.0.0.1:3020` |
 | Vhosts | `default`, `ecom-touch-public.conf`, `preprod.ecomschool.fr.conf`, `tme-machinery`, `wendyam-finance`. Pas de `preprod.wagesse.fr` |
 
 Le script archive les vhosts, compare leurs sommes MD5 après coup, et retire uniquement le sien si un autre nom HTTPS change de statut. Il ne redémarre pas ces applications.
 
-L’ancienne version du script, au commit `91e8235`, cherchait un port à partir de 3010. Il ne faut pas l’exécuter. Le code applicatif déployé reste ce commit. Le script à lancer est celui de la branche `cursor/preprod-deployment-ba0b` à jour, qui fixe le port 3020.
+L’ancienne version du script, au commit `91e8235`, cherchait un port à partir de 3010. Il ne faut pas l’exécuter. Le code applicatif déployé reste ce commit. Le script à lancer est celui de la branche `cursor/preprod-deployment-ba0b` à jour, qui fixe le port 3020 et vérifie l’archive Node avant extraction.
 
 ## Commit retenu
 
@@ -70,9 +72,10 @@ Aucun enregistrement DNS n’a été modifié. La messagerie LWS reste sur `mail
 - `prisma migrate deploy` sur une base neuve (6 migrations, checksums vérifiés plus bas) ;
 - `SEED_DEMO_ACCOUNTS=false` : forfaits et packs, aucun compte `password123` ;
 - administrateur créé seulement pour `ADMIN_PHONE`, mot de passe aléatoire dans `/etc/wagesse/preprod-admin.credentials` (mode 600) ;
-- systemd `wagesse-preprod.service`, écoute `127.0.0.1` sur le premier port libre de 3010 à 3020 ;
-- vhost nginx nommé `preprod.wagesse.fr` uniquement ;
-- certificat Let’s Encrypt propre à ce nom, sans réécrire le certificat `ecom-touch.tech`.
+- compte administrateur créé par `wagesse`, jamais en root ; le numéro et le mot de passe ne sont pas journalisés ;
+- systemd `wagesse-preprod.service`, écoute fixe `127.0.0.1:3020` ;
+- vhost nginx nommé `preprod.wagesse.fr` uniquement, `listen 443 ssl` sans `http2` ;
+- certificat Let’s Encrypt `--cert-name preprod.wagesse.fr` seulement, crochet de renouvellement qui recharge nginx pour ce certificat seul.
 
 Le script s’arrête si le vhost préproduction mentionne `ecom-touch`, ou si l’utilisateur `wagesse` existe avec un autre répertoire. Il archive `/etc/nginx/sites-available` et `sites-enabled` dans `/var/backups/wagesse-preprod/` avant d’ajouter son fichier. Il ne fait pas `apt-get upgrade` et ne supprime aucune autre base.
 
@@ -93,15 +96,45 @@ Une base neuve accepte donc `migrate deploy`. Une base qui aurait appliqué les 
 
 Le seed d’essai avec `SEED_DEMO_ACCOUNTS=false` a laissé 0 utilisateur, 3 forfaits et 4 packs. La base d’essai a ensuite été supprimée. `wagesse_test` et `wagesse_e2e` n’ont pas été supprimées.
 
-## Pour lancer l’installation
+## Pour relancer l’installation
 
-Une clé SSH autorisée sur le VPS est nécessaire. Ensuite, sur le serveur :
+La commande s’exécute dans le terminal root du VPS. Elle réutilise MariaDB, l’utilisateur `wagesse`, Node s’il est déjà en 22.23.4, et le clone. Elle ne fait pas `migrate reset`, ne supprime pas la base et ne réinstalle pas MariaDB si `mysql` est déjà présent.
+
+En cas d’échec avant le certificat, le script retire seulement le vhost et le service WAGESSE. Un code de sortie 2 signifie que HTTPS répond et que seul l’essai de renouvellement a échoué : ne pas retirer le vhost. La fonction `restore_wagesse` ne touche ni MariaDB, ni PostgreSQL, ni les autres vhosts.
 
 ```bash
-git clone https://github.com/warrzy/wagesse.git
-cd wagesse
-git checkout cursor/preprod-deployment-ba0b
-ADMIN_PHONE=<numéro opérateur> CERTBOT_EMAIL=<adresse> bash deploy/preprod/install.sh
+set +o history
+umask 077
+if [[ ! -d /root/wagesse-preprod-src/.git ]]; then
+  git clone https://github.com/warrzy/wagesse.git /root/wagesse-preprod-src
+fi
+cd /root/wagesse-preprod-src
+git fetch origin cursor/preprod-deployment-ba0b
+git checkout --detach origin/cursor/preprod-deployment-ba0b
+test "$(sha256sum deploy/preprod/install.sh | awk '{print $1}')" = "85c24298cbd5aba827f9a4908af5a771cee8c83aba52fe456d656e4edfb534e5"
+bash deploy/preprod/install.sh --check
+
+restore_wagesse() {
+  systemctl disable --now wagesse-preprod.service 2>/dev/null || true
+  rm -f /etc/nginx/sites-enabled/preprod.wagesse.fr
+  rm -f /etc/nginx/sites-available/preprod.wagesse.fr
+  nginx -t && systemctl reload nginx
+  echo "Vhost et service WAGESSE retirés. Base et autres sites conservés."
+}
+
+read -rs -p "ADMIN_PHONE : " ADMIN_PHONE
+echo
+export ADMIN_PHONE
+set +e
+bash deploy/preprod/install.sh
+status=$?
+set -e
+unset ADMIN_PHONE
+if [[ "${status}" -eq 2 ]]; then
+  echo "HTTPS en place. Ne pas appeler restore_wagesse."
+elif [[ "${status}" -ne 0 ]]; then
+  echo "Échec ${status}. restore_wagesse retire le vhost sans supprimer la base."
+fi
 ```
 
-Le numéro et l’adresse ne vont pas dans Git. Le mot de passe administrateur reste dans `/etc/wagesse/preprod-admin.credentials`.
+Le numéro ne va pas dans Git ni dans la ligne de commande. Le mot de passe administrateur reste dans `/etc/wagesse/preprod-admin.credentials`, mode 600, propriétaire root.

@@ -1,6 +1,6 @@
 # Configuration serveur prévue — préproduction
 
-État constaté le 6 novembre 2026 à 19:50 (Europe/Paris). La configuration ci-dessous est celle du script `deploy/preprod/install.sh`. Elle n’est pas encore appliquée sur `147.79.118.212`.
+État relu le 7 novembre 2026 à 18:05 (Europe/Paris). MariaDB 10.11.14 écoute sur `127.0.0.1:3306`. Le service `wagesse-preprod` est inactif, le port 3020 est libre et le vhost `preprod.wagesse.fr` n’est pas installé. Le reste de cette page décrit la configuration que le script appliquera, pas un état déjà en service.
 
 ## Ce qui est déjà sur le VPS
 
@@ -8,8 +8,8 @@
 - Port 80, vhost par défaut : page d’accueil nginx.
 - Port 443, certificat par défaut : `ecom-touch.tech` et `www.ecom-touch.tech`, application Next.js ECOM-TOUCH.
 - `preprod.wagesse.fr` n’a pas de vhost nommé. La requête HTTPS reçoit donc le certificat et le site par défaut, et la vérification du nom échoue.
-- MariaDB ou MySQL n’est pas exposé sur Internet (port 3306 fermé depuis l’extérieur). La version locale n’a pas été lue.
-- Node.js sur le serveur n’a pas été lu.
+- MariaDB 10.11.14 écoute sur `127.0.0.1:3306` et n’est pas exposé sur Internet.
+- Le Node isolé prévu est 22.23.4, contrôlé par la somme SHA-256 officielle avant extraction. Le Node déjà utilisé par les autres applications n’est pas remplacé.
 
 ECOM-TOUCH, son certificat et son vhost restent en place. Le vhost WAGESSE ne porte que `server_name preprod.wagesse.fr` et n’utilise pas `default_server`.
 
