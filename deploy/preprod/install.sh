@@ -148,6 +148,10 @@ self_check() {
     echo "Le défi ACME public n'est pas vérifié." >&2
     return 1
   fi
+  if ! grep -q 'wait_for_presented_cert' "$0" || ! grep -q 'streak' "$0"; then
+    echo "Le certificat HTTPS n'est pas contrôlé plusieurs fois après le rechargement." >&2
+    return 1
+  fi
   echo "Vérification statique du script réussie."
 }
 
@@ -422,6 +426,8 @@ if [[ ! -d "${APP_DIR}/app/.git" ]]; then
 fi
 chown -R "${APP_USER}:${APP_USER}" "${APP_DIR}/app"
 git_app fetch origin
+previous_ref=$(git_app rev-parse HEAD)
+tracked_changes=$(git_app status --porcelain --untracked-files=no)
 git_app checkout --detach "${REF}"
 deployed=$(git_app rev-parse HEAD)
 printf '%s\n' "Commit déployé : ${deployed}" | tee "${ENV_DIR}/preprod-release.txt"
@@ -510,7 +516,13 @@ if [[ "${PAYMENT_PROVIDER}" == "orange_money_sandbox" || -n "${SMS_ALLOW_SIMULAT
 fi
 
 pushd "${APP_DIR}/app" >/dev/null
-run_as_app_clean npm ci
+reuse_build=0
+if [[ "${previous_ref}" == "${REF}" && -z "${tracked_changes}" && -d node_modules/next && -f .next/BUILD_ID ]]; then
+  reuse_build=1
+  echo "Build de production déjà présent pour ${REF}. npm ci et next build ne sont pas relancés."
+else
+  run_as_app_clean npm ci
+fi
 run_as_app npx prisma generate
 run_as_app npx prisma migrate deploy
 run_as_app env SEED_DEMO_ACCOUNTS=false npm run seed
@@ -542,7 +554,11 @@ BOOTSTRAP_DIR=""
 rm -f "${RUNTIME_ADMIN}"
 RUNTIME_ADMIN=""
 
-run_as_app env NODE_OPTIONS="--max-old-space-size=2048" npm run build
+if [[ "${reuse_build}" -eq 0 ]]; then
+  run_as_app env NODE_OPTIONS="--max-old-space-size=2048" npm run build
+else
+  echo "Compilation Next.js conservée."
+fi
 popd >/dev/null
 assert_foreign_still_up
 
@@ -644,6 +660,13 @@ EOF
 }
 
 write_https_vhost() {
+  local ssl_lines=""
+  if [[ -f /etc/letsencrypt/options-ssl-nginx.conf ]]; then
+    ssl_lines+="    include /etc/letsencrypt/options-ssl-nginx.conf;"$'\n'
+  fi
+  if [[ -f /etc/letsencrypt/ssl-dhparams.pem ]]; then
+    ssl_lines+="    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;"$'\n'
+  fi
   cat > "${NGINX_SITE}" <<EOF
 server {
     listen 80;
@@ -667,7 +690,7 @@ server {
 
     ssl_certificate ${CERT_DIR}/fullchain.pem;
     ssl_certificate_key ${CERT_DIR}/privkey.pem;
-
+${ssl_lines}
     location / {
         proxy_pass http://127.0.0.1:${PORT};
         proxy_http_version 1.1;
@@ -686,7 +709,55 @@ enable_site() {
     rollback_nginx
     exit 1
   fi
-  systemctl reload nginx
+  if ! systemctl reload nginx; then
+    echo "Le rechargement de nginx a échoué." >&2
+    rollback_nginx
+    exit 1
+  fi
+}
+
+read_presented_cert() {
+  local endpoint="$1"
+  local raw pem
+  raw=$(openssl s_client -connect "${endpoint}" -servername "${CERT_NAME}" </dev/null 2>/dev/null || true)
+  pem=$(printf '%s\n' "${raw}" | awk '/-----BEGIN CERTIFICATE-----/{found=1} found{print} /-----END CERTIFICATE-----/{exit}')
+  if [[ -z "${pem}" ]]; then
+    printf '%s\n' "aucun certificat lu sur ${endpoint}"
+    return 0
+  fi
+  printf '%s\n' "${pem}" | openssl x509 -noout -subject -ext subjectAltName 2>/dev/null \
+    || printf '%s\n' "certificat illisible sur ${endpoint}"
+}
+
+wait_for_presented_cert() {
+  local streak=0 attempt text last="aucun certificat lu"
+  for attempt in $(seq 1 30); do
+    text=$(read_presented_cert "127.0.0.1:443")
+    if grep -Fq "${CERT_NAME}" <<<"${text}"; then
+      streak=$((streak + 1))
+      if [[ "${streak}" -ge 5 ]]; then
+        local v6
+        v6=$(read_presented_cert "[::1]:443")
+        if grep -Fq "${CERT_NAME}" <<<"${v6}"; then
+          echo "Certificat ${CERT_NAME} présenté de façon stable après le rechargement de nginx."
+          return 0
+        fi
+        if [[ "${v6}" == aucun\ certificat\ lu* ]] && ! ss -ltn | awk '{print $4}' | grep -Eq '^\[::\]:443$|^\[::1\]:443$|^\*:443$'; then
+          echo "Certificat ${CERT_NAME} présenté de façon stable en IPv4."
+          return 0
+        fi
+        streak=0
+        last="${v6}"
+      fi
+    else
+      streak=0
+      last="${text}"
+    fi
+    sleep 0.5
+  done
+  echo "Le certificat présenté ne couvre pas ${CERT_NAME}." >&2
+  printf '%s\n' "${last}" >&2
+  return 1
 }
 
 probe_acme() {
@@ -764,9 +835,7 @@ fi
 enable_site
 assert_foreign_still_up
 
-cert_text=$(echo | openssl s_client -connect 127.0.0.1:443 -servername "${CERT_NAME}" 2>/dev/null | openssl x509 -noout -subject -ext subjectAltName 2>/dev/null || true)
-if ! grep -Fq "${CERT_NAME}" <<<"${cert_text}"; then
-  echo "Le certificat présenté ne couvre pas ${CERT_NAME}." >&2
+if ! wait_for_presented_cert; then
   rollback_nginx
   exit 1
 fi
@@ -774,6 +843,13 @@ if ! curl -fsS --max-time 20 --resolve "${CERT_NAME}:443:127.0.0.1" -o /dev/null
   echo "HTTPS local ne répond pas pour ${CERT_NAME}." >&2
   rollback_nginx
   exit 1
+fi
+public_https=0
+if curl -fsS --max-time 20 -o /dev/null "https://${CERT_NAME}/"; then
+  public_https=1
+  echo "HTTPS public répond pour ${CERT_NAME}."
+else
+  echo "HTTPS public ne répond pas encore pour ${CERT_NAME}. Le vhost et le service restent en place." >&2
 fi
 echo "HTTPS_READY"
 
@@ -818,6 +894,11 @@ fi
 assert_foreign_still_up
 assert_mariadb_local
 systemctl is-active --quiet wagesse-preprod.service
+if [[ "${public_https}" -ne 1 ]]; then
+  echo "RENEWAL_DRY_RUN_OK"
+  echo "HTTPS local est en place. L'accès public reste à confirmer. Ne pas retirer le vhost."
+  exit 2
+fi
 echo "RENEWAL_DRY_RUN_OK"
 echo "Préproduction en écoute sur 127.0.0.1:${PORT}, vhost ${CERT_NAME} uniquement."
 echo "Paiement manuel, PayDunya désactivé, simulation SMS absente."

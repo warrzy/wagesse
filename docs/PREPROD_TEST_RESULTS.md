@@ -76,6 +76,14 @@ La deuxième installation n’a pas été relancée. Lecture seule ensuite : `wa
 
 `systemctl show wagesse-preprod.service` : dernier processus arrêté avec le statut 143 (signal TERM), durée 1,8 s, aucun redémarrage. Le vhost WAGESSE n’est plus présent. Les autres vhosts n’ont pas de bloc `server_name preprod.wagesse.fr`. Le serveur par défaut utilise `root /var/www/html` et répond 404 si le fichier n’y est pas. `bash -n` et `install.sh --check` contrôlent que le défi pointe vers ce répertoire et qu’il est aussi demandé sur l’URL publique. L’installation n’a pas été relancée.
 
+## Certificat obtenu puis vhost retiré, 7 novembre 2026, 19:19 (Europe/Paris)
+
+Journal du VPS à 18:19:44 UTC. Migrations déjà appliquées, seed sans comptes de démonstration, `next build` réussi, service systemd créé, défi ACME accepté en local et en public, certificat Let’s Encrypt écrit pour `preprod.wagesse.fr`. `nginx -t` a réussi. Le message suivant a été « Le certificat présenté ne couvre pas preprod.wagesse.fr. », puis le vhost et le service ont été retirés. MariaDB et les autres vhosts sont restés.
+
+Lecture seule après coup : les cinq vhosts d’origine sont les seuls présents ; `wagesse-preprod` est inactif ; le port 3020 est fermé ; `/etc/letsencrypt/renewal/preprod.wagesse.fr.conf` existe et pointe vers le certificat émis. Sans vhost WAGESSE, SNI sur `127.0.0.1:443` présente `ecom-touch.tech`, et SNI sur `[::1]:443` présente `preprod.ecomschool.fr`. Les autres noms (`preprod.ecomschool.fr`, `tme-machinery.com`, `wendyam-finance.com`) reçoivent leur propre certificat. Wendyam Finance est le seul `listen 443 ssl http2` ; l’avertissement nginx sur `[::]:443` existait déjà.
+
+Reproduction locale avec nginx 1.24.0 et les mêmes options d’écoute : une seule lecture juste après `nginx -s reload` obtient `ecom-touch.tech`, puis le nom `preprod.wagesse.fr` devient stable. Le contrôle du script exige maintenant cinq lectures consécutives et, en cas d’échec, affiche le sujet et le SAN lus. `bash -n` et `install.sh --check` réussissent. L’installation privilégiée n’a pas été relancée.
+
 ## Ce qui reste à exécuter sur le serveur
 
 Après l’installation réelle : ouverture de https://preprod.wagesse.fr avec un certificat au nom `preprod.wagesse.fr`, connexion administrateur, création d’une commande manuelle, approbation, solde de crédits, et contrôle que https://ecom-touch.tech répond encore.

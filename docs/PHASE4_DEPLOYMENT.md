@@ -6,7 +6,9 @@ Date des contrôles : 6 novembre 2026, 19:47–19:52 (Europe/Paris).
 
 WAGESSE n’est pas encore en service sur https://preprod.wagesse.fr. La deuxième exécution, le 7 novembre 2026 à 18:26 (Europe/Paris), a installé les dépendances et généré le client Prisma, puis s’est arrêtée : `/etc/wagesse` est en mode 700, propriétaire root, et le compte `wagesse` ne peut pas lire `/etc/wagesse/preprod.env`. Prisma a donc démarré sans `DATABASE_URL`. Le vhost et le service ne sont pas en place. Les ports 3000, 3001, 3010, 5432 et MariaDB sur `127.0.0.1:3306` répondaient encore au contrôle suivant.
 
-Le 7 novembre 2026 à 18:47 (Europe/Paris), le service a été arrêté par le signal 143 environ deux secondes après son lancement, et le contrôle ACME a reçu un 404. Le serveur nginx par défaut publie `/var/www/html` ; le jeton était écrit dans `/var/www/letsencrypt`, que ce serveur ne sert pas. Le script dépose maintenant le défi dans `/var/www/html/.well-known/acme-challenge/`, le vérifie en local et en public, et attend le port 3020 jusqu’à une minute. En cas d’arrêt réel du service, le journal est affiché sans les secrets. SHA-256 de `deploy/preprod/install.sh` : `768fb5aef3487f09f9c01fe3bf54123f4aa26efa2753db81e8988fa366cf4a9c`.
+Le 7 novembre 2026 à 18:47 (Europe/Paris), le service a été arrêté par le signal 143 environ deux secondes après son lancement, et le contrôle ACME a reçu un 404. Le serveur nginx par défaut publie `/var/www/html` ; le jeton était écrit dans `/var/www/letsencrypt`, que ce serveur ne sert pas. Le script dépose maintenant le défi dans `/var/www/html/.well-known/acme-challenge/`, le vérifie en local et en public, et attend le port 3020 jusqu’à une minute. En cas d’arrêt réel du service, le journal est affiché sans les secrets.
+
+Le 7 novembre 2026 à 19:19 (Europe/Paris), la reprise a compilé Next.js, obtenu le certificat Let’s Encrypt de `preprod.wagesse.fr` (expiration le 5 février 2027) et réussi `nginx -t`. Le contrôle TLS suivant n’a fait qu’une lecture, dans la seconde du rechargement. nginx 1.24 garde alors d’anciens workers qui présentent encore le certificat par défaut `ecom-touch.tech`. Le script a pris cette lecture pour un échec et a retiré le vhost. Le certificat reste dans `/etc/letsencrypt/live/preprod.wagesse.fr`. La reprise suivante le réutilise, attend cinq présentations consécutives du bon nom en IPv4 et en IPv6, affiche le sujet réellement lu si ce nom n’arrive pas, et ne relance pas `npm ci` ni `next build` lorsque ce build est déjà celui du commit épinglé. SHA-256 de `deploy/preprod/install.sh` : `72bfcab75793f202c09cee8ab6fb28aa513ae08d6a9d23fa2f26d3e8edf5892c`.
 
 ## Inventaire console du 7 novembre 2026
 
@@ -100,7 +102,7 @@ Le seed d’essai avec `SEED_DEMO_ACCOUNTS=false` a laissé 0 utilisateur, 3 for
 
 La commande s’exécute dans le terminal root du VPS. Elle réutilise MariaDB, l’utilisateur `wagesse`, Node s’il est déjà en 22.23.4, et le clone. Elle ne fait pas `migrate reset`, ne supprime pas la base et ne réinstalle pas MariaDB si `mysql` est déjà présent.
 
-En cas d’échec avant le certificat, le script retire seulement le vhost et le service WAGESSE. Un code de sortie 2 signifie que HTTPS répond et que seul l’essai de renouvellement a échoué : ne pas retirer le vhost. La fonction `restore_wagesse` ne touche ni MariaDB, ni PostgreSQL, ni les autres vhosts.
+Le certificat émis le 7 novembre 2026 à 19:19 (Europe/Paris) est conservé : la reprise ne relance pas Certbot et ne reconstruit pas Next.js si le build du commit `91e8235` est déjà là. En cas d’échec avant le certificat, le script retire seulement le vhost et le service WAGESSE. Un code de sortie 2 signifie que le vhost local répond et qu’il ne faut pas appeler `restore_wagesse`. La fonction `restore_wagesse` ne touche ni MariaDB, ni PostgreSQL, ni les autres vhosts.
 
 ```bash
 set +o history
@@ -111,7 +113,7 @@ fi
 cd /root/wagesse-preprod-src
 git fetch origin cursor/preprod-deployment-ba0b
 git checkout --detach origin/cursor/preprod-deployment-ba0b
-test "$(sha256sum deploy/preprod/install.sh | awk '{print $1}')" = "768fb5aef3487f09f9c01fe3bf54123f4aa26efa2753db81e8988fa366cf4a9c"
+test "$(sha256sum deploy/preprod/install.sh | awk '{print $1}')" = "72bfcab75793f202c09cee8ab6fb28aa513ae08d6a9d23fa2f26d3e8edf5892c"
 bash deploy/preprod/install.sh --check
 
 restore_wagesse() {

@@ -61,7 +61,7 @@ Variables métier du fichier d’environnement :
 
 Fichier ajouté : `/etc/nginx/sites-available/preprod.wagesse.fr`, lien dans `sites-enabled`.
 
-- Port 80 : défi ACME dans `/var/www/letsencrypt`, puis redirection vers HTTPS une fois le certificat obtenu.
+- Port 80 : défi ACME dans `/var/www/html/.well-known/acme-challenge/`, puis redirection vers HTTPS une fois le certificat obtenu.
 - Port 443 : `listen 443 ssl` et `listen [::]:443 ssl`, sans `http2`, comme ECOM-TOUCH, ECOM-SCHOOL et TME. Wendyam Finance est le seul vhost en `ssl http2`. Ajouter un second `http2` redéfinit les options du port 443.
 - `nginx -t` avant chaque rechargement.
 
