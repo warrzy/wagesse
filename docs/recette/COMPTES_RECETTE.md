@@ -2,20 +2,16 @@
 
 Ces comptes ont été créés le 7 novembre 2026 sur https://preprod.wagesse.fr. Les données portent le préfixe « Recette ». Les mots de passe ne figurent pas dans ce fichier.
 
-| Référence | Rôle | Téléphone | Nom affiché | Connexion | Secret |
-| --- | --- | --- | --- | --- | --- |
-| client-a | CLIENT | 78001021 | Recette ClienteA | https://preprod.wagesse.fr/auth/login | comptes-recette.enc |
-| client-b | CLIENT | 78001022 | Recette ClienteB | https://preprod.wagesse.fr/auth/login | comptes-recette.enc |
-| trucker-a | TRUCKER | 78002021 | Recette TransporteurA | https://preprod.wagesse.fr/auth/login | comptes-recette.enc |
-| trucker-b | TRUCKER | 78002022 | Recette TransporteurB | https://preprod.wagesse.fr/auth/login | comptes-recette.enc |
+| Référence | Rôle | Téléphone | Nom affiché |
+| --- | --- | --- | --- |
+| client-a | CLIENT | 78001021 | Recette ClienteA |
+| client-b | CLIENT | 78001022 | Recette ClienteB |
+| trucker-a | TRUCKER | 78002021 | Recette TransporteurA |
+| trucker-b | TRUCKER | 78002022 | Recette TransporteurB |
+| admin-recette | ADMIN | 78003021 | Recette Admin |
 
-L'administrateur déjà présent sur le serveur n'a pas été modifié. Aucun second administrateur n'a pu être créé : l'inscription publique n'accepte que CLIENT et TRUCKER.
+L'administrateur déjà présent sur le serveur n'est pas modifié. Le compte `admin-recette` n'existe qu'après l'exécution autorisée de `deploy/preprod/rotate-recette-secrets.sh`. L'inscription publique reste limitée à CLIENT et TRUCKER.
 
-Le fichier `docs/recette/comptes-recette.enc` est chiffré en AES-256-CBC, PBKDF2, 200 000 itérations. Une copie et la phrase secrète sont sur le VPS, lisibles seulement par `wagesse-deploy` :
+Le fichier chiffré qui était dans Git et dans le dossier de `wagesse-deploy` est retiré. Il avait été conservé à côté de sa phrase secrète, donc les quatre mots de passe d'origine sont considérés comme exposés. Le script root les remplace, crée l'administrateur de recette s'il est absent, et écrit le nouveau registre uniquement dans `/etc/wagesse/recette-accounts.enc` (root, mode 600). La nouvelle phrase secrète est affichée une fois sur le terminal de l'opérateur. Elle n'est pas écrite à côté du registre, ni dans Git, ni dans ce document.
 
-```bash
-openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 \
-  -in comptes-recette.enc -pass file:wagesse-recette.passphrase
-```
-
-La phrase secrète est remise au propriétaire en dehors de ce document et n'est pas dans Git.
+Ce script n'a pas encore été lancé : il exige l'autorisation explicite du propriétaire.

@@ -39,3 +39,9 @@ Ces montées ne sont pas appliquées dans ce correctif de déploiement. Next 16.
 | `prisma`, `@prisma/config`, `deepmerge-ts` | Prisma 6.19.3 | l’avis couvre Prisma jusqu’à 7.10.0 | `npm audit fix` ne propose pas de remplacement. Pas de passage à une majeure |
 
 Pour les outils de développement, la cible `eslint-config-next@15.5.29` indiquée par une partie des avis est une descente incompatible avec Next 16. Le dry-run sans `--force` aligne plutôt cet outil sur 16.4.5. `brace-expansion` et `js-yaml` restent des dépendances indirectes de développement.
+
+## Décision du 7 novembre 2026, seconde recette
+
+axios n'est importé par aucun fichier du dépôt. La dépendance directe est retirée, ainsi que follow-redirects. zod est résolu en 4.6.7, dans la plage déjà déclarée. Next reste en 16.2 : l'alerte critique décrit une exécution de code sur un serveur Windows, et 16.4.5 est une évolution de framework non essayée sur la préproduction. La signature et la vérification JWT précisent l'algorithme HS256. jsonwebtoken n'est pas passé en version 9.
+
+`npm audit --omit=dev` après ces changements : 1 critique, 8 hautes, 1 modérée. Les hautes restantes sont next (la même alerte Windows), Prisma et deepmerge-ts, jsonwebtoken, nanoid, postcss, sharp/libvips, source-map-js. uuid reste modéré. Le code applicatif n'appelle pas nanoid ni uuid avec un tampon ou une taille fournis par un client.

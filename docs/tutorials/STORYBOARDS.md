@@ -9,6 +9,8 @@ Quatre vidéos MP4 ont été enregistrées le 7 novembre 2026 sur https://prepro
 | tutoriel-client.mp4 | 22 s | Tableau de bord, demandes, formulaire, profil, contacts, commandes, achat |
 | tutoriel-transporteur.mp4 | 16 s | Tableau de bord, véhicule, demandes disponibles, profil, refus de l'admin |
 
+Les quatre vidéos demandées pour la seconde recette (administration, validation d'un paiement manuel, achat et attribution de crédits, parcours complet d'une mission) ne sont pas produites. Les filmer avant le déploiement autorisé montrerait l'écran SMS et un achat refusé, pas le parcours corrigé. Les scènes ci-dessous restent le découpage à tourner sur le serveur une fois la branche en place.
+
 ## Scènes non tournées
 
 ### Administration

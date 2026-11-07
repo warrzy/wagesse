@@ -19,14 +19,14 @@ footer, .footer-note { page-break-before: avoid; }
 <h1>Dossier de mise en production</h1></section>
 <p>Statut : préparation seulement. Aucun domaine de production n'a été basculé, aucune donnée n'a été migrée, aucun déploiement de production n'a été lancé.</p>
 <h2>Recommandation</h2>
-<p>NO-GO tant que les conditions suivantes ne sont pas réunies et acceptées explicitement.</p>
+<p>NO-GO. La seconde recette n'a pas rejoué le cycle métier sur le serveur : le redémarrage, la rotation des mots de passe et la restauration d'essai attendent l'autorisation du propriétaire. Aucun domaine de production n'est basculé.</p>
 <h2>Checklist de sécurité</h2>
 <ul>
 <li>Conserver `PAYMENT_MODE=MANUAL` ou n'activer un prestataire qu'avec des clés réelles, hors préproduction.</li>
 <li>Laisser PayDunya désactivé tant que le webhook et les clés ne sont pas revus.</li>
 <li>Ne pas copier les comptes 78001021, 78001022, 78002021 et 78002022.</li>
 <li>Ne pas réutiliser la base `wagesse_preprod`.</li>
-<li>Retirer `x-powered-by` et ajouter HSTS, `X-Content-Type-Options: nosniff` et une politique de frame.</li>
+<li>Les en-têtes HSTS, nosniff, DENY et Referrer-Policy, ainsi que le retrait de X-Powered-By, sont dans le code. Ils ne sont pas encore visibles sur le site déployé.</li>
 <li>Traiter les alertes npm hautes avant l'ouverture publique. L'alerte critique Next.js vise Windows ; le VPS actuel est Linux.</li>
 <li>Déployer le correctif qui n'interrompt plus l'inscription sur l'écran SMS, ainsi que les pages légales.</li>
 </ul>

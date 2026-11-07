@@ -4,7 +4,7 @@ Statut : préparation seulement. Aucun domaine de production n'a été basculé,
 
 ## Recommandation
 
-NO-GO tant que les conditions suivantes ne sont pas réunies et acceptées explicitement.
+NO-GO. La seconde recette n'a pas rejoué le cycle métier sur le serveur : le redémarrage, la rotation des mots de passe et la restauration d'essai attendent l'autorisation du propriétaire. Aucun domaine de production n'est basculé.
 
 ## Checklist de sécurité
 
@@ -12,9 +12,9 @@ NO-GO tant que les conditions suivantes ne sont pas réunies et acceptées expli
 - Laisser PayDunya désactivé tant que le webhook et les clés ne sont pas revus.
 - Ne pas copier les comptes 78001021, 78001022, 78002021 et 78002022.
 - Ne pas réutiliser la base `wagesse_preprod`.
-- Retirer `x-powered-by` et ajouter HSTS, `X-Content-Type-Options: nosniff` et une politique de frame.
-- Traiter les alertes npm hautes avant l'ouverture publique. L'alerte critique Next.js vise Windows ; le VPS actuel est Linux.
-- Déployer le correctif qui n'interrompt plus l'inscription sur l'écran SMS, ainsi que les pages légales.
+- Les en-têtes HSTS, nosniff, DENY et Referrer-Policy, ainsi que le retrait de `X-Powered-By`, sont dans le code. Ils ne sont pas encore visibles sur https://preprod.wagesse.fr.
+- L'alerte critique Next.js vise Windows. axios, inutilisé, est retiré. zod est à 4.6.7. La signature JWT est limitée à HS256. Prisma, sharp, postcss, nanoid et source-map-js restent des risques résiduels non déclenchés par le code actuel.
+- Déployer la branche de recette avant toute ouverture : redirection après connexion, pages légales, page 404 française, vérification de téléphone réservée aux comptes fictifs.
 
 ## Domaine
 

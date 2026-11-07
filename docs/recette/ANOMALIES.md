@@ -18,9 +18,13 @@ Correctif : pages rédigées dans cette branche. Absentes du serveur tant que la
 
 Capture `04-404.png`. La page Next.js par défaut dit « This page could not be found. »
 
+Correctif dans cette branche : `app/not-found.tsx` affiche une page française avec l'en-tête et le pied de page. Le serveur déployé (`91e8235`) montre encore la capture d'origine.
+
 ## A4 — Mineure — En-têtes de durcissement absents
 
 `curl -I https://preprod.wagesse.fr/` ne montre ni HSTS, ni `X-Content-Type-Options`, ni `X-Frame-Options`. `x-powered-by: Next.js` est présent.
+
+Correctif dans cette branche : `next.config.js` ajoute ces en-têtes et retire `X-Powered-By`. Aucun vhost nginx n'est modifié. Le contrôle HTTP réel attend le redémarrage autorisé.
 
 ## A5 — Amélioration — Refus admin renvoyé en 401
 
@@ -28,7 +32,9 @@ Un client ou un transporteur qui appelle `/api/admin/dashboard` reçoit HTTP 401
 
 ## A6 — Critique npm, non exploitable sur cet hôte
 
-`npm audit --omit=dev` signale une alerte critique Next.js : exécution de code à distance sur un serveur hébergé sous Windows. Le VPS est Ubuntu. Elle ne s'applique pas à cette préproduction. Onze alertes hautes restent ouvertes (axios, jsonwebtoken, prisma, sharp, zod, postcss, nanoid, follow-redirects, deepmerge-ts, source-map-js). Elles n'ont pas été mises à jour dans cette recette pour ne pas changer le framework déployé sans essai de non-régression.
+`npm audit --omit=dev` signale une alerte critique Next.js : exécution de code à distance sur un serveur hébergé sous Windows. Le VPS est Ubuntu. Elle ne s'applique pas à cette préproduction. Next n'est pas monté en 16.4.5 dans ce correctif.
+
+axios n'était importé nulle part : la dépendance est retirée, et avec elle follow-redirects. zod est monté dans sa plage (4.6.7). La vérification JWT n'accepte plus que HS256. Après ce changement, l'audit production indique 1 critique, 8 hautes et 1 modérée. Restent des avis sur Prisma, sharp/libvips, postcss, nanoid, source-map-js, jsonwebtoken 8 et uuid. Aucun de ces paquets n'est appelé avec les options qui rendent l'avis exploitable ici (pas de fusion d'objets fournis par le client, pas de générateur nanoid de taille nulle, pas de tampon uuid fourni par l'appelant). jsonwebtoken 9 est une version majeure et n'est pas imposée.
 
 ## Non corrigé volontairement
 

@@ -62,7 +62,7 @@ footer, .footer-note { page-break-before: avoid; }
 <li>Choisir le profil client. Le profil administrateur n'est pas proposé.</li>
 <li>Renseigner le numéro, le nom et le mot de passe.</li>
 </ol>
-<p><strong>Résultat observé le 7 novembre.</strong> Le compte est créé, le SMS n'est pas envoyé, et l'écran de code s'affiche. Le correctif de la branche de recette doit ensuite ouvrir le tableau de bord et laisser le code pour plus tard.</p>
+<p><strong>Résultat observé le 7 novembre sur le serveur.</strong> Le compte est créé, le SMS n'est pas envoyé, et l'écran de code s'affiche. Dans la version corrigée, la connexion ouvre le tableau de bord du rôle. Un bandeau rappelle que le numéro devra être vérifié avant un achat ou un déblocage de contact. La capture ci-dessous montre encore l'écran servi par le commit déployé.</p>
 <img class="shot" src="../recette/preuves/09-inscription.png" alt="Formulaire d'inscription">
 <img class="shot" src="../recette/preuves/08-verification-sms.png" alt="Écran de code SMS">
 <p><strong>Erreur fréquente.</strong> Saisir moins de 8 chiffres, ou un numéro déjà inscrit.</p>
@@ -136,8 +136,8 @@ footer, .footer-note { page-break-before: avoid; }
 <h2>Glossaire</h2>
 <p><strong>Demande.</strong> Besoin de transport publié par un client. <strong>Devis.</strong> Prix proposé par un transporteur. <strong>Mission.</strong> Transport créé quand un devis est accepté. <strong>Crédit.</strong> Unité qui débloque un contact. <strong>Commande manuelle.</strong> Intention de paiement en attente d'un administrateur.</p>
 <h2>Questions fréquentes</h2>
-<p><strong>Pourquoi aucun SMS n'arrive ?</strong> La préproduction n'a pas de fournisseur SMS. Le code n'est pas affiché à l'écran. Les achats restent fermés.</p>
+<p><strong>Pourquoi aucun SMS n'arrive ?</strong> Aucun fournisseur SMS du Burkina Faso n'est branché. Orange SMS et Africa's Talking peuvent couvrir le pays, mais ils envoient de vrais messages payants : ils ne sont pas activés. En préproduction seulement, un administrateur peut marquer comme vérifié un compte fictif dont le numéro commence par 7800 et le nom contient « Recette ». Cette route n'existe pas si le drapeau PREPROD_TEST_PHONE_VERIFY n'est pas exactement true. Elle ne renvoie aucun code.</p>
 <p><strong>Mon solde a-t-il augmenté quand j'ai confirmé un pack ?</strong> Non, pas sans numéro vérifié, et pas avant la validation d'un administrateur.</p>
 <p><strong>Puis-je voir le numéro d'un transporteur ?</strong> Non, tant que le contact n'est pas débloqué.</p>
-<p><strong>Où sont les mentions légales ?</strong> Elles répondent 404 sur le serveur actuel. Elles sont rédigées dans la branche de recette, en attente de déploiement.</p>
+<p><strong>Où sont les mentions légales ?</strong> Dans la version corrigée, `/terms`, `/privacy`, `/legal/terms` et `/legal/privacy` affichent les pages rédigées. Une adresse inconnue affiche une page 404 en français. Le serveur actuellement déployé répond encore 404 anglais sur ces adresses, jusqu'au redémarrage autorisé.</p>
 </body></html>

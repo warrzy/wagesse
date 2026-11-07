@@ -38,4 +38,5 @@ footer, .footer-note { page-break-before: avoid; }
 <tr><td>Page /admin ouverte par un transporteur</td><td>tableau de bord transporteur, pas l'administration</td></tr>
 </table>
 <h2>Limites</h2>
-<p>Le compte administrateur initial n'a pas été utilisé. Les doubles validations de paiement n'ont pas été rejouées. Les en-têtes de durcissement manquent. Les alertes npm hautes ne sont pas corrigées. Firefox et Safari n'ont pas été ouverts.</p></body></html>
+<p>Dans la branche, la vérification JWT n'accepte que HS256. Les en-têtes HSTS, nosniff, DENY, Referrer-Policy et Permissions-Policy sont déclarés, et X-Powered-By est retiré. axios est retiré. zod est en 4.6.7. Une route d'administration peut marquer un compte fictif comme vérifié, seulement si le drapeau de préproduction est exactement true, et sans renvoyer de code.</p>
+<p>Le compte administrateur initial n'a pas été utilisé. Les doubles validations de paiement n'ont pas été rejouées. Les en-têtes ne sont pas encore servis par le site. L'alerte critique Next.js reste et vise Windows. Firefox et Safari n'ont pas été ouverts.</p></body></html>

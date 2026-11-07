@@ -22,6 +22,10 @@ Date : 7 novembre 2026, 19:50 (Europe/Paris). Cible : https://preprod.wagesse.fr
 | Code de réinitialisation faux | HTTP 400, l'ancien mot de passe fonctionne encore |
 | Page /admin ouverte par un transporteur | tableau de bord transporteur, pas l'administration |
 
+## Ajouts dans la branche, pas encore sur le serveur
+
+La vérification JWT n'accepte que HS256 et n'écrit plus l'erreur de jeton. Les en-têtes HSTS, nosniff, DENY, Referrer-Policy et Permissions-Policy sont déclarés dans Next.js, et `X-Powered-By` est retiré. axios, qui n'était pas importé, est retiré. zod est en 4.6.7. Une route d'administration marque un compte fictif 7800 comme vérifié uniquement si PREPROD_TEST_PHONE_VERIFY vaut exactement true. Elle ne renvoie aucun code. Les tests unitaires de ces règles passent (17 tests).
+
 ## Limites
 
-Le compte administrateur initial n'a pas été utilisé. Les doubles validations de paiement n'ont pas été rejouées. Les en-têtes de durcissement manquent. Les alertes npm hautes ne sont pas corrigées. Firefox et Safari n'ont pas été ouverts.
+Le compte administrateur initial n'a pas été utilisé. Les doubles validations de paiement n'ont pas été rejouées. Les en-têtes ne sont pas encore servis par https://preprod.wagesse.fr. L'alerte critique Next.js reste, et elle vise Windows. Firefox et Safari n'ont pas été ouverts.
