@@ -340,7 +340,12 @@ async function main() {
       console.error("[seed] credit packs seed failed", e)
     }
 
-    // Demo accounts
+    if (process.env.SEED_DEMO_ACCOUNTS === "false") {
+      console.log("SEED_DEMO_ACCOUNTS=false : référentiel chargé, comptes de démonstration ignorés")
+      return
+    }
+
+    // Demo accounts — développement et tests uniquement.
     const passwordHash = await bcrypt.hash("password123", 10)
 
     const client = await prisma.user.upsert({
