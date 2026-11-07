@@ -22,14 +22,15 @@ describe("security headers", () => {
 
 describe("fictional phone verification", () => {
   it("stays disabled outside the preproduction database", () => {
-    const enabled = {
+    const enabled: NodeJS.ProcessEnv = {
+      NODE_ENV: "test",
       WAGESSE_DEPLOYMENT: "preprod",
       PREPROD_TEST_PHONE_VERIFY: "true",
       DATABASE_URL: "mysql://user:secret@127.0.0.1:3306/wagesse_preprod",
     }
-    assert.equal(preprodTestPhoneVerifyEnabled({}), false)
-    assert.equal(preprodTestPhoneVerifyEnabled({ NODE_ENV: "production", ...enabled, WAGESSE_DEPLOYMENT: "production" }), false)
-    assert.equal(preprodTestPhoneVerifyEnabled({ ...enabled, PREPROD_TEST_PHONE_VERIFY: "true", WAGESSE_DEPLOYMENT: undefined }), false)
+    assert.equal(preprodTestPhoneVerifyEnabled({ NODE_ENV: "test" }), false)
+    assert.equal(preprodTestPhoneVerifyEnabled({ ...enabled, WAGESSE_DEPLOYMENT: "production" }), false)
+    assert.equal(preprodTestPhoneVerifyEnabled({ ...enabled, WAGESSE_DEPLOYMENT: undefined }), false)
     assert.equal(preprodTestPhoneVerifyEnabled({ ...enabled, DATABASE_URL: "mysql://user:secret@127.0.0.1:3306/wagesse" }), false)
     assert.equal(preprodTestPhoneVerifyEnabled(enabled), true)
   })

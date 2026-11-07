@@ -4,6 +4,7 @@
   "description": "Marketplace de fret pour le Burkina Faso",
   "private": true,
   "scripts": {
+    "postinstall": "prisma generate",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

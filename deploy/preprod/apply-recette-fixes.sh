@@ -112,16 +112,27 @@ actual=$(git_in "$APP" rev-parse HEAD)
 [[ "$actual" == "$REF" ]] || fail "HEAD ${actual} différent de ${REF}."
 git_in "$APP" merge-base --is-ancestor "$EXPECTED_BASE" "$REF" || fail "Le commit ${REF} ne contient pas ${EXPECTED_BASE}."
 
+# npm --prefix keeps the caller's directory as INIT_CWD. The @prisma/client
+# postinstall then runs prisma generate there and exits 0 on failure, leaving
+# the stub client in the application. Generate and typecheck inside the app.
 step=dependances
 runuser -u wagesse -- env -i \
   HOME=/opt/wagesse-preprod PATH="$NODE_BIN:/usr/bin:/bin" \
-  npm --prefix "$APP" ci --no-audit --no-fund
+  bash -c 'set -euo pipefail; cd "$1"; npm ci --no-audit --no-fund; npx prisma generate --schema prisma/schema.prisma' \
+  bash "$APP" 2>&1 | secret_filter
+
+step=client_prisma
+runuser -u wagesse -- env -i \
+  HOME=/opt/wagesse-preprod PATH="$NODE_BIN:/usr/bin:/bin" \
+  bash -c 'set -euo pipefail; cd "$1"; npx tsc --noEmit --pretty false --incremental false -p deploy/preprod/prisma-client-probe.tsconfig.json' \
+  bash "$APP"
 
 step=compilation
 runuser -u wagesse -- env -i \
   HOME=/opt/wagesse-preprod PATH="$NODE_BIN:/usr/bin:/bin" \
   NODE_OPTIONS=--max-old-space-size=2048 \
-  npm --prefix "$APP" run build
+  bash -c 'set -euo pipefail; cd "$1"; npm run build' \
+  bash "$APP"
 
 step=redemarrage
 systemctl restart wagesse-preprod.service
