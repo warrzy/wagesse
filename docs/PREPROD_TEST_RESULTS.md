@@ -72,6 +72,10 @@ La deuxième installation n’a pas été relancée. Lecture seule ensuite : `wa
 
 `bash deploy/preprod/install.sh --check` vérifie qu’une URL `mysql://` est masquée, qu’un `source` raté s’arrête avec `set -e`, et que le script ne redonne pas la lecture du fichier au compte `wagesse`. Le schéma de `wagesse_preprod` n’a pas été lu : la session disponible n’a pas d’accès MariaDB. Le journal montre que `migrate deploy` n’a pas abouti.
 
+## Démarrage et ACME, 7 novembre 2026, 18:47 (Europe/Paris)
+
+`systemctl show wagesse-preprod.service` : dernier processus arrêté avec le statut 143 (signal TERM), durée 1,8 s, aucun redémarrage. Le vhost WAGESSE n’est plus présent. Les autres vhosts n’ont pas de bloc `server_name preprod.wagesse.fr`. Le serveur par défaut utilise `root /var/www/html` et répond 404 si le fichier n’y est pas. `bash -n` et `install.sh --check` contrôlent que le défi pointe vers ce répertoire et qu’il est aussi demandé sur l’URL publique. L’installation n’a pas été relancée.
+
 ## Ce qui reste à exécuter sur le serveur
 
 Après l’installation réelle : ouverture de https://preprod.wagesse.fr avec un certificat au nom `preprod.wagesse.fr`, connexion administrateur, création d’une commande manuelle, approbation, solde de crédits, et contrôle que https://ecom-touch.tech répond encore.

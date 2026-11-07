@@ -13,7 +13,7 @@ ENV_FILE="${ENV_DIR}/preprod.env"
 BACKUP_DIR=/var/backups/wagesse-preprod
 NGINX_SITE=/etc/nginx/sites-available/preprod.wagesse.fr
 NGINX_LINK=/etc/nginx/sites-enabled/preprod.wagesse.fr
-WEBROOT=/var/www/letsencrypt
+ACME_WEBROOT=/var/www/html
 CERT_NAME=preprod.wagesse.fr
 CERT_DIR=/etc/letsencrypt/live/${CERT_NAME}
 PORT=3020
@@ -140,6 +140,14 @@ self_check() {
     echo "L'absence de DATABASE_URL n'interrompt pas Prisma." >&2
     return 1
   fi
+  if ! grep -q 'ACME_WEBROOT=/var/www/html' "$0" || ! grep -q 'alias ${ACME_WEBROOT}/.well-known/acme-challenge/' "$0"; then
+    echo "Le défi ACME n'utilise pas la racine déjà publiée par nginx." >&2
+    return 1
+  fi
+  if ! grep -q 'http://${CERT_NAME}/.well-known/acme-challenge/' "$0"; then
+    echo "Le défi ACME public n'est pas vérifié." >&2
+    return 1
+  fi
   echo "Vérification statique du script réussie."
 }
 
@@ -177,9 +185,11 @@ cleanup_runtime() {
 }
 trap cleanup_runtime EXIT
 
-mkdir -p "${BACKUP_DIR}" "${ENV_DIR}" "${WEBROOT}/.well-known/acme-challenge"
+umask 022
+mkdir -p "${BACKUP_DIR}" "${ENV_DIR}"
 chmod 700 "${ENV_DIR}" "${BACKUP_DIR}"
-chmod 755 "${WEBROOT}" "${WEBROOT}/.well-known" "${WEBROOT}/.well-known/acme-challenge"
+mkdir -p "${ACME_WEBROOT}/.well-known/acme-challenge"
+chmod 755 "${ACME_WEBROOT}/.well-known" "${ACME_WEBROOT}/.well-known/acme-challenge"
 touch "${LOG}"
 chmod 600 "${LOG}"
 exec > >(tee -a "${LOG}") 2>&1
@@ -548,6 +558,7 @@ User=${APP_USER}
 Group=${APP_USER}
 WorkingDirectory=${APP_DIR}/app
 EnvironmentFile=${ENV_FILE}
+Environment=HOSTNAME=127.0.0.1
 ExecStart=${APP_DIR}/.node/bin/node node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 3020
 Restart=on-failure
 RestartSec=5
@@ -557,18 +568,32 @@ NoNewPrivileges=true
 WantedBy=multi-user.target
 EOF
 
+show_service_log() {
+  systemctl show wagesse-preprod.service -p ActiveState -p Result -p ExecMainStatus -p ExecMainCode --no-pager || true
+  journalctl -u wagesse-preprod.service -n 80 --no-pager -o cat 2>/dev/null | secret_filter || true
+}
+
 systemctl daemon-reload
+chmod 644 /etc/systemd/system/wagesse-preprod.service
+systemctl reset-failed wagesse-preprod.service || true
 systemctl enable --now wagesse-preprod.service
 ready=0
-for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30; do
-  if curl -fsS "http://127.0.0.1:${PORT}/" >/dev/null; then
+for _ in $(seq 1 30); do
+  if curl -fs -o /dev/null --max-time 2 "http://127.0.0.1:${PORT}/"; then
     ready=1
     break
   fi
-  sleep 1
+  if ! systemctl is-active --quiet wagesse-preprod.service; then
+    echo "Le service WAGESSE s'est arrêté pendant le démarrage." >&2
+    show_service_log >&2
+    systemctl disable --now wagesse-preprod.service || true
+    exit 1
+  fi
+  sleep 2
 done
 if [[ "${ready}" -ne 1 ]]; then
-  echo "WAGESSE ne répond pas sur 127.0.0.1:${PORT}." >&2
+  echo "WAGESSE ne répond pas sur 127.0.0.1:${PORT} après une minute." >&2
+  show_service_log >&2
   systemctl disable --now wagesse-preprod.service || true
   exit 1
 fi
@@ -603,7 +628,8 @@ server {
     server_name ${CERT_NAME};
 
     location ^~ /.well-known/acme-challenge/ {
-        root ${WEBROOT};
+        default_type text/plain;
+        alias ${ACME_WEBROOT}/.well-known/acme-challenge/;
     }
 
     location / {
@@ -625,7 +651,8 @@ server {
     server_name ${CERT_NAME};
 
     location ^~ /.well-known/acme-challenge/ {
-        root ${WEBROOT};
+        default_type text/plain;
+        alias ${ACME_WEBROOT}/.well-known/acme-challenge/;
     }
 
     location / {
@@ -653,6 +680,7 @@ EOF
 }
 
 enable_site() {
+  chmod 644 "${NGINX_SITE}"
   ln -sfn "${NGINX_SITE}" "${NGINX_LINK}"
   if ! nginx -t; then
     rollback_nginx
@@ -661,18 +689,37 @@ enable_site() {
   systemctl reload nginx
 }
 
+probe_acme() {
+  local probe probe_file local_code public_code local_body public_body
+  probe=$(openssl rand -hex 16)
+  probe_file="${ACME_WEBROOT}/.well-known/acme-challenge/${probe}"
+  printf '%s' 'wagesse-probe' > "${probe_file}"
+  chmod 644 "${probe_file}"
+  local_body=$(mktemp)
+  public_body=$(mktemp)
+  local_code=$(curl -s -o "${local_body}" -w "%{http_code}" --max-time 10 \
+    --resolve "${CERT_NAME}:80:127.0.0.1" \
+    "http://${CERT_NAME}/.well-known/acme-challenge/${probe}" || true)
+  public_code=$(curl -s -o "${public_body}" -w "%{http_code}" --max-time 20 \
+    "http://${CERT_NAME}/.well-known/acme-challenge/${probe}" || true)
+  local_code=${local_code:-000}
+  public_code=${public_code:-000}
+  if [[ "${local_code}" == "200" && "$(cat "${local_body}")" == "wagesse-probe" \
+    && "${public_code}" == "200" && "$(cat "${public_body}")" == "wagesse-probe" ]]; then
+    rm -f "${probe_file}" "${local_body}" "${public_body}"
+    echo "Défi ACME servi en local et en public pour ${CERT_NAME}."
+    return 0
+  fi
+  echo "Le défi ACME n'est pas servi pour ${CERT_NAME} (local ${local_code}, public ${public_code})." >&2
+  rm -f "${probe_file}" "${local_body}" "${public_body}"
+  return 1
+}
+
 if [[ ! -f "${CERT_DIR}/fullchain.pem" ]]; then
   write_http_vhost
   enable_site
   assert_foreign_still_up
-  probe=$(openssl rand -hex 16)
-  probe_file="${WEBROOT}/.well-known/acme-challenge/${probe}"
-  printf '%s' 'wagesse-probe' > "${probe_file}"
-  chmod 644 "${probe_file}"
-  probe_body=$(curl -fsS --max-time 10 -H "Host: ${CERT_NAME}" "http://127.0.0.1/.well-known/acme-challenge/${probe}" || true)
-  rm -f "${probe_file}"
-  if [[ "${probe_body}" != "wagesse-probe" ]]; then
-    echo "Le défi ACME n'est pas servi pour ${CERT_NAME}." >&2
+  if ! probe_acme; then
     rollback_nginx
     exit 1
   fi
@@ -681,7 +728,7 @@ if [[ ! -f "${CERT_DIR}/fullchain.pem" ]]; then
     apt-get install -y --no-upgrade --no-install-recommends certbot
   fi
   certbot_args=(
-    certonly --webroot -w "${WEBROOT}" --cert-name "${CERT_NAME}" -d "${CERT_NAME}"
+    certonly --webroot -w "${ACME_WEBROOT}" --cert-name "${CERT_NAME}" -d "${CERT_NAME}"
     --keep-until-expiring --non-interactive
     --deploy-hook "systemctl reload nginx"
   )

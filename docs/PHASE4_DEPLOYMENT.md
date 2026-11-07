@@ -6,7 +6,7 @@ Date des contrôles : 6 novembre 2026, 19:47–19:52 (Europe/Paris).
 
 WAGESSE n’est pas encore en service sur https://preprod.wagesse.fr. La deuxième exécution, le 7 novembre 2026 à 18:26 (Europe/Paris), a installé les dépendances et généré le client Prisma, puis s’est arrêtée : `/etc/wagesse` est en mode 700, propriétaire root, et le compte `wagesse` ne peut pas lire `/etc/wagesse/preprod.env`. Prisma a donc démarré sans `DATABASE_URL`. Le vhost et le service ne sont pas en place. Les ports 3000, 3001, 3010, 5432 et MariaDB sur `127.0.0.1:3306` répondaient encore au contrôle suivant.
 
-Le script lit maintenant ce fichier en root, le laisse en mode 600, et transmet les variables au processus `wagesse` par l’environnement, sans les mettre sur la ligne de commande ni dans le journal. Un échec de chargement ou une `DATABASE_URL` vide arrête le script avant `migrate deploy`. SHA-256 de `deploy/preprod/install.sh` : `b555d7346e8c39bd82534bde6298c79ad047f0823e151fbcf41a75c671f353a9`.
+Le 7 novembre 2026 à 18:47 (Europe/Paris), le service a été arrêté par le signal 143 environ deux secondes après son lancement, et le contrôle ACME a reçu un 404. Le serveur nginx par défaut publie `/var/www/html` ; le jeton était écrit dans `/var/www/letsencrypt`, que ce serveur ne sert pas. Le script dépose maintenant le défi dans `/var/www/html/.well-known/acme-challenge/`, le vérifie en local et en public, et attend le port 3020 jusqu’à une minute. En cas d’arrêt réel du service, le journal est affiché sans les secrets. SHA-256 de `deploy/preprod/install.sh` : `768fb5aef3487f09f9c01fe3bf54123f4aa26efa2753db81e8988fa366cf4a9c`.
 
 ## Inventaire console du 7 novembre 2026
 
@@ -111,7 +111,7 @@ fi
 cd /root/wagesse-preprod-src
 git fetch origin cursor/preprod-deployment-ba0b
 git checkout --detach origin/cursor/preprod-deployment-ba0b
-test "$(sha256sum deploy/preprod/install.sh | awk '{print $1}')" = "b555d7346e8c39bd82534bde6298c79ad047f0823e151fbcf41a75c671f353a9"
+test "$(sha256sum deploy/preprod/install.sh | awk '{print $1}')" = "768fb5aef3487f09f9c01fe3bf54123f4aa26efa2753db81e8988fa366cf4a9c"
 bash deploy/preprod/install.sh --check
 
 restore_wagesse() {
