@@ -4,7 +4,9 @@ Exécution le 6 novembre 2026, jusqu’à 19:52 (Europe/Paris).
 
 ## URL publique
 
-`https://preprod.wagesse.fr` ne sert pas WAGESSE.
+Au 7 novembre 2026, 16:14 (Europe/Paris), `https://preprod.wagesse.fr` ne sert pas WAGESSE. L’agent n’a pas pu ouvrir de session sur le VPS. La recette navigateur sur l’URL publique n’a donc pas été exécutée.
+
+Le script corrigé refuse de démarrer si les ports 3000, 3001, 3010 ou 5432 sont absents, et il s’arrête si l’un d’eux disparaît. Il n’a pas été lancé sur le serveur.
 
 ```text
 curl https://preprod.wagesse.fr/

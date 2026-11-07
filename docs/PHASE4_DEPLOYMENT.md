@@ -4,9 +4,28 @@ Date des contrôles : 6 novembre 2026, 19:47–19:52 (Europe/Paris).
 
 ## Résultat
 
-WAGESSE n’est pas en service sur https://preprod.wagesse.fr. L’installation sur le VPS n’a pas été lancée : SSH répond `Permission denied (publickey,password)` pour `root` et `ubuntu`, et cette session ne possède aucune clé privée.
+WAGESSE n’est pas encore en service sur https://preprod.wagesse.fr. Le 7 novembre 2026 à 16:14 (Europe/Paris), SSH depuis l’agent répond encore `Permission denied (publickey,password)`. La console root ouverte sur le serveur (session `169.254.0.1`, 7 novembre 2026 15:59 UTC) a fourni l’inventaire ci-dessous. Aucune commande de cet inventaire n’a été relancée par l’agent, et aucun service du VPS n’a été modifié par l’agent.
 
-Le site HTTPS déjà présent sur `147.79.118.212` est ECOM-TOUCH (`ecom-touch.tech`). Il n’a pas été arrêté, modifié ni remplacé.
+## Inventaire console du 7 novembre 2026
+
+| Élément | Valeur |
+| --- | --- |
+| Hôte | `srv1392968`, Ubuntu 24.04.4 LTS, noyau 6.8.0-147-generic |
+| Ressources | 7,8 Gio de RAM, charge 0, disque 16 Go utilisés sur 96 Go |
+| Node global | v24.14.0, conservé. WAGESSE utilise Node 22.23.4 dans `/opt/wagesse-preprod/.node` |
+| PostgreSQL | actif sur `127.0.0.1:5432` et `[::1]:5432`. Non modifié |
+| MariaDB | absent. Le script l’installe sans `apt-get upgrade` et exige une écoute localhost |
+| nginx | actif. Rechargement seulement après `nginx -t`. Jamais `restart` |
+| PM2 | `pm2-deploy.service` actif. Le script ne l’appelle pas |
+| Port 3000 | Wendyam Finance, `0.0.0.0:3000` |
+| Port 3001 | ECOM-SCHOOL, `127.0.0.1:3001` |
+| Port 3010 | ECOM-TOUCH, toutes interfaces. Le script refuse de s’y placer |
+| Port 3020 | libre d’après la console. Seule écoute autorisée : `127.0.0.1:3020` |
+| Vhosts | `default`, `ecom-touch-public.conf`, `preprod.ecomschool.fr.conf`, `tme-machinery`, `wendyam-finance`. Pas de `preprod.wagesse.fr` |
+
+Le script archive les vhosts, compare leurs sommes MD5 après coup, et retire uniquement le sien si un autre nom HTTPS change de statut. Il ne redémarre pas ces applications.
+
+L’ancienne version du script, au commit `91e8235`, cherchait un port à partir de 3010. Il ne faut pas l’exécuter. Le code applicatif déployé reste ce commit. Le script à lancer est celui de la branche `cursor/preprod-deployment-ba0b` à jour, qui fixe le port 3020.
 
 ## Commit retenu
 
@@ -18,7 +37,7 @@ Le site HTTPS déjà présent sur `147.79.118.212` est ECOM-TOUCH (`ecom-touch.t
 | Branche à déployer | `cursor/preprod-deployment-ba0b` |
 | Commit installé par le script | `91e8235de45f3dfd58be558dc4636147d2a7d8df` |
 
-Cette branche ajoute le refus des comptes de démonstration (`SEED_DEMO_ACCOUNTS=false`) et `deploy/preprod/install.sh`. Le script déploie par défaut le commit `91e8235de45f3dfd58be558dc4636147d2a7d8df`, qui contient l’installateur et le seed. `DEPLOY_REF` permet d’en choisir un autre.
+Le script à exécuter est celui de la branche à jour. Il déploie le code applicatif `91e8235de45f3dfd58be558dc4636147d2a7d8df` (`SEED_DEMO_ACCOUNTS=false`, sans les comptes `password123`). `DEPLOY_REF` permet d’en choisir un autre. Le fichier `install.sh` de ce commit-là ne doit pas être lancé : il choisissait un port à partir de 3010.
 
 `main` ne reçoit pas le déploiement.
 

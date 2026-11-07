@@ -30,6 +30,8 @@ rm /etc/nginx/sites-enabled/preprod.wagesse.fr
 nginx -t && systemctl reload nginx
 ```
 
+Ne pas utiliser `systemctl restart nginx`, `pm2 restart`, ni redémarrer PostgreSQL. Ne pas libérer les ports 3000, 3001 ou 3010.
+
 Le certificat `/etc/letsencrypt/live/preprod.wagesse.fr` peut rester : il n’est plus servi. La base `wagesse_preprod` peut rester en place. La supprimer seulement après un dump conservé hors du serveur :
 
 ```bash

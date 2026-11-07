@@ -34,7 +34,7 @@ Aucun changement DNS n’est nécessaire pour la préproduction : l’enregistre
 | Code | `/opt/wagesse-preprod/app` |
 | Node | `/opt/wagesse-preprod/.node` (22.23.4), distinct du Node système |
 | Service | `wagesse-preprod.service` |
-| Écoute | `127.0.0.1`, port 3010 ou le suivant libre jusqu’à 3020 |
+| Écoute | `127.0.0.1:3020` uniquement. 3000, 3001 et 3010 restent aux applications déjà présentes |
 | Environnement | `/etc/wagesse/preprod.env`, mode 640, groupe `wagesse` |
 | Identifiants admin | `/etc/wagesse/preprod-admin.credentials`, mode 600, root |
 
