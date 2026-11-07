@@ -14,6 +14,7 @@ NO-GO. La seconde recette n'a pas rejoué le cycle métier sur le serveur : le r
 - Ne pas réutiliser la base `wagesse_preprod`.
 - Les en-têtes HSTS, nosniff, DENY et Referrer-Policy, ainsi que le retrait de `X-Powered-By`, sont dans le code. Ils ne sont pas encore visibles sur https://preprod.wagesse.fr.
 - L'alerte critique Next.js vise Windows. axios, inutilisé, est retiré. zod est à 4.6.7. La signature JWT est limitée à HS256. Prisma, sharp, postcss, nanoid et source-map-js restent des risques résiduels non déclenchés par le code actuel.
+- Ne pas définir `WAGESSE_DEPLOYMENT=preprod` ni `PREPROD_TEST_PHONE_VERIFY=true` en production. La vérification fictive reste fermée si l'un des deux manque ou si la base n'est pas `wagesse_preprod`.
 - Déployer la branche de recette avant toute ouverture : redirection après connexion, pages légales, page 404 française, vérification de téléphone réservée aux comptes fictifs.
 
 ## Domaine

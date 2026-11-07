@@ -21,11 +21,17 @@ describe("security headers", () => {
 })
 
 describe("fictional phone verification", () => {
-  it("stays disabled unless the preproduction flag is exactly true", () => {
+  it("stays disabled outside the preproduction database", () => {
+    const enabled = {
+      WAGESSE_DEPLOYMENT: "preprod",
+      PREPROD_TEST_PHONE_VERIFY: "true",
+      DATABASE_URL: "mysql://user:secret@127.0.0.1:3306/wagesse_preprod",
+    }
     assert.equal(preprodTestPhoneVerifyEnabled({}), false)
-    assert.equal(preprodTestPhoneVerifyEnabled({ NODE_ENV: "production" }), false)
-    assert.equal(preprodTestPhoneVerifyEnabled({ PREPROD_TEST_PHONE_VERIFY: "false" }), false)
-    assert.equal(preprodTestPhoneVerifyEnabled({ PREPROD_TEST_PHONE_VERIFY: "true" }), true)
+    assert.equal(preprodTestPhoneVerifyEnabled({ NODE_ENV: "production", ...enabled, WAGESSE_DEPLOYMENT: "production" }), false)
+    assert.equal(preprodTestPhoneVerifyEnabled({ ...enabled, PREPROD_TEST_PHONE_VERIFY: "true", WAGESSE_DEPLOYMENT: undefined }), false)
+    assert.equal(preprodTestPhoneVerifyEnabled({ ...enabled, DATABASE_URL: "mysql://user:secret@127.0.0.1:3306/wagesse" }), false)
+    assert.equal(preprodTestPhoneVerifyEnabled(enabled), true)
   })
 
   it("accepts only a reserved fictional client or trucker", () => {

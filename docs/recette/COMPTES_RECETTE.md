@@ -14,4 +14,4 @@ L'administrateur déjà présent sur le serveur n'est pas modifié. Le compte `a
 
 Le fichier chiffré qui était dans Git et dans le dossier de `wagesse-deploy` est retiré. Il avait été conservé à côté de sa phrase secrète, donc les quatre mots de passe d'origine sont considérés comme exposés. Le script root les remplace, crée l'administrateur de recette s'il est absent, et écrit le nouveau registre uniquement dans `/etc/wagesse/recette-accounts.enc` (root, mode 600). La nouvelle phrase secrète est écrite uniquement dans `/root/wagesse-recette.passphrase`. Elle n'est pas affichée, ni écrite à côté du registre, ni dans Git, ni dans ce document.
 
-Ce script n'a pas encore été lancé : il exige l'autorisation explicite du propriétaire.
+Le script ne se termine que si les quatre hachages stockés ont changé et si le nouveau mot de passe ne correspond plus à l'ancien hachage. Les cinq mots de passe sont distincts. L'administrateur déjà présent n'est pas modifié. L'administrateur de recette `78003021` est créé ou renouvelé, et son mot de passe figure seulement dans le registre chiffré.

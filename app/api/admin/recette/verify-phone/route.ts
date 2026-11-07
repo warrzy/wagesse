@@ -8,7 +8,9 @@ export const dynamic = "force-dynamic"
 /**
  * Marks a fictional preproduction account as phone-verified.
  * No code is generated, stored, or returned. The route does not exist unless
- * PREPROD_TEST_PHONE_VERIFY=true, and only an administrator can call it.
+ * the deployment is preprod, the flag is exactly true, and the database is
+ * wagesse_preprod. A client or a trucker receives the same refusal as any
+ * other non-administrator.
  */
 export async function POST(request: NextRequest) {
   if (!preprodTestPhoneVerifyEnabled()) {
