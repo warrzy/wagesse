@@ -29,12 +29,26 @@ BOOTSTRAP_DIR=""
 RUNTIME_ADMIN=""
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
+# Transmis au processus wagesse par sudo, jamais sur la ligne de commande.
+APP_SECRET_VARS="NODE_ENV,NEXT_PUBLIC_APP_NAME,NEXT_PUBLIC_APP_URL,NEXT_PUBLIC_CURRENCY,DATABASE_URL,JWT_SECRET,JWT_EXPIRATION,PAYMENT_MODE,PAYDUNYA_ENABLED,PAYDUNYA_MASTER_KEY,PAYDUNYA_PRIVATE_KEY,PAYDUNYA_TOKEN,PAYDUNYA_MODE,PAYMENT_PROVIDER,ORANGE_MONEY_CLIENT_ID,ORANGE_MONEY_CLIENT_SECRET,ORANGE_MONEY_MERCHANT_KEY,SMS_PROVIDER,SMS_HTTP_URL,SMS_HTTP_KEY,SMS_SENDER,SMS_COUNTRY_CODE,SMS_ALLOW_SIMULATE,OTP_DEBUG_RETURN,SEED_DEMO_ACCOUNTS,PORT"
+
 sha256_matches() {
   local file="$1"
   local expected="$2"
   local actual
   actual=$(sha256sum "${file}" | awk '{print $1}')
   [[ "${actual}" == "${expected}" ]]
+}
+
+secret_filter() {
+  sed -u -E \
+    -e 's#mysql://[^[:space:]'\''"]+#mysql://[redacted]#g' \
+    -e 's#(JWT_SECRET=)[^[:space:]]+#\1[redacted]#g' \
+    -e 's#(PAYDUNYA_[A-Z_]*(KEY|TOKEN)=)[^[:space:]]+#\1[redacted]#g' \
+    -e 's#(ORANGE_MONEY_[A-Z_]*(SECRET|KEY)=)[^[:space:]]+#\1[redacted]#g' \
+    -e 's#(SMS_HTTP_KEY=)[^[:space:]]+#\1[redacted]#g' \
+    -e 's#(password=)[^[:space:]]+#\1[redacted]#g' \
+    -e 's#(phone=)[0-9]+#\1[redacted]#g'
 }
 
 self_check() {
@@ -94,6 +108,36 @@ self_check() {
   fi
   if ! grep -q 'process.getuid' "${0%/*}/create-admin.mjs"; then
     echo "Le script admin ne refuse pas root." >&2
+    return 1
+  fi
+  local filtered continued
+  filtered=$(printf '%s\n' 'mysql://wagesse_preprod:supersecret@127.0.0.1:3306/db' | secret_filter)
+  if [[ "${filtered}" == *supersecret* || "${filtered}" != *'mysql://[redacted]'* ]]; then
+    echo "Le filtre ne masque pas une URL de base." >&2
+    return 1
+  fi
+  continued=$(bash -c 'set -euo pipefail; . /no/such/wagesse.env; echo CONTINUED' 2>/dev/null || true)
+  if [[ "${continued}" == *CONTINUED* ]]; then
+    echo "Un chargement de secrets raté ne s'arrête pas." >&2
+    return 1
+  fi
+  local bad_source bad_mode
+  bad_source="bash \"\${ENV_FILE}\""
+  bad_mode="chmod 64""0"
+  if grep -F -q "${bad_source}" "$0" || grep -F -q "${bad_mode} \"\${ENV_FILE}\"" "$0"; then
+    echo "Le compte applicatif lirait encore le fichier de secrets." >&2
+    return 1
+  fi
+  if ! grep -q 'chmod 600 "${ENV_FILE}"' "$0" || ! grep -q 'exec_as_app "${APP_SECRET_VARS}"' "$0"; then
+    echo "Les secrets ne restent pas limités à root." >&2
+    return 1
+  fi
+  if ! grep -q -- '--preserve-env="${preserve}"' "$0"; then
+    echo "Les variables ne sont pas transmises par l'environnement du processus." >&2
+    return 1
+  fi
+  if ! grep -q 'DATABASE_URL absent' "$0"; then
+    echo "L'absence de DATABASE_URL n'interrompt pas Prisma." >&2
     return 1
   fi
   echo "Vérification statique du script réussie."
@@ -208,8 +252,28 @@ git_app() {
 
 run_as_app_clean() {
   sudo -u "${APP_USER}" env HOME="${APP_DIR}" PATH="${APP_DIR}/.node/bin:${PATH}" \
-    bash -c 'cd "$1" || exit 1; shift; exec "$@"' \
+    bash -c 'set -euo pipefail; cd "$1" || exit 1; shift; exec "$@"' \
     bash "${APP_DIR}/app" "$@"
+}
+
+exec_as_app() {
+  local preserve="$1"
+  shift
+  local status
+  if [[ -z "${DATABASE_URL:-}" ]]; then
+    echo "DATABASE_URL absent. Arrêt avant Prisma ou le build." >&2
+    exit 1
+  fi
+  set +e
+  sudo --preserve-env="${preserve}" -u "${APP_USER}" \
+    env HOME="${APP_DIR}" PATH="${APP_DIR}/.node/bin:${PATH}" \
+    "$@" 2>&1 | secret_filter
+  status=${PIPESTATUS[0]}
+  set -e
+  if [[ "${status}" -ne 0 ]]; then
+    echo "Commande applicative interrompue (code ${status})." >&2
+    exit "${status}"
+  fi
 }
 
 run_as_app() {
@@ -220,9 +284,9 @@ run_as_app() {
       exit 1
     fi
   done
-  sudo -u "${APP_USER}" env HOME="${APP_DIR}" \
-    bash -c 'set -a; . "$1"; set +a; cd "$2" || exit 1; export PATH="$3:$PATH"; shift 3; exec "$@"' \
-    bash "${ENV_FILE}" "${APP_DIR}/app" "${APP_DIR}/.node/bin" "$@"
+  exec_as_app "${APP_SECRET_VARS}" \
+    bash -c 'set -euo pipefail; if [[ -z "${DATABASE_URL:-}" ]]; then echo "DATABASE_URL absent. Arrêt avant Prisma ou le build." >&2; exit 1; fi; cd "$1" || exit 1; shift; exec "$@"' \
+    bash "${APP_DIR}/app" "$@"
 }
 
 mysql_hidden() {
@@ -402,8 +466,6 @@ PORT=${PORT}
 EOF
   unset db_pass jwt
   umask 022
-  chown root:"${APP_USER}" "${ENV_FILE}"
-  chmod 640 "${ENV_FILE}"
 else
   echo "Fichier d'environnement conservé."
   if mysql -N -e "SHOW DATABASES LIKE 'wagesse_preprod'" | grep -qx wagesse_preprod; then
@@ -412,10 +474,21 @@ else
   fi
 fi
 
+chown root:root "${ENV_FILE}"
+chmod 600 "${ENV_FILE}"
+chmod 700 "${ENV_DIR}"
+if [[ ! -r "${ENV_FILE}" ]]; then
+  echo "Fichier d'environnement illisible pour root. Arrêt." >&2
+  exit 1
+fi
 set -a
 # shellcheck disable=SC1090
 . "${ENV_FILE}"
 set +a
+if [[ -z "${DATABASE_URL:-}" ]]; then
+  echo "DATABASE_URL absent. Migrations interrompues." >&2
+  exit 1
+fi
 
 if [[ "${PORT}" != "3020" || "${PAYMENT_MODE}" != "MANUAL" || "${PAYDUNYA_ENABLED}" != "false" || "${SEED_DEMO_ACCOUNTS}" != "false" ]]; then
   echo "L'environnement ne respecte pas le mode manuel, PayDunya inactif, le port 3020 ou l'absence de comptes de démonstration." >&2
@@ -441,9 +514,9 @@ chown "${APP_USER}:${APP_USER}" "${BOOTSTRAP_DIR}/admin.env"
 chmod 600 "${BOOTSTRAP_DIR}/admin.env"
 RUNTIME_ADMIN="${APP_DIR}/app/create-admin.runtime.mjs"
 install -m 600 -o "${APP_USER}" -g "${APP_USER}" "${SCRIPT_DIR}/create-admin.mjs" "${RUNTIME_ADMIN}"
-sudo -u "${APP_USER}" env HOME="${APP_DIR}" \
-  bash -c 'set -a; . "$1"; . "$2"; set +a; cd "$3" || exit 1; export PATH="$4:$PATH"; exec node "$5"' \
-  bash "${ENV_FILE}" "${BOOTSTRAP_DIR}/admin.env" "${APP_DIR}/app" "${APP_DIR}/.node/bin" "${RUNTIME_ADMIN}"
+exec_as_app "DATABASE_URL" \
+  bash -c 'set -euo pipefail; set -a; . "$1"; set +a; if [[ -z "${DATABASE_URL:-}" || -z "${ADMIN_PHONE:-}" ]]; then echo "Secrets administrateur incomplets. Arrêt." >&2; exit 1; fi; cd "$2" || exit 1; exec node "$3"' \
+  bash "${BOOTSTRAP_DIR}/admin.env" "${APP_DIR}/app" "${RUNTIME_ADMIN}"
 if [[ -f "${BOOTSTRAP_DIR}/credentials" ]]; then
   install -m 600 -o root -g root "${BOOTSTRAP_DIR}/credentials" "${ENV_DIR}/preprod-admin.credentials"
 fi

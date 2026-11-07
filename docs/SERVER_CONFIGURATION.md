@@ -35,7 +35,7 @@ Aucun changement DNS n’est nécessaire pour la préproduction : l’enregistre
 | Node | `/opt/wagesse-preprod/.node` (22.23.4), distinct du Node système |
 | Service | `wagesse-preprod.service` |
 | Écoute | `127.0.0.1:3020` uniquement. 3000, 3001 et 3010 restent aux applications déjà présentes |
-| Environnement | `/etc/wagesse/preprod.env`, mode 640, groupe `wagesse` |
+| Environnement | `/etc/wagesse/preprod.env`, répertoire et fichier en 700/600, propriétaire root. systemd le lit en root. Prisma le reçoit par l’environnement du processus, sans droit de lecture pour les autres comptes |
 | Identifiants admin | `/etc/wagesse/preprod-admin.credentials`, mode 600, root |
 
 Variables métier du fichier d’environnement :

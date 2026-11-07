@@ -4,9 +4,9 @@ Date des contrôles : 6 novembre 2026, 19:47–19:52 (Europe/Paris).
 
 ## Résultat
 
-WAGESSE n’est pas encore en service sur https://preprod.wagesse.fr. Le 7 novembre 2026 à 18:05 (Europe/Paris), `http://preprod.wagesse.fr/` sert encore la page nginx par défaut (615 octets) et le certificat HTTPS présenté est celui d’ECOM-TOUCH. L’installation privilégiée n’a pas été relancée.
+WAGESSE n’est pas encore en service sur https://preprod.wagesse.fr. La deuxième exécution, le 7 novembre 2026 à 18:26 (Europe/Paris), a installé les dépendances et généré le client Prisma, puis s’est arrêtée : `/etc/wagesse` est en mode 700, propriétaire root, et le compte `wagesse` ne peut pas lire `/etc/wagesse/preprod.env`. Prisma a donc démarré sans `DATABASE_URL`. Le vhost et le service ne sont pas en place. Les ports 3000, 3001, 3010, 5432 et MariaDB sur `127.0.0.1:3306` répondaient encore au contrôle suivant.
 
-La première exécution root s’est arrêtée sur `dubious ownership` après l’installation de MariaDB 10.11.14 et le clone du code. Le correctif Git du commit `4dbf02c` est conservé : toute commande `git` du dépôt applicatif passe par `sudo -u wagesse`, sans `safe.directory`. Le script ajoute la vérification SHA-256 de Node.js 22.23.4 (`1805bcd35e6815559bd2eb97db438d3fdb0eb3a5e6a977b7c1badca76337e9ce`, fichier officiel `SHASUMS256.txt`), crée le compte administrateur sous l’utilisateur `wagesse`, et ne demande le certificat que pour `preprod.wagesse.fr`. SHA-256 de `deploy/preprod/install.sh` : `85c24298cbd5aba827f9a4908af5a771cee8c83aba52fe456d656e4edfb534e5`.
+Le script lit maintenant ce fichier en root, le laisse en mode 600, et transmet les variables au processus `wagesse` par l’environnement, sans les mettre sur la ligne de commande ni dans le journal. Un échec de chargement ou une `DATABASE_URL` vide arrête le script avant `migrate deploy`. SHA-256 de `deploy/preprod/install.sh` : `b555d7346e8c39bd82534bde6298c79ad047f0823e151fbcf41a75c671f353a9`.
 
 ## Inventaire console du 7 novembre 2026
 
@@ -22,7 +22,7 @@ La première exécution root s’est arrêtée sur `dubious ownership` après l�
 | Port 3000 | Wendyam Finance, `0.0.0.0:3000` |
 | Port 3001 | ECOM-SCHOOL, `127.0.0.1:3001` |
 | Port 3010 | ECOM-TOUCH, toutes interfaces. Le script refuse de s’y placer |
-| Port 3020 | libre le 7 novembre 2026 à 18:05 (Europe/Paris). Seule écoute autorisée : `127.0.0.1:3020` |
+| Port 3020 | libre après l’échec de 18:26 (Europe/Paris). Seule écoute autorisée : `127.0.0.1:3020` |
 | Vhosts | `default`, `ecom-touch-public.conf`, `preprod.ecomschool.fr.conf`, `tme-machinery`, `wendyam-finance`. Pas de `preprod.wagesse.fr` |
 
 Le script archive les vhosts, compare leurs sommes MD5 après coup, et retire uniquement le sien si un autre nom HTTPS change de statut. Il ne redémarre pas ces applications.
@@ -111,7 +111,7 @@ fi
 cd /root/wagesse-preprod-src
 git fetch origin cursor/preprod-deployment-ba0b
 git checkout --detach origin/cursor/preprod-deployment-ba0b
-test "$(sha256sum deploy/preprod/install.sh | awk '{print $1}')" = "85c24298cbd5aba827f9a4908af5a771cee8c83aba52fe456d656e4edfb534e5"
+test "$(sha256sum deploy/preprod/install.sh | awk '{print $1}')" = "b555d7346e8c39bd82534bde6298c79ad047f0823e151fbcf41a75c671f353a9"
 bash deploy/preprod/install.sh --check
 
 restore_wagesse() {

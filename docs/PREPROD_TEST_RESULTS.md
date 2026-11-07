@@ -66,6 +66,12 @@ Exécutés depuis l’agent, sans installation privilégiée sur le VPS.
 
 Un essai local du script admin, lancé avec l’environnement de test déjà présent, a créé puis supprimé une ligne administrateur dans `wagesse_test`. Aucun fichier d’identifiants n’a été conservé. Les parcours métier de https://preprod.wagesse.fr n’ont pas été ouverts.
 
+## Contrôles après l’échec Prisma du 7 novembre 2026, 18:26 (Europe/Paris)
+
+La deuxième installation n’a pas été relancée. Lecture seule ensuite : `wagesse-preprod` inactif, port 3020 fermé, vhost absent, MariaDB limité à `127.0.0.1:3306`, nginx, SSH, PostgreSQL et PM2 actifs. `namei` s’arrête sur `/etc/wagesse` en `drwx------ root root` : le fichier d’environnement existe, le compte de déploiement ne peut pas le lire.
+
+`bash deploy/preprod/install.sh --check` vérifie qu’une URL `mysql://` est masquée, qu’un `source` raté s’arrête avec `set -e`, et que le script ne redonne pas la lecture du fichier au compte `wagesse`. Le schéma de `wagesse_preprod` n’a pas été lu : la session disponible n’a pas d’accès MariaDB. Le journal montre que `migrate deploy` n’a pas abouti.
+
 ## Ce qui reste à exécuter sur le serveur
 
 Après l’installation réelle : ouverture de https://preprod.wagesse.fr avec un certificat au nom `preprod.wagesse.fr`, connexion administrateur, création d’une commande manuelle, approbation, solde de crédits, et contrôle que https://ecom-touch.tech répond encore.
