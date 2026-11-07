@@ -172,10 +172,13 @@ chown -R "${APP_USER}:${APP_USER}" "${APP_DIR}/.node"
 if [[ ! -d "${APP_DIR}/app/.git" ]]; then
   sudo -u "${APP_USER}" git clone "${REPO}" "${APP_DIR}/app"
 fi
+chown -R "${APP_USER}:${APP_USER}" "${APP_DIR}/app"
 sudo -u "${APP_USER}" git -C "${APP_DIR}/app" fetch origin
 sudo -u "${APP_USER}" git -C "${APP_DIR}/app" checkout --detach "${REF}"
-echo "Commit déployé : $(git -C "${APP_DIR}/app" rev-parse HEAD)" | tee "${ENV_DIR}/preprod-release.txt"
-if [[ "$(git -C "${APP_DIR}/app" rev-parse HEAD)" != "${REF}" ]]; then
+# Git refuse un dépôt dont le propriétaire n'est pas l'utilisateur courant.
+deployed=$(sudo -u "${APP_USER}" git -C "${APP_DIR}/app" rev-parse HEAD)
+printf '%s\n' "Commit déployé : ${deployed}" | tee "${ENV_DIR}/preprod-release.txt"
+if [[ "${deployed}" != "${REF}" ]]; then
   echo "Le commit déployé n'est pas ${REF}." >&2
   exit 1
 fi
