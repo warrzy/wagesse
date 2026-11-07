@@ -47,10 +47,33 @@ verify_script_sums() {
   ) || die "Somme SHA-256 des scripts refusée. Arrêt avant exécution."
 }
 
+# Git refuses a root process on a repository owned by another user.
+# Run as that owner instead of widening the set of trusted directories.
+git_in() {
+  local repo="$1"
+  shift
+  [[ -d "$repo" ]] || die "Dépôt Git absent : ${repo}."
+  local owner home
+  owner=$(stat -c '%U' "$repo")
+  [[ -n "$owner" && "$owner" != "UNKNOWN" ]] || die "Propriétaire illisible pour ${repo}."
+  if [[ "$(id -un)" == "$owner" ]]; then
+    GIT_TERMINAL_PROMPT=0 git -C "$repo" "$@"
+    return
+  fi
+  home=$(getent passwd "$owner" | awk -F: '{print $6}')
+  [[ -n "$home" ]] || die "Utilisateur ${owner} introuvable pour Git."
+  runuser -u "$owner" -- env -i \
+    HOME="$home" \
+    PATH="/usr/bin:/bin" \
+    GIT_TERMINAL_PROMPT=0 \
+    git -C "$repo" "$@"
+}
+
 assert_descendant() {
-  local repo="$1" ref="$2"
-  git -C "$repo" cat-file -e "${EXPECTED_BASE}^{commit}" || die "Commit de référence ${EXPECTED_BASE} introuvable."
-  git -C "$repo" merge-base --is-ancestor "$EXPECTED_BASE" "$ref" || die "Le commit ${ref} ne contient pas ${EXPECTED_BASE}."
+  local repo="$1" ref="$2" owner
+  owner=$(stat -c '%U' "$repo")
+  git_in "$repo" cat-file -e "${EXPECTED_BASE}^{commit}" || die "Commit de référence ${EXPECTED_BASE} introuvable pour ${owner}."
+  git_in "$repo" merge-base --is-ancestor "$EXPECTED_BASE" "$ref" || die "Le commit ${ref} ne contient pas ${EXPECTED_BASE} pour ${owner}."
 }
 
 assert_bcrypt_declared() {

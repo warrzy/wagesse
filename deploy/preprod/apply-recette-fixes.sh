@@ -31,9 +31,7 @@ assert_preprod_database
 unset DATABASE_URL
 
 step=ancetre
-runuser -u wagesse -- env -i \
-  HOME=/opt/wagesse-preprod PATH="$NODE_BIN:/usr/bin:/bin" GIT_TERMINAL_PROMPT=0 \
-  git -C "$APP" fetch --no-tags origin "$EXPECTED_BASE" || die "Impossible de lire le commit de référence ${EXPECTED_BASE}."
+git_in "$APP" fetch --no-tags origin "$EXPECTED_BASE" || die "Impossible de lire le commit de référence ${EXPECTED_BASE}."
 assert_descendant "$APP" "$EXPECTED_BASE"
 
 fail() {
@@ -55,9 +53,7 @@ rollback() {
   echo "Échec à l'étape ${step}. Retour au commit ${PREV:-inconnu}." >&2
   systemctl stop wagesse-preprod.service || true
   if [[ -n "${PREV:-}" ]]; then
-    runuser -u wagesse -- env -i \
-      HOME=/opt/wagesse-preprod PATH="$NODE_BIN:/usr/bin:/bin" GIT_TERMINAL_PROMPT=0 \
-      git -C "$APP" checkout --detach "$PREV" || echo "Le retour Git a échoué." >&2
+    git_in "$APP" checkout --detach "$PREV" || echo "Le retour Git a échoué." >&2
   fi
   if [[ -n "${BK:-}" && -f "$BK/runtime.tar" ]]; then
     tar -C "$APP" -xf "$BK/runtime.tar" || echo "La restauration des fichiers a échoué." >&2
@@ -83,7 +79,7 @@ step=sauvegarde
 BK=/var/backups/wagesse-preprod/rollback-$(date -u +%Y%m%dT%H%M%SZ)
 install -d -m 700 /var/backups/wagesse-preprod
 install -d -m 700 "$BK"
-PREV=$(runuser -u wagesse -- env -i HOME=/opt/wagesse-preprod PATH=/usr/bin:/bin git -C "$APP" rev-parse HEAD)
+PREV=$(git_in "$APP" rev-parse HEAD)
 printf '%s\n' "$PREV" > "$BK/commit"
 cp -a "$ENV_FILE" "$BK/preprod.env"
 chmod 600 "$BK/preprod.env"
@@ -110,15 +106,11 @@ ensure_preprod_flag PREPROD_TEST_PHONE_VERIFY true
 chmod 600 "$ENV_FILE"
 
 step=code
-runuser -u wagesse -- env -i \
-  HOME=/opt/wagesse-preprod PATH="$NODE_BIN:/usr/bin:/bin" GIT_TERMINAL_PROMPT=0 \
-  git -C "$APP" fetch --no-tags origin "$REF"
-runuser -u wagesse -- env -i \
-  HOME=/opt/wagesse-preprod PATH="$NODE_BIN:/usr/bin:/bin" GIT_TERMINAL_PROMPT=0 \
-  git -C "$APP" checkout --detach "$REF"
-actual=$(runuser -u wagesse -- env -i HOME=/opt/wagesse-preprod PATH=/usr/bin:/bin git -C "$APP" rev-parse HEAD)
+git_in "$APP" fetch --no-tags origin "$REF"
+git_in "$APP" checkout --detach "$REF"
+actual=$(git_in "$APP" rev-parse HEAD)
 [[ "$actual" == "$REF" ]] || fail "HEAD ${actual} différent de ${REF}."
-git -C "$APP" merge-base --is-ancestor "$EXPECTED_BASE" "$REF" || fail "Le commit ${REF} ne contient pas ${EXPECTED_BASE}."
+git_in "$APP" merge-base --is-ancestor "$EXPECTED_BASE" "$REF" || fail "Le commit ${REF} ne contient pas ${EXPECTED_BASE}."
 
 step=dependances
 runuser -u wagesse -- env -i \

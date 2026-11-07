@@ -31,7 +31,7 @@ PROBE="${APP}/.recette-import-probe.mjs"
 [[ -f "$SCRIPT" ]] || die "Script de rotation absent. Arrêt."
 
 step=modules
-repo=$(git -C "$DIR" rev-parse --show-toplevel)
+repo=$(git_in "$DIR" rev-parse --show-toplevel)
 assert_bcrypt_declared "$repo/package.json"
 assert_rotation_layout "$0"
 probe_rotation_imports
