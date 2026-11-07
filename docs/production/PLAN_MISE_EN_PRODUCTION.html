@@ -1,0 +1,55 @@
+<!DOCTYPE html><html lang='fr'><head><meta charset='utf-8'><title>Mise en production WAGESSE</title><style>
+@page { size: A4; margin: 16mm 14mm 18mm; }
+body { font-family: 'Liberation Sans', sans-serif; color: #0f172a; font-size: 11pt; line-height: 1.45; }
+h1 { font-size: 22pt; margin-bottom: 0.2em; }
+h2 { font-size: 15pt; margin-top: 1.3em; border-bottom: 2px solid #f97316; padding-bottom: 0.15em; }
+h3 { font-size: 12.5pt; margin-top: 1em; }
+.cover { page-break-after: always; min-height: 250mm; }
+.brand { color: #f97316; font-weight: 800; letter-spacing: 0.08em; }
+.muted { color: #475569; }
+table { width: 100%; border-collapse: collapse; margin: 0.6em 0 1em; font-size: 9pt; }
+th, td { border: 1px solid #e2e8f0; padding: 4px 6px; vertical-align: top; }
+th { background: #fff7ed; text-align: left; }
+img.shot { width: 100%; border: 1px solid #e2e8f0; margin: 0.4em 0 0.8em; }
+.pass { color: #166534; font-weight: 700; }
+.fail { color: #991b1b; font-weight: 700; }
+.blocked { color: #9a3412; font-weight: 700; }
+footer, .footer-note { page-break-before: avoid; }
+</style></head><body><section class='cover'><p class='brand'>WAGESSE</p>
+<h1>Dossier de mise en production</h1></section>
+<p>Statut : préparation seulement. Aucun domaine de production n'a été basculé, aucune donnée n'a été migrée, aucun déploiement de production n'a été lancé.</p>
+<h2>Recommandation</h2>
+<p>NO-GO tant que les conditions suivantes ne sont pas réunies et acceptées explicitement.</p>
+<h2>Checklist de sécurité</h2>
+<ul>
+<li>Conserver `PAYMENT_MODE=MANUAL` ou n'activer un prestataire qu'avec des clés réelles, hors préproduction.</li>
+<li>Laisser PayDunya désactivé tant que le webhook et les clés ne sont pas revus.</li>
+<li>Ne pas copier les comptes 78001021, 78001022, 78002021 et 78002022.</li>
+<li>Ne pas réutiliser la base `wagesse_preprod`.</li>
+<li>Retirer `x-powered-by` et ajouter HSTS, `X-Content-Type-Options: nosniff` et une politique de frame.</li>
+<li>Traiter les alertes npm hautes avant l'ouverture publique. L'alerte critique Next.js vise Windows ; le VPS actuel est Linux.</li>
+<li>Déployer le correctif qui n'interrompt plus l'inscription sur l'écran SMS, ainsi que les pages légales.</li>
+</ul>
+<h2>Domaine</h2>
+<p>Le domaine de production prévu n'est pas `preprod.wagesse.fr`. `wagesse.fr` pointe aujourd'hui vers l'hébergement LWS, pas vers ce VPS. Le changer exige une validation séparée. Le certificat de préproduction ne couvre pas le domaine de production.</p>
+<h2>Sauvegarde et restauration</h2>
+<ul>
+<li>Avant toute migration : `mysqldump` de la future base de production, fichier chiffré, hors du dépôt Git.</li>
+<li>Restauration à répéter sur une base jetable, puis contrôle du nombre d'utilisateurs et d'une demande.</li>
+<li>Cette restauration n'a pas été exécutée pendant la recette.</li>
+</ul>
+<h2>Migrations</h2>
+<p>`prisma migrate deploy` uniquement. Pas de `migrate reset`. Les six migrations déjà appliquées en préproduction sont le socle. Une base neuve de production doit les recevoir dans l'ordre, sans les données fictives.</p>
+<h2>Secrets</h2>
+<p>Fichiers root 600, hors dépôt. `JWT_SECRET`, mot de passe MariaDB et éventuelles clés de paiement sont distincts de ceux de la préproduction. Le compte applicatif ne lit pas le fichier d'environnement.</p>
+<h2>Déploiement</h2>
+<p>Même isolation que la préproduction : utilisateur système dédié, port local, vhost nommé, `nginx -t` avant rechargement. Le code n'est pas le commit de préproduction tant que la branche de recette n'est pas acceptée.</p>
+<h2>Après déploiement</h2>
+<ul>
+<li>Certificat au nom du domaine de production.</li>
+<li>Connexion d'un administrateur créé pour la production, pas un compte de recette.</li>
+<li>Une commande manuelle de bout en bout, avec un vrai numéro vérifié.</li>
+<li>Les autres sites du serveur répondent encore.</li>
+</ul>
+<h2>Retour arrière</h2>
+<p>Conserver le dump précédant la migration et le précédent build. En cas d'échec : retirer le vhost de production, réactiver l'ancien processus, restaurer le dump sur une base neuve puis basculer l'application. Ne pas restaurer par-dessus une base qui aurait déjà reçu des paiements réels sans décision explicite.</p></body></html>

@@ -7,6 +7,7 @@ import Link from "next/link"
 import Header from "@/components/Header"
 import Footer from "@/components/Footer"
 import CreditsBanner from "@/components/CreditsBanner"
+import PhoneNotice from "@/components/PhoneNotice"
 import ClientGuard from "@/app/dashboard/client/client-guard"
 import { Truck, DollarSign, CheckCircle, AlertCircle, TrendingUp } from "lucide-react"
 import { apiClient } from "@/lib/api-client"
@@ -123,6 +124,8 @@ export default function TruckerDashboard() {
             <h1 className="text-3xl font-bold mb-2">Tableau de bord camionneur</h1>
             <p className="text-gray-600">Gérez vos missions et revenus</p>
           </motion.div>
+
+          <PhoneNotice />
 
           <motion.div variants={itemVariants} className="mb-8">
             <CreditsBanner dashboardHref="/dashboard/trucker" contactsHref="/dashboard/trucker/contacts" />

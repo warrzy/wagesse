@@ -1,0 +1,41 @@
+<!DOCTYPE html><html lang='fr'><head><meta charset='utf-8'><title>Audit sécurité WAGESSE</title><style>
+@page { size: A4; margin: 16mm 14mm 18mm; }
+body { font-family: 'Liberation Sans', sans-serif; color: #0f172a; font-size: 11pt; line-height: 1.45; }
+h1 { font-size: 22pt; margin-bottom: 0.2em; }
+h2 { font-size: 15pt; margin-top: 1.3em; border-bottom: 2px solid #f97316; padding-bottom: 0.15em; }
+h3 { font-size: 12.5pt; margin-top: 1em; }
+.cover { page-break-after: always; min-height: 250mm; }
+.brand { color: #f97316; font-weight: 800; letter-spacing: 0.08em; }
+.muted { color: #475569; }
+table { width: 100%; border-collapse: collapse; margin: 0.6em 0 1em; font-size: 9pt; }
+th, td { border: 1px solid #e2e8f0; padding: 4px 6px; vertical-align: top; }
+th { background: #fff7ed; text-align: left; }
+img.shot { width: 100%; border: 1px solid #e2e8f0; margin: 0.4em 0 0.8em; }
+.pass { color: #166534; font-weight: 700; }
+.fail { color: #991b1b; font-weight: 700; }
+.blocked { color: #9a3412; font-weight: 700; }
+footer, .footer-note { page-break-before: avoid; }
+</style></head><body><section class='cover'><p class='brand'>WAGESSE</p>
+<h1>Contrôles de sécurité — préproduction</h1></section>
+<p>Date : 7 novembre 2026, 19:50 (Europe/Paris). Cible : https://preprod.wagesse.fr. Aucun test destructif sur les autres applications du VPS.</p>
+<h2>Résultats exécutés</h2>
+<table>
+<tr><th>Contrôle</th><th>Résultat</th></tr>
+<tr><td>Inscription avec le rôle ADMIN</td><td>Refusée, HTTP 400</td></tr>
+<tr><td>Mot de passe incorrect</td><td>HTTP 401, message générique</td></tr>
+<tr><td>Tableau de bord admin sans jeton</td><td>HTTP 401</td></tr>
+<tr><td>Tableau de bord admin avec un client</td><td>HTTP 401, aucune donnée</td></tr>
+<tr><td>Liste des utilisateurs avec un transporteur</td><td>HTTP 401</td></tr>
+<tr><td>Demande d'un autre client</td><td>HTTP 403</td></tr>
+<tr><td>Refus d'un devis d'un autre client</td><td>HTTP 403</td></tr>
+<tr><td>Véhicules d'un autre transporteur</td><td>absents de la liste</td></tr>
+<tr><td>Devis du client</td><td>deux devis, numéros de transporteurs absents du JSON</td></tr>
+<tr><td>Second devis du même transporteur</td><td>HTTP 400</td></tr>
+<tr><td>Achat, forfait et déblocage sans téléphone vérifié</td><td>HTTP 403, solde resté à 0</td></tr>
+<tr><td>Webhook PayDunya forgé</td><td>HTTP 403, PayDunya désactivé</td></tr>
+<tr><td>Mot de passe oublié</td><td>réponse sans code, SMS non délivré</td></tr>
+<tr><td>Code de réinitialisation faux</td><td>HTTP 400, l'ancien mot de passe fonctionne encore</td></tr>
+<tr><td>Page /admin ouverte par un transporteur</td><td>tableau de bord transporteur, pas l'administration</td></tr>
+</table>
+<h2>Limites</h2>
+<p>Le compte administrateur initial n'a pas été utilisé. Les doubles validations de paiement n'ont pas été rejouées. Les en-têtes de durcissement manquent. Les alertes npm hautes ne sont pas corrigées. Firefox et Safari n'ont pas été ouverts.</p></body></html>
