@@ -44,7 +44,7 @@ test("le mode simple parcourt le métier sans SMS et le mode vérifié réappliq
     SMS_ALLOW_SIMULATE: process.env.SMS_ALLOW_SIMULATE,
   }
   process.env.PHONE_VERIFICATION_REQUIRED = "false"
-  process.env.NODE_ENV = "test"
+  Object.assign(process.env, { NODE_ENV: "test" })
   process.env.SMS_PROVIDER = "simulate"
 
   const phone = `79${String(seq).padStart(6, "0")}`
@@ -100,7 +100,7 @@ test("le mode simple parcourt le métier sans SMS et le mode vérifié réappliq
     requestedDate: when,
   }, clientToken))
   const requestBody = await json(request)
-  assert.equal(request.status, 201, requestBody.error)
+  assert.equal(request.status, 201, requestBody.error ?? "réponse sans message d'erreur")
   const requestId = requestBody.data.id as string
   const published = await publishRequest(post(`/api/requests/${requestId}/publish`, {}, clientToken), { params: Promise.resolve({ id: requestId }) })
   assert.equal(published.status, 200)
@@ -113,13 +113,13 @@ test("le mode simple parcourt le métier sans SMS et le mode vérifié réappliq
     validUntil: when,
   }, truckerToken))
   const quoteBody = await json(quote)
-  assert.equal(quote.status, 201, quoteBody.error)
+  assert.equal(quote.status, 201, quoteBody.error ?? "réponse sans message d'erreur")
   const quoteId = quoteBody.data.id as string
 
   const pack = await prisma.creditPack.findFirstOrThrow({ where: { isActive: true, credits: { gt: 0 } } })
   const order = await purchase(post("/api/credits/purchase", { packCode: pack.code }, clientToken))
   const orderBody = await json(order)
-  assert.equal(order.status, 201, orderBody.error)
+  assert.equal(order.status, 201, orderBody.error ?? "réponse sans message d'erreur")
   const stillUnverified = await prisma.user.findUniqueOrThrow({ where: { phone }, select: { phoneVerified: true } })
   assert.equal(stillUnverified.phoneVerified, null)
 
@@ -156,7 +156,7 @@ test("le mode simple parcourt le métier sans SMS et le mode vérifié réappliq
     { params: Promise.resolve({ id: quoteId }) }
   )
   const missionBody = await json(missionResponse)
-  assert.equal(missionResponse.status, 201, missionBody.error)
+  assert.equal(missionResponse.status, 201, missionBody.error ?? "réponse sans message d'erreur")
   const missionId = missionBody.data.id as string
   for (const status of ["TRUCK_EN_ROUTE_PICKUP", "ARRIVED_PICKUP", "LOADING_IN_PROGRESS", "EN_ROUTE_DELIVERY", "ARRIVED_DELIVERY", "DELIVERED", "PENDING_CONFIRMATION"]) {
     const step = await missionStatus(
@@ -197,7 +197,7 @@ test("le mode simple parcourt le métier sans SMS et le mode vérifié réappliq
   assert.equal(refusedSignup.status, 503)
   assert.equal(await prisma.user.count({ where: { phone: `76${String(seq).padStart(6, "0")}` } }), 0)
 
-  process.env.NODE_ENV = "test"
+  Object.assign(process.env, { NODE_ENV: "test" })
   process.env.SMS_PROVIDER = "simulate"
   const blockedOtp = await purchase(post("/api/credits/purchase", { packCode: pack.code }, clientToken))
   assert.equal(blockedOtp.status, 403)
