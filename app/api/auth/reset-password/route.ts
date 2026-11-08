@@ -3,11 +3,12 @@ import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { hashPassword, verifyOTP } from "@/lib/auth"
 import { otpKey } from "@/lib/otp-delivery"
+import { passwordSchema } from "@/lib/validations"
 
 const schema = z.object({
   phone: z.string().regex(/^[0-9]{8,}$/, "Numéro de téléphone invalide"),
   code: z.string().length(6, "Le code doit contenir 6 chiffres"),
-  password: z.string().min(8, "Le mot de passe doit avoir au moins 8 caractères"),
+  password: passwordSchema,
 })
 
 export async function POST(request: NextRequest) {
@@ -38,6 +39,16 @@ export async function POST(request: NextRequest) {
     const user = await prisma.user.findUnique({ where: { phone } })
     if (!user || user.deletedAt || user.status === "DELETED") {
       return NextResponse.json({ success: false, error: "Compte introuvable", code: "NOT_FOUND" }, { status: 404 })
+    }
+    if (!user.phoneVerified) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Le numéro n'a pas été vérifié. La réinitialisation par SMS est refusée.",
+          code: "PHONE_NOT_VERIFIED",
+        },
+        { status: 403 }
+      )
     }
 
     await prisma.user.update({

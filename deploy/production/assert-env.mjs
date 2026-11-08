@@ -22,7 +22,12 @@ if ((env.DATABASE_URL || "").includes("/wagesse_preprod")) problems.push("base-p
 if (env.OTP_DEBUG_RETURN === "true") problems.push("otp-debug")
 if (env.SMS_ALLOW_SIMULATE) problems.push("sms-simulation")
 if ((env.SMS_PROVIDER || "").toLowerCase() === "simulate") problems.push("sms-simulate")
-if (!env.SMS_HTTP_URL || !env.SMS_HTTP_KEY) problems.push("sms-http-absent")
+if (env.PHONE_VERIFICATION_REQUIRED !== "true" && env.PHONE_VERIFICATION_REQUIRED !== "false") {
+  problems.push("verification-telephone-absente")
+}
+if (env.PHONE_VERIFICATION_REQUIRED === "true" && (!env.SMS_HTTP_URL || !env.SMS_HTTP_KEY)) {
+  problems.push("sms-http-absent")
+}
 if (env.NODE_ENV !== "production") problems.push("node-env")
 
 if (problems.length > 0) {

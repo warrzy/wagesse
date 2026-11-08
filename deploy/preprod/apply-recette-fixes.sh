@@ -103,6 +103,7 @@ ensure_preprod_flag() {
 }
 ensure_preprod_flag WAGESSE_DEPLOYMENT preprod
 ensure_preprod_flag PREPROD_TEST_PHONE_VERIFY true
+ensure_preprod_flag PHONE_VERIFICATION_REQUIRED false
 chmod 600 "$ENV_FILE"
 
 step=code
