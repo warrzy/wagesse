@@ -44,15 +44,22 @@ async function call(method, path, { token, body, host } = {}) {
   } catch {
     json = null
   }
-  return { status: response.status, json, text }
+  return { method, path, status: response.status, json, text }
 }
 
 function errorOf(result) {
-  return String(result.json?.error || result.json?.code || "").slice(0, 80)
+  const code = result.json?.code || result.json?.error
+  return typeof code === "string" ? code.slice(0, 80) : ""
+}
+
+function outcome(result) {
+  if (result.status === 404) return `${result.method} ${result.path} HTTP 404`
+  const detail = errorOf(result)
+  return detail ? `HTTP ${result.status} ${detail}` : `HTTP ${result.status}`
 }
 
 async function expect(name, result, status) {
-  if (result.status !== status) fail(name, `HTTP ${result.status} ${errorOf(result)}`)
+  if (result.status !== status) fail(name, outcome(result))
   pass(name, `HTTP ${status}`)
   return result
 }
@@ -82,7 +89,7 @@ async function signup(phone, role, lastName) {
     body: { phone, password, firstName: "Recette", lastName, role },
   })
   if (result.status !== 201 || !result.json?.data?.token) {
-    fail(`inscription ${role}`, `HTTP ${result.status} ${errorOf(result)}`)
+    fail(`inscription ${role}`, outcome(result))
   }
   if (result.json.data.phoneVerificationRequired !== false) fail(`inscription ${role}`, "SMS exigé")
   if (result.json.data.user.phoneVerified !== null) fail(`inscription ${role}`, "téléphone marqué vérifié")
@@ -145,7 +152,7 @@ const adminLogin = await call("POST", "/api/auth/login", {
   body: { phone: "78003021", password: adminAccount.password },
 })
 if (adminLogin.status !== 200 || adminLogin.json?.data?.user?.role !== "ADMIN") {
-  fail("connexion admin recette", `HTTP ${adminLogin.status}`)
+  fail("connexion admin recette", outcome(adminLogin))
 }
 const admin = { token: adminLogin.json.data.token }
 pass("connexion admin recette")
@@ -153,7 +160,7 @@ await expect("admin sans jeton", await call("GET", "/api/admin/dashboard"), 401)
 await expect("admin par client", await call("GET", "/api/admin/dashboard", { token: client.token }), 401)
 await expect("admin par transporteur", await call("GET", "/api/admin/utilisateurs", { token: trucker.token }), 401)
 const logs = await call("GET", "/api/admin/logs", { token: admin.token })
-if (logs.status !== 200) fail("journal d'audit", `HTTP ${logs.status}`)
+if (logs.status !== 200) fail("journal d'audit", outcome(logs))
 const audited = Array.isArray(logs.json?.data?.items) && logs.json.data.items.some((item) => item.action === "login_locked")
 if (!audited) fail("journal d'audit", "verrouillage absent")
 pass("journal d'audit")
@@ -202,7 +209,7 @@ if (!ownVehicles.text.includes(plate)) fail("véhicule", "plaque absente du prop
 pass("véhicule du propriétaire")
 
 const beforeUnlock = await call("GET", `/api/requests/${requestId}`, { token: trucker.token })
-if (beforeUnlock.status !== 200) fail("consultation demande", `HTTP ${beforeUnlock.status}`)
+if (beforeUnlock.status !== 200) fail("consultation demande", outcome(beforeUnlock))
 if (beforeUnlock.text.includes(phones.client)) fail("coordonnées masquées", "numéro client visible")
 pass("coordonnées masquées")
 
@@ -249,7 +256,7 @@ if (plans.status === 200 && plans.json?.data?.length) {
 
 async function balance(token) {
   const result = await call("GET", "/api/credits/balance", { token })
-  if (result.status !== 200) fail("solde", `HTTP ${result.status}`)
+  if (result.status !== 200) fail("solde", outcome(result))
   return result.json.data.balance
 }
 
@@ -264,7 +271,7 @@ const otherRequest = await call("POST", "/api/requests", {
     requestedDate: when,
   },
 })
-if (otherRequest.status !== 201) fail("demande sans crédit", `HTTP ${otherRequest.status}`)
+if (otherRequest.status !== 201) fail("demande sans crédit", outcome(otherRequest))
 await expect(
   "déblocage sans crédit",
   await call("POST", `/api/requests/${otherRequest.json.data.id}/unlock-contacts`, { token: other.token }),
@@ -293,7 +300,7 @@ const granted = await balance(client.token)
 if (granted !== before + pack.credits) fail("attribution", "montant inattendu")
 pass("attribution unique")
 const again = await call("POST", `/api/admin/commandes/${orderId}/approve`, { token: admin.token, body: {} })
-if (again.status !== 200 || again.json?.data?.alreadyProcessed !== true) fail("double validation", `HTTP ${again.status}`)
+if (again.status !== 200 || again.json?.data?.alreadyProcessed !== true) fail("double validation", outcome(again))
 if ((await balance(client.token)) !== granted) fail("double validation", "le solde a augmenté")
 pass("double validation")
 
@@ -302,7 +309,7 @@ await expect("déblocage", await call("POST", `/api/requests/${requestId}/unlock
 const afterUnlock = await balance(client.token)
 if (afterUnlock >= granted) fail("déblocage", "aucun crédit consommé")
 const repeat = await call("POST", `/api/requests/${requestId}/unlock-contacts`, { token: client.token })
-if (repeat.status !== 200 || repeat.json?.data?.alreadyUnlocked !== true) fail("second déblocage", `HTTP ${repeat.status}`)
+if (repeat.status !== 200 || repeat.json?.data?.alreadyUnlocked !== true) fail("second déblocage", outcome(repeat))
 if ((await balance(client.token)) !== afterUnlock) fail("second déblocage", "crédit consommé deux fois")
 pass("déblocage unique")
 const opened = await call("GET", `/api/requests/${requestId}`, { token: client.token })

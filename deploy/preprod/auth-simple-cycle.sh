@@ -4,7 +4,7 @@
 # to approve one manual payment. Passwords are not printed, and the fictional
 # phone verification is not used.
 #
-#   WAGESSE_PREPROD_AUTHORIZE=yes bash deploy/preprod/run-step.sh auth-simple-cycle
+#   WAGESSE_PREPROD_AUTHORIZE=yes bash deploy/preprod/run-step.sh auth-simple-cycle <commit>
 set -euo pipefail
 
 DIR=$(cd "$(dirname "$0")" && pwd)
@@ -14,14 +14,32 @@ require_authorization
 require_root
 verify_script_sums "$DIR"
 
+REF="${1:-}"
+AUTH=d01574087fcbf740e7d9bd5ea4f715a32f7ed113
+APP=/opt/wagesse-preprod/app
 ENC=/etc/wagesse/recette-accounts.enc
 PASS=/root/wagesse-recette.passphrase
 NODE=/opt/wagesse-preprod/.node/bin/node
-[[ -s "$ENC" && -s "$PASS" && -x "$NODE" ]] || die "Registre de recette absent. Ne pas relancer la rotation."
+[[ "$REF" =~ ^[0-9a-f]{40}$ ]] || die "Commit déployé requis. Cycle arrêté avant toute création de compte."
+[[ -d "$APP/.git" && -s "$ENC" && -s "$PASS" && -x "$NODE" ]] || die "Préproduction ou registre de recette absent. Ne pas relancer la rotation."
 
-policy=$(curl -fsS --max-time 10 http://127.0.0.1:3020/api/auth/phone-verification)
-node -e 'const b=JSON.parse(process.argv[1]); if (!b.data || b.data.required !== false) process.exit(1)' "$policy" \
-  || die "La préproduction n'est pas en mode simple. Cycle arrêté."
+actual=$(git_in "$APP" rev-parse HEAD)
+[[ "$actual" == "$REF" ]] || die "HEAD ${actual} différent du commit requis ${REF}. Cycle arrêté."
+git_in "$APP" merge-base --is-ancestor "$AUTH" "$actual" || die "Le commit déployé ne contient pas l'authentification simple. Cycle arrêté."
+
+policy_file=$(mktemp /dev/shm/wagesse-policy.XXXXXX)
+policy_code=$(curl -sS -o "$policy_file" -w '%{http_code}' --max-time 10 http://127.0.0.1:3020/api/auth/phone-verification || true)
+if [[ "$policy_code" == "404" ]]; then
+  rm -f "$policy_file"
+  die "GET /api/auth/phone-verification HTTP 404"
+fi
+[[ "$policy_code" == "200" ]] || { rm -f "$policy_file"; die "GET /api/auth/phone-verification HTTP ${policy_code}"; }
+node - "$policy_file" <<'PY' || { rm -f "$policy_file"; die "La préproduction n'est pas en mode simple. Cycle arrêté."; }
+const fs = require("fs")
+const body = JSON.parse(fs.readFileSync(process.argv[1], "utf8"))
+if (!body.data || body.data.required !== false) process.exit(1)
+PY
+rm -f "$policy_file"
 
 umask 077
 tmp=$(mktemp /dev/shm/wagesse-auth-simple.XXXXXX)

@@ -49,12 +49,25 @@ WAGESSE_PREPROD_AUTHORIZE=yes bash deploy/preprod/run-step.sh auth-simple <commi
 
 Ne pas utiliser `run-step.sh deploy` pour cette évolution : ce chemin conserve aussi le drapeau de vérification fictive tel qu'il était, mais le script dédié est celui qui impose le mode A et refuse une modification Prisma.
 
-## Recette après un démarrage réussi
+## Reprise après l'échec TypeScript
 
-Cette commande crée des comptes fictifs `781xxxxx`, fait valider un paiement manuel par l'administrateur de recette déjà existant, et ne marque aucun téléphone vérifié. Elle ne restaure pas l'application en cas d'échec métier.
+Le déploiement de `e89eb5cb6e050ef40c6d126eac371b2fe0ab6cba` s'est arrêté au contrôle TypeScript. Le service est revenu à `627cb4fc0fcd014e8743db2249b1887fe71dd173`. Conserver cette sauvegarde et `/var/backups/wagesse-preprod/rollback-20261107T214947Z`. Ne pas relancer la rotation et ne pas modifier MariaDB.
+
+La reprise commence à l'étape `auth-simple`, avec le nouveau commit, depuis une copie distincte de l'application en service :
 
 ```bash
-WAGESSE_PREPROD_AUTHORIZE=yes bash deploy/preprod/run-step.sh auth-simple-cycle
+bash deploy/preprod/preflight.sh <commit complet>
+WAGESSE_PREPROD_AUTHORIZE=yes bash deploy/preprod/run-step.sh auth-simple <commit complet>
+```
+
+Si le script signale une erreur, ne pas le relancer. La recette ci-dessous attend une autorisation séparée et un déploiement réussi.
+
+## Recette après un démarrage réussi
+
+Cette commande crée des comptes fictifs `781xxxxx`, fait valider un paiement manuel par l'administrateur de recette déjà existant, et ne marque aucun téléphone vérifié. Elle refuse de démarrer si le commit demandé n'est pas celui qui est réellement en service, ou s'il ne contient pas l'authentification simple. Un HTTP 404 est affiché avec sa méthode et sa route, sans corps de réponse.
+
+```bash
+WAGESSE_PREPROD_AUTHORIZE=yes bash deploy/preprod/run-step.sh auth-simple-cycle <commit déployé>
 ```
 
 Le mode `PHONE_VERIFICATION_REQUIRED=true` se vérifie sur la base de test locale, pas sur la préproduction. Sans fournisseur SMS, l'inscription répond HTTP 503 et aucun compte n'est créé.

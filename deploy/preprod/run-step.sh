@@ -6,7 +6,7 @@
 #   WAGESSE_PREPROD_AUTHORIZE=yes bash deploy/preprod/run-step.sh restore
 #   WAGESSE_PREPROD_AUTHORIZE=yes bash deploy/preprod/run-step.sh cycle
 #   WAGESSE_PREPROD_AUTHORIZE=yes bash deploy/preprod/run-step.sh auth-simple <commit>
-#   WAGESSE_PREPROD_AUTHORIZE=yes bash deploy/preprod/run-step.sh auth-simple-cycle
+#   WAGESSE_PREPROD_AUTHORIZE=yes bash deploy/preprod/run-step.sh auth-simple-cycle <commit>
 set -euo pipefail
 
 DIR=$(cd "$(dirname "$0")" && pwd)
@@ -33,7 +33,8 @@ case "$step" in
     bash "$DIR/deploy-auth-simple.sh" "$2"
     ;;
   auth-simple-cycle)
-    bash "$DIR/auth-simple-cycle.sh"
+    [[ "${2:-}" =~ ^[0-9a-f]{40}$ ]] || { echo "Commit déployé requis." >&2; exit 1; }
+    bash "$DIR/auth-simple-cycle.sh" "$2"
     ;;
   *)
     echo "Étape inconnue. Utiliser preflight, rotate, deploy, restore, cycle, auth-simple ou auth-simple-cycle." >&2

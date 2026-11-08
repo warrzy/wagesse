@@ -59,6 +59,15 @@ test("le déploiement génère le client dans l'application avant la compilation
   assert.equal(auth.includes("systemctl restart nginx"), false)
   assert.match(auth, /627cb4fc0fcd014e8743db2249b1887fe71dd173/)
   assert.match(auth, /d01574087fcbf740e7d9bd5ea4f715a32f7ed113/)
+  const cycle = source("deploy/preprod/auth-simple-cycle.sh")
+  assert.match(cycle, /git_in "\$APP" rev-parse HEAD/)
+  assert.match(cycle, /différent du commit requis/)
+  assert.match(cycle, /ne contient pas l'authentification simple/)
+  const recipe = source("deploy/preprod/auth-simple-cycle.mjs")
+  assert.match(recipe, /\$\{result\.method\} \$\{result\.path\} HTTP 404/)
+  const tsconfig = JSON.parse(source("tsconfig.json")) as { include: string[]; exclude?: string[] }
+  assert.ok(tsconfig.include.includes("**/*.ts"))
+  assert.equal((tsconfig.exclude ?? []).some((item) => item.includes("tests")), false)
 })
 
 test("le client factice de postinstall est refusé avant le build", () => {

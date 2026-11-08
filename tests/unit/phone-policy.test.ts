@@ -15,7 +15,8 @@ test("le mode simple n'exige pas le SMS et ne se laisse pas activer sans fournis
   assert.equal(phoneVerificationRequired(), false)
 
   process.env.PHONE_VERIFICATION_REQUIRED = "true"
-  process.env.NODE_ENV = "production"
+  const runtimeEnv = process.env as { NODE_ENV?: string }
+  runtimeEnv.NODE_ENV = "production"
   process.env.SMS_PROVIDER = "http"
   delete process.env.SMS_HTTP_URL
   delete process.env.SMS_HTTP_KEY
