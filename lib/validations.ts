@@ -6,10 +6,17 @@ export const loginSchema = z.object({
   password: z.string().min(8, "Le mot de passe doit avoir au moins 8 caractères"),
 })
 
+/** New passwords. Existing hashes stay valid: login does not reapply this rule. */
+export const passwordSchema = z
+  .string()
+  .min(8, "Le mot de passe doit avoir au moins 8 caractères")
+  .regex(/[A-Za-z]/, "Le mot de passe doit contenir une lettre")
+  .regex(/[0-9]/, "Le mot de passe doit contenir un chiffre")
+
 // Base signup payload — this is what actually gets sent to the API
 export const signupSchema = z.object({
   phone: z.string().regex(/^[0-9]{8,}$/, "Numéro de téléphone invalide"),
-  password: z.string().min(8, "Le mot de passe doit avoir au moins 8 caractères"),
+  password: passwordSchema,
   firstName: z.string().min(2, "Le prénom est requis"),
   lastName: z.string().min(2, "Le nom est requis"),
   role: z.enum(["CLIENT", "TRUCKER"]),

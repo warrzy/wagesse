@@ -13,7 +13,7 @@ th { background: #fff7ed; text-align: left; }
 <h2>Prérequis bloquants</h2>
 <table>
 <tr><th>Sujet</th><th>État</th><th>Condition d'ouverture</th></tr>
-<tr><td>SMS réel</td><td>Absent en préproduction. Les achats de vrais numéros resteraient fermés.</td><td><code>SMS_PROVIDER=http</code>, URL et clé hors dépôt. <code>deploy/production/assert-env.mjs</code> doit accepter le fichier.</td></tr>
+<tr><td>SMS</td><td>La V1 peut démarrer sans SMS. Le mécanisme OTP est conservé.</td><td><code>PHONE_VERIFICATION_REQUIRED=false</code>, ou <code>true</code> avec un SMS HTTP. <code>deploy/production/assert-env.mjs</code> doit accepter le fichier.</td></tr>
 <tr><td>Mécanisme de recette</td><td>Ouvert seulement sur la préproduction, par les trois drapeaux et la base <code>wagesse_preprod</code>.</td><td>Ne pas copier <code>preprod.env</code>. Déploiement, drapeau fictif et base de préproduction absents. Host de production différent de <code>preprod.wagesse.fr</code>.</td></tr>
 <tr><td>Base et secrets</td><td>Seule <code>wagesse_preprod</code> existe pour WAGESSE.</td><td>Base neuve, <code>JWT_SECRET</code> et mot de passe MariaDB distincts. <code>prisma migrate deploy</code> sans les données fictives. Pas de <code>migrate reset</code>.</td></tr>
 <tr><td>Administrateur</td><td>L'administrateur existant n'a pas été lu.</td><td>Créer un administrateur de production. Ne pas importer 78003021 ni les comptes 7800.</td></tr>

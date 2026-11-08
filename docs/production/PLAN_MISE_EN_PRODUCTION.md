@@ -8,7 +8,7 @@ NO-GO pour l'ouverture commerciale. Le cycle métier du 7 novembre 2026 a réuss
 
 ## Bloquant
 
-- SMS HTTP configuré. `node deploy/production/assert-env.mjs` doit accepter le fichier sans afficher les secrets.
+- Déclarer `PHONE_VERIFICATION_REQUIRED`. La valeur `false` ouvre la V1 sans SMS. La valeur `true` exige un SMS HTTP opérationnel. `node deploy/production/assert-env.mjs` doit accepter le fichier sans afficher les secrets.
 - Ne pas copier `WAGESSE_DEPLOYMENT=preprod`, `PREPROD_TEST_PHONE_VERIFY=true` ni la base `wagesse_preprod`.
 - Ne pas importer les comptes 7800 ni modifier l'administrateur existant.
 - Dump chiffré hors du serveur avant la première migration, restauré d'abord sur une base jetable.

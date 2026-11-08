@@ -36,6 +36,8 @@ th { background: #fff7ed; text-align: left; }
 <h2>3. Téléphone des comptes de recette</h2>
 <p>En préproduction seulement, l'administrateur peut marquer comme vérifié un compte fictif dont le numéro commence par 7800 et dont le nom contient « Recette ». Un administrateur n'est pas accepté. La réponse ne contient pas de code. Un client qui appelle cette route reçoit HTTP 401.</p>
 <p>Cette route doit rester fermée en production. Le contrôle <code>deploy/production/assert-env.mjs</code> refuse un fichier d'environnement qui la laisserait ouverte.</p>
+<h2>3 bis. Compte sans SMS</h2>
+<p>Lorsque la vérification SMS n'est pas exigée, un client achète et débloque sans code. Le solde et la validation manuelle ne changent pas. Un mot de passe oublié n'est pas envoyé à un numéro jamais vérifié. L'administrateur peut définir un nouveau mot de passe après un contrôle d'identité réalisé en dehors du numéro. Le guide de réactivation est <code>docs/security/REACTIVATION_SMS.md</code>.</p>
 <h2>4. Ce que l'administrateur ne trouve pas encore</h2>
 <p>Certains écrans du menu affichent « en cours de construction » : rôles, contenus, matériaux, promotions, types de camions. Les notifications visibles par un client ne sont pas livrées. Ces manques sont reportés, ils ne bloquent pas le paiement manuel ni la mission.</p>
 </body></html>

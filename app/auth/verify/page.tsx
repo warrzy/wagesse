@@ -1,6 +1,6 @@
 "use client"
 
-import { FormEvent, useState } from "react"
+import { FormEvent, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense } from "react"
 import Header from "@/components/Header"
@@ -16,6 +16,14 @@ function VerifyForm() {
   const [error, setError] = useState<string | null>(null)
   const [info, setInfo] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [required, setRequired] = useState(true)
+
+  useEffect(() => {
+    fetch("/api/auth/phone-verification")
+      .then((response) => response.json())
+      .then((body) => setRequired(body?.data?.required === true))
+      .catch(() => setRequired(true))
+  }, [])
 
   const submit = async (event: FormEvent) => {
     event.preventDefault()
@@ -47,7 +55,9 @@ function VerifyForm() {
         <div className="bg-white rounded-lg shadow-lg p-8">
           <h1 className="text-3xl font-bold mb-2 text-center">Vérifier le numéro</h1>
           <p className="text-gray-600 text-center mb-8">
-            Saisissez le code SMS reçu pour débloquer les achats et les contacts.
+            {required
+              ? "Saisissez le code SMS reçu pour débloquer les achats et les contacts."
+              : "La vérification SMS n'est pas exigée. Le formulaire reste disponible pour enregistrer un numéro réellement vérifié."}
           </p>
           {params.get("sent") === "0" ? (
             <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm">

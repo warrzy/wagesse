@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { issueOtp } from "@/lib/otp-delivery"
+import { smsConfigured } from "@/lib/sms"
 
 const schema = z.object({
   phone: z.string().regex(/^[0-9]{8,}$/, "Numéro de téléphone invalide"),
@@ -19,12 +20,17 @@ export async function POST(request: NextRequest) {
     }
 
     const { phone } = validation.data
-    const user = await prisma.user.findUnique({ where: { phone }, select: { id: true, status: true, deletedAt: true } })
-    if (!user || user.deletedAt || user.status === "DELETED") {
-      return NextResponse.json({
-        success: true,
-        message: "Si ce numéro a un compte, un code a été envoyé.",
-      })
+    const generic = {
+      success: true,
+      message:
+        "Si ce numéro correspond à un compte dont le téléphone a été vérifié, un code a été envoyé. Sinon, un administrateur rétablit l'accès après un contrôle d'identité.",
+    }
+    const user = await prisma.user.findUnique({
+      where: { phone },
+      select: { id: true, status: true, deletedAt: true, phoneVerified: true },
+    })
+    if (!user || user.deletedAt || user.status === "DELETED" || !user.phoneVerified || !smsConfigured()) {
+      return NextResponse.json(generic)
     }
 
     const issued = await issueOtp(phone, "reset")
@@ -37,7 +43,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: "Si ce numéro a un compte, un code a été envoyé.",
+      message: generic.message,
       data: {
         smsDelivered: issued.delivered,
         ...(issued.debugOtp ? { debugOtp: issued.debugOtp } : {}),
