@@ -12,6 +12,10 @@ function source(relative: string): string {
   return readFileSync(path.join(root, relative), "utf8")
 }
 
+function dirOfPolicy(): string {
+  return mkdtempSync(path.join(tmpdir(), "phone-policy-"))
+}
+
 test("le client généré exporte le namespace Prisma du schéma", () => {
   const generated = source("node_modules/.prisma/client/index.d.ts")
   assert.match(generated, /export namespace Prisma \{/)
@@ -65,6 +69,20 @@ test("le déploiement génère le client dans l'application avant la compilation
   assert.match(cycle, /ne contient pas l'authentification simple/)
   const recipe = source("deploy/preprod/auth-simple-cycle.mjs")
   assert.match(recipe, /\$\{result\.method\} \$\{result\.path\} HTTP 404/)
+  assert.match(auth, /python3 "\$DIR\/check-phone-policy.py"/)
+  assert.equal(auth.includes("node -"), false)
+  assert.match(auth, /POST \/api\/auth\/phone-verification HTTP/)
+  assert.match(auth, /"405"/)
+  assert.match(auth, /cleanup_diag/)
+  assert.match(auth, /Commit effectivement installé/)
+  assert.match(source("app/api/auth/phone-verification/route.ts"), /export async function GET/)
+  assert.equal(source("app/api/auth/phone-verification/route.ts").includes("export async function POST"), false)
+  const accepted = path.join(dirOfPolicy(), "ok.json")
+  writeFileSync(accepted, JSON.stringify({ success: true, data: { required: false, configured: false, misconfigured: false } }))
+  execFileSync("python3", [path.join(root, "deploy/preprod/check-phone-policy.py"), accepted], { encoding: "utf8" })
+  const rejected = path.join(dirOfPolicy(), "secret.json")
+  writeFileSync(rejected, JSON.stringify({ data: { required: false, misconfigured: false, note: "password" } }))
+  assert.throws(() => execFileSync("python3", [path.join(root, "deploy/preprod/check-phone-policy.py"), rejected], { encoding: "utf8", stdio: "pipe" }))
   const tsconfig = JSON.parse(source("tsconfig.json")) as { include: string[]; exclude?: string[] }
   assert.ok(tsconfig.include.includes("**/*.ts"))
   assert.equal((tsconfig.exclude ?? []).some((item) => item.includes("tests")), false)

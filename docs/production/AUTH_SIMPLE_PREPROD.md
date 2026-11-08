@@ -49,6 +49,12 @@ WAGESSE_PREPROD_AUTHORIZE=yes bash deploy/preprod/run-step.sh auth-simple <commi
 
 Ne pas utiliser `run-step.sh deploy` pour cette évolution : ce chemin conserve aussi le drapeau de vérification fictive tel qu'il était, mais le script dédié est celui qui impose le mode A et refuse une modification Prisma.
 
+## Reprise après le rollback du contrôle de politique
+
+Le déploiement de `b9b84706964461b7b0047ad1fa2dc2cac31e8ca9` a redémarré Next.js, puis le contrôle de `/api/auth/phone-verification` a exécuté un programme Python avec Node.js. Node.js s'arrête avant de lire la réponse, et le script revient alors au commit précédent. Le site public répond HTTP 404 sur cette route et HTTP 200 sur l'accueil, ce qui correspond à `627cb4fc0fcd014e8743db2249b1887fe71dd173`. Le certificat servi pour `preprod.wagesse.fr` contient `DNS:preprod.wagesse.fr`.
+
+Le correctif appelle `python3 deploy/preprod/check-phone-policy.py`. Ce programme exige `data.required` et `data.misconfigured` à `false`, sans afficher le corps. POST doit rester HTTP 405. Le contrôle TLS interroge `127.0.0.1:443` avec le nom `preprod.wagesse.fr`, comme le vhost qui écoute sur le port 443. Les fichiers temporaires sont effacés, y compris quand le script revient en arrière. Le commit réellement en service est affiché après le succès et après le retour.
+
 ## Reprise après l'échec TypeScript
 
 Le déploiement de `e89eb5cb6e050ef40c6d126eac371b2fe0ab6cba` s'est arrêté au contrôle TypeScript. Le service est revenu à `627cb4fc0fcd014e8743db2249b1887fe71dd173`. Conserver cette sauvegarde et `/var/backups/wagesse-preprod/rollback-20261107T214947Z`. Ne pas relancer la rotation et ne pas modifier MariaDB.

@@ -42,15 +42,43 @@ git_in "$APP" fetch --no-tags origin "$EXPECTED_BASE" || die "Impossible de lire
 assert_descendant "$APP" "$EXPECTED_BASE"
 
 fail() {
-  echo "$1" >&2
+  echo "Étape ${step} : $1" >&2
   rollback 1
 }
 
 BK=
 PREV=
 ROLLBACK_DONE=0
+POLICY_FILES=()
+cleanup_diag() {
+  local f
+  [[ ${#POLICY_FILES[@]} -eq 0 ]] && return 0
+  for f in "${POLICY_FILES[@]}"; do
+    [[ -f "$f" ]] || continue
+    shred -u "$f" 2>/dev/null || rm -f "$f"
+  done
+  POLICY_FILES=()
+}
+remember_diag() {
+  POLICY_FILES+=("$1")
+}
+http_code() {
+  local method="$1" url="$2" dest="$3" code
+  code=$(curl -sS -o "$dest" -w '%{http_code}' -X "$method" --max-time 15 "$url" || true)
+  [[ "$code" =~ ^[0-9]{3}$ ]] || code=000
+  printf '%s' "$code"
+}
+policy_reason() {
+  local token
+  token=$(tr -cd 'a-z-' < "$1" | head -c 32)
+  case "$token" in
+    secret-pattern|policy-shape|invalid-json) printf '%s' "$token" ;;
+    *) printf '%s' "interpreteur" ;;
+  esac
+}
 rollback() {
-  local code="${1:-1}"
+  local code="${1:-1}" restored
+  cleanup_diag
   if [[ "$ROLLBACK_DONE" == 1 ]]; then exit "$code"; fi
   ROLLBACK_DONE=1
   if [[ "$step" == "sauvegarde" || "$step" == "ancetre" || "$step" == "integrite" || "$step" == "base" || "$step" == "droits" || "$step" == "schema" ]]; then
@@ -77,6 +105,8 @@ rollback() {
     echo "L'application précédente ne répond pas." >&2
   fi
   journalctl -u wagesse-preprod.service -n 40 --no-pager -o cat 2>/dev/null | secret_filter >&2 || true
+  restored=$(git_in "$APP" rev-parse HEAD 2>/dev/null || true)
+  echo "Commit effectivement installé : ${restored:-inconnu}" >&2
   echo "Sauvegarde conservée : ${BK:-aucune}" >&2
   echo "La base MariaDB n'a pas été restaurée ni réinitialisée." >&2
   exit "$code"
@@ -189,36 +219,51 @@ listeners=$(ss -ltnH 'sport = :3020' | awk '{print $4}' | sort -u)
 
 step=politique
 policy=$(mktemp /dev/shm/wagesse-policy.XXXXXX)
-chmod 600 "$policy"
-curl -fsS --max-time 10 http://127.0.0.1:3020/api/auth/phone-verification > "$policy"
-node - "$policy" <<'PY' || fail "La politique publique n'est pas le mode simple."
-import json, sys
-raw = open(sys.argv[1], encoding="utf-8").read()
-if "SMS_HTTP" in raw or "mysql://" in raw or "password" in raw.lower():
-    sys.exit(1)
-body = json.loads(raw)
-data = body.get("data") or {}
-if data.get("required") is not False or data.get("misconfigured") is not False:
-    sys.exit(1)
-PY
-shred -u "$policy" 2>/dev/null || rm -f "$policy"
-post_code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 -X POST http://127.0.0.1:3020/api/auth/phone-verification)
-[[ "$post_code" == "405" ]] || fail "La politique accepte une écriture publique (${post_code})."
+reason=$(mktemp /dev/shm/wagesse-policy-reason.XXXXXX)
+chmod 600 "$policy" "$reason"
+remember_diag "$policy"
+remember_diag "$reason"
+code=$(http_code GET http://127.0.0.1:3020/api/auth/phone-verification "$policy")
+echo "Contrôle ${step} : GET /api/auth/phone-verification HTTP ${code}"
+[[ "$code" == "200" ]] || fail "GET /api/auth/phone-verification HTTP ${code}"
+py=0
+python3 "$DIR/check-phone-policy.py" "$policy" 2>"$reason" || py=$?
+if [[ "$py" != 0 ]]; then
+  fail "GET /api/auth/phone-verification HTTP ${code}, contrôle $(policy_reason "$reason")"
+fi
+post_code=$(http_code POST http://127.0.0.1:3020/api/auth/phone-verification /dev/null)
+echo "Contrôle ${step} : POST /api/auth/phone-verification HTTP ${post_code}"
+[[ "$post_code" == "405" ]] || fail "POST /api/auth/phone-verification HTTP ${post_code}"
+cleanup_diag
 
 step=https
-curl -fsS --max-time 15 https://preprod.wagesse.fr/api/auth/phone-verification > /dev/shm/wagesse-policy-https.json
-node - /dev/shm/wagesse-policy-https.json <<'PY' || fail "Le site HTTPS ne sert pas le mode simple."
-import json, sys
-raw = open(sys.argv[1], encoding="utf-8").read()
-data = json.loads(raw).get("data") or {}
-if data.get("required") is not False:
-    sys.exit(1)
-PY
-shred -u /dev/shm/wagesse-policy-https.json 2>/dev/null || rm -f /dev/shm/wagesse-policy-https.json
-cert=$(openssl s_client -servername preprod.wagesse.fr -connect 127.0.0.1:443 </dev/null 2>/dev/null | openssl x509 -noout -checkend 86400 -ext subjectAltName || true)
-[[ "$cert" == *preprod.wagesse.fr* ]] || fail "Le certificat HTTPS ne couvre pas preprod.wagesse.fr."
+https_body=$(mktemp /dev/shm/wagesse-policy-https.XXXXXX)
+https_reason=$(mktemp /dev/shm/wagesse-policy-https-reason.XXXXXX)
+chmod 600 "$https_body" "$https_reason"
+remember_diag "$https_body"
+remember_diag "$https_reason"
+https_code=$(http_code GET https://preprod.wagesse.fr/api/auth/phone-verification "$https_body")
+echo "Contrôle ${step} : GET /api/auth/phone-verification HTTP ${https_code}"
+[[ "$https_code" == "200" ]] || fail "GET https://preprod.wagesse.fr/api/auth/phone-verification HTTP ${https_code}"
+py=0
+python3 "$DIR/check-phone-policy.py" "$https_body" --required-only 2>"$https_reason" || py=$?
+if [[ "$py" != 0 ]]; then
+  fail "GET https://preprod.wagesse.fr/api/auth/phone-verification HTTP ${https_code}, contrôle $(policy_reason "$https_reason")"
+fi
+cleanup_diag
 
+step=certificat
+# nginx listens on 443 for every IPv4 address and selects this certificate by SNI.
+cert=$(timeout 10 openssl s_client -servername preprod.wagesse.fr -connect 127.0.0.1:443 </dev/null 2>/dev/null | openssl x509 -noout -checkend 86400 -ext subjectAltName || true)
+[[ "$cert" == *DNS:preprod.wagesse.fr* ]] || fail "127.0.0.1:443 SNI preprod.wagesse.fr refusé"
+unset cert
+echo "Contrôle certificat : 127.0.0.1:443 SNI preprod.wagesse.fr accepté"
+
+installed=$(git_in "$APP" rev-parse HEAD)
+[[ "$installed" == "$REF" ]] || fail "commit en service ${installed} différent de ${REF}"
 trap - ERR
+cleanup_diag
+echo "Commit effectivement installé : ${installed}"
 echo "WAGESSE préproduction redémarrée sur $REF en authentification simple."
 echo "Sauvegarde conservée pour un retour manuel : $BK"
 echo "Ancienne sauvegarde à conserver : /var/backups/wagesse-preprod/rollback-20261107T214947Z"
