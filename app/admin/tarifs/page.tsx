@@ -148,7 +148,7 @@ export default function AdminTarifsPage() {
               type="button"
               disabled={creating}
               onClick={onCreate}
-              className="rounded-xl bg-[#13283A] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0d1c29] disabled:opacity-50"
+              className="rounded-xl bg-[#071D40] px-4 py-2 text-sm font-semibold text-white hover:bg-[#041428] disabled:opacity-50"
             >
               {creating ? "Création…" : "Créer"}
             </button>
@@ -189,7 +189,7 @@ export default function AdminTarifsPage() {
           <button
             type="button"
             onClick={load}
-            className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-[#13283A] hover:bg-[#F5F4F0]"
+            className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-[#071D40] hover:bg-[#F4F8FC]"
           >
             Rafraîchir
           </button>

@@ -44,7 +44,7 @@ export default function AdminAdministrateursPage() {
               <p className="font-semibold">{item.firstName} {item.lastName}</p>
               <p className="text-sm text-gray-600">{item.phone} · {item.status}</p>
             </div>
-            <Link href={`/admin/utilisateurs/${item.id}`} className="text-sm font-semibold text-[#ED8A25]">
+            <Link href={`/admin/utilisateurs/${item.id}`} className="text-sm font-semibold text-[#FF7900]">
               Fiche
             </Link>
           </article>

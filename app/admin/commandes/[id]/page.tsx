@@ -78,7 +78,7 @@ export default function AdminCommandeDetailPage() {
 
   return (
     <div className="container-max max-w-4xl">
-      <Link href="/admin/commandes" className="text-sm font-semibold text-[#ED8A25]">Retour aux commandes</Link>
+      <Link href="/admin/commandes" className="text-sm font-semibold text-[#FF7900]">Retour aux commandes</Link>
       <h1 className="mt-3 text-2xl font-bold">{order.reference}</h1>
       <p className="text-sm text-gray-600">{order.status} — {order.kind}</p>
       {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
@@ -114,7 +114,7 @@ export default function AdminCommandeDetailPage() {
           <div className="mt-3 space-y-3">
             <textarea className="input-field min-h-24" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Motif, obligatoire en cas de refus" />
             <div className="flex gap-3">
-              <button type="button" disabled={busy} onClick={approve} className="px-4 py-2 rounded-lg bg-[#ED8A25] text-[#13283A] text-sm font-semibold disabled:opacity-50">
+              <button type="button" disabled={busy} onClick={approve} className="px-4 py-2 rounded-lg bg-[#FF7900] text-[#071D40] text-sm font-semibold disabled:opacity-50">
                 Approuver et attribuer
               </button>
               <button type="button" disabled={busy} onClick={reject} className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-semibold disabled:opacity-50">

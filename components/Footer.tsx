@@ -3,20 +3,21 @@
 import { BRAND_CONFIG } from "@/lib/config"
 import Link from "next/link"
 import { MARKETPLACE_IMAGES } from "@/lib/marketplace-images"
+import BrandLogo from "@/components/BrandLogo"
 
 export default function Footer() {
   const currentYear = new Date().getFullYear()
 
   return (
-    <footer className="mt-0 bg-[#13283A] text-white">
+    <footer className="mt-0 bg-[#071D40] text-white">
       <div className="container-max py-16">
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
           <div className="lg:col-span-4">
-            <p className="text-lg font-semibold tracking-tight">{BRAND_CONFIG.name}</p>
+            <BrandLogo tone="dark" />
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/70">
               Mise en relation entre clients et camionneurs pour le transport de matériaux au Burkina Faso.
             </p>
-            <a href={`mailto:${BRAND_CONFIG.social.email}`} className="mt-6 inline-block text-sm font-semibold text-[#E8B55B]">
+            <a href={`mailto:${BRAND_CONFIG.social.email}`} className="mt-6 inline-block text-sm font-semibold text-[#FF7900]">
               {BRAND_CONFIG.social.email}
             </a>
           </div>
@@ -50,7 +51,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-12 border-t border-white/10 pt-6 text-xs leading-relaxed text-white/50">
-          <p>© {currentYear} {BRAND_CONFIG.name}. Les photographies sont des illustrations sous licence Pexels. Elles ne représentent pas des chantiers, des flottes ni des partenaires de WAGESSE.</p>
+          <p>© {currentYear} {BRAND_CONFIG.name}. Les photographies sont des illustrations sous licence Pexels. La vidéo du bandeau est une illustration Mixkit, sans son. Elles ne représentent pas des chantiers, des flottes ni des partenaires de WAGESSE.</p>
           <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
             {MARKETPLACE_IMAGES.map((image) => (
               <li key={image.id}>

@@ -123,7 +123,7 @@ export default function AdminUserDetailsPage() {
           <p className="text-sm text-red-600 font-semibold">Erreur</p>
           <p className="mt-2 text-sm text-gray-600">{error}</p>
           <div className="mt-4">
-            <Link href="/admin/utilisateurs" className="text-sm font-semibold text-[#ED8A25] hover:underline">
+            <Link href="/admin/utilisateurs" className="text-sm font-semibold text-[#FF7900] hover:underline">
               Retour
             </Link>
           </div>
@@ -157,7 +157,7 @@ export default function AdminUserDetailsPage() {
               setSaveSuccess(null)
               setFPassword("")
             }}
-            className="px-4 py-2 rounded-lg bg-[#13283A] text-white text-sm font-semibold hover:bg-[#0d1c29]"
+            className="px-4 py-2 rounded-lg bg-[#071D40] text-white text-sm font-semibold hover:bg-[#041428]"
           >
             {editOpen ? "Fermer" : "Modifier"}
           </button>
@@ -235,7 +235,7 @@ export default function AdminUserDetailsPage() {
                   setData((prev: any) => ({ ...prev, user: res.data }))
                   setSaveLoading(false)
                 }}
-                className="px-4 py-2 rounded-lg bg-[#ED8A25] text-[#13283A] text-sm font-semibold hover:bg-[#c56f12] disabled:opacity-50"
+                className="px-4 py-2 rounded-lg bg-[#FF7900] text-[#071D40] text-sm font-semibold hover:bg-[#e56d00] disabled:opacity-50"
               >
                 {saveLoading ? "Enregistrement..." : "Enregistrer"}
               </button>
@@ -407,7 +407,7 @@ export default function AdminUserDetailsPage() {
                   ) : (
                     (activity.requests || []).map((r: any) => (
                       <div key={r.id} className="py-2 text-sm flex items-center justify-between">
-                        <Link href={`/admin/annonces/${r.id}`} className="text-sm font-semibold text-[#ED8A25] hover:underline">
+                        <Link href={`/admin/annonces/${r.id}`} className="text-sm font-semibold text-[#FF7900] hover:underline">
                           {r.id}
                         </Link>
                         <span className="text-xs text-gray-600">{r.status}</span>
@@ -425,7 +425,7 @@ export default function AdminUserDetailsPage() {
                   ) : (
                     (activity.quotes || []).map((q: any) => (
                       <div key={q.id} className="py-2 text-sm flex items-center justify-between">
-                        <Link href={`/admin/offres/${q.id}`} className="text-sm font-semibold text-[#ED8A25] hover:underline">
+                        <Link href={`/admin/offres/${q.id}`} className="text-sm font-semibold text-[#FF7900] hover:underline">
                           {q.id}
                         </Link>
                         <span className="text-xs text-gray-600">{q.status}</span>
@@ -443,7 +443,7 @@ export default function AdminUserDetailsPage() {
                   ) : (
                     (activity.missions || []).map((m: any) => (
                       <div key={m.id} className="py-2 text-sm flex items-center justify-between">
-                        <Link href={`/admin/transports/${m.id}`} className="text-sm font-semibold text-[#ED8A25] hover:underline">
+                        <Link href={`/admin/transports/${m.id}`} className="text-sm font-semibold text-[#FF7900] hover:underline">
                           {m.missionReference || m.id}
                         </Link>
                         <span className="text-xs text-gray-600">{m.status}</span>
@@ -522,7 +522,7 @@ export default function AdminUserDetailsPage() {
               <button
                 type="button"
                 onClick={() => setEditOpen(true)}
-                className="w-full px-4 py-2 rounded-lg bg-[#13283A] text-white text-sm font-semibold hover:bg-[#0d1c29]"
+                className="w-full px-4 py-2 rounded-lg bg-[#071D40] text-white text-sm font-semibold hover:bg-[#041428]"
               >
                 Modifier / Désactiver
               </button>

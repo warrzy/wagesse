@@ -1,11 +1,11 @@
 "use client"
 
-import { BRAND_CONFIG } from "@/lib/config"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Menu, X } from "lucide-react"
 import { useEffect, useState } from "react"
 import { apiClient, StoredUser } from "@/lib/api-client"
+import BrandLogo from "@/components/BrandLogo"
 
 const links = [
   { href: "/#fonctionnement", label: "Fonctionnement" },
@@ -51,18 +51,13 @@ export default function Header() {
       : "/dashboard/client"
 
   return (
-    <header className="sticky top-0 z-50 border-b border-[#13283A]/10 bg-[#F5F4F0]/90 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-[#071D40]/10 bg-[#F4F8FC]/90 backdrop-blur">
       <nav className="container-max flex h-[76px] items-center justify-between gap-6">
-        <Link href="/" className="flex items-center gap-3 font-semibold tracking-tight text-[#13283A]">
-          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-[#13283A] text-sm font-semibold text-[#E8B55B]" aria-hidden="true">
-            W
-          </span>
-          <span className="text-lg">{BRAND_CONFIG.name}</span>
-        </Link>
+        <BrandLogo />
 
         <div className="hidden flex-1 items-center justify-center gap-8 lg:flex">
           {links.map((link) => (
-            <Link key={link.href} href={link.href} className="text-sm font-semibold text-[#13283A]/80 hover:text-[#ED8A25]">
+            <Link key={link.href} href={link.href} className="text-sm font-semibold text-[#071D40]/80 transition-colors hover:text-[#087DD1]">
               {link.label}
             </Link>
           ))}
@@ -71,7 +66,7 @@ export default function Header() {
         <div className="hidden items-center gap-3 lg:flex">
           {user ? (
             <>
-              <Link href={dashboardHref} className="text-sm font-semibold text-[#13283A]">
+              <Link href={dashboardHref} className="text-sm font-semibold text-[#071D40]">
                 {user.firstName || "Mon espace"}
               </Link>
               <button type="button" onClick={handleLogout} className="button-outline px-4 py-2 text-sm">
@@ -79,7 +74,7 @@ export default function Header() {
               </button>
             </>
           ) : (
-            <Link href="/auth/login" className="text-sm font-semibold text-[#13283A]">
+            <Link href="/auth/login" className="text-sm font-semibold text-[#071D40]">
               Connexion
             </Link>
           )}
@@ -89,7 +84,7 @@ export default function Header() {
         </div>
 
         <button
-          className="grid h-12 w-12 place-items-center rounded-2xl border border-[#13283A]/10 lg:hidden"
+          className="grid h-12 w-12 place-items-center rounded-2xl border border-[#071D40]/10 lg:hidden"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-expanded={mobileMenuOpen}
           aria-label={mobileMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
@@ -99,14 +94,14 @@ export default function Header() {
       </nav>
 
       {mobileMenuOpen ? (
-        <div className="border-t border-[#13283A]/10 bg-[#F5F4F0] lg:hidden">
+        <div className="border-t border-[#071D40]/10 bg-[#F4F8FC] lg:hidden">
           <div className="container-max flex flex-col gap-2 py-4">
             {links.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className="min-h-12 rounded-2xl px-3 py-3 text-base font-semibold text-[#13283A]"
+                className="min-h-12 rounded-2xl px-3 py-3 text-base font-semibold text-[#071D40]"
               >
                 {link.label}
               </Link>

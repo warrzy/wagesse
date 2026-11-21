@@ -174,7 +174,7 @@ export default function MissionDetailPage() {
               )}
               <div>
                 <p className="text-gray-500">Prix</p>
-                <p className="font-bold text-[#ED8A25]">{mission.contractPrice.toLocaleString("fr-FR")} Fr</p>
+                <p className="font-bold text-[#FF7900]">{mission.contractPrice.toLocaleString("fr-FR")} Fr</p>
               </div>
             </div>
 
@@ -182,7 +182,7 @@ export default function MissionDetailPage() {
               <button
                 onClick={handleAdvance}
                 disabled={updating}
-                className="w-full py-3 px-4 bg-[#ED8A25] text-[#13283A] rounded-lg font-medium hover:bg-[#c56f12] transition-colors disabled:opacity-50"
+                className="w-full py-3 px-4 bg-[#FF7900] text-[#071D40] rounded-lg font-medium hover:bg-[#e56d00] transition-colors disabled:opacity-50"
               >
                 {updating ? "Mise à jour…" : `Marquer : ${MISSION_STATUS_LABELS[next] || next}`}
               </button>

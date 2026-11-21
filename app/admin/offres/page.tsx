@@ -191,7 +191,7 @@ export default function AdminOffresPage() {
           <button
             type="button"
             onClick={() => setCreateOpen((v) => !v)}
-            className="px-4 py-2 rounded-lg bg-[#13283A] text-white text-sm font-semibold hover:bg-[#0d1c29]"
+            className="px-4 py-2 rounded-lg bg-[#071D40] text-white text-sm font-semibold hover:bg-[#041428]"
           >
             {createOpen ? "Fermer" : "Créer"}
           </button>
@@ -250,7 +250,7 @@ export default function AdminOffresPage() {
               <button
                 type="submit"
                 disabled={creating}
-                className="px-4 py-2 rounded-lg bg-[#ED8A25] text-[#13283A] text-sm font-semibold hover:bg-[#c56f12] disabled:opacity-50"
+                className="px-4 py-2 rounded-lg bg-[#FF7900] text-[#071D40] text-sm font-semibold hover:bg-[#e56d00] disabled:opacity-50"
               >
                 {creating ? "Création…" : "Créer l’offre"}
               </button>
@@ -267,7 +267,7 @@ export default function AdminOffresPage() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="ID offre, ID annonce, nom, téléphone, email..."
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ED8A25]/40"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF7900]/40"
             />
           </div>
 
@@ -304,7 +304,7 @@ export default function AdminOffresPage() {
             <button
               type="button"
               onClick={applyFilters}
-              className="px-4 py-2 rounded-lg bg-[#13283A] text-white text-sm font-semibold hover:bg-[#0d1c29]"
+              className="px-4 py-2 rounded-lg bg-[#071D40] text-white text-sm font-semibold hover:bg-[#041428]"
             >
               Appliquer
             </button>
@@ -414,7 +414,7 @@ export default function AdminOffresPage() {
                   <tr key={it.id} className="text-sm hover:bg-gray-50">
                     <td className="px-4 py-3 font-mono text-xs text-gray-700">{it.id}</td>
                     <td className="px-4 py-3">
-                      <Link href={`/admin/annonces/${it.requestId}`} className="text-sm font-semibold text-[#ED8A25] hover:underline">
+                      <Link href={`/admin/annonces/${it.requestId}`} className="text-sm font-semibold text-[#FF7900] hover:underline">
                         {it.requestId}
                       </Link>
                       <div className="text-xs text-gray-500">{it.request?.pickupCity} → {it.request?.dropoffCity}</div>

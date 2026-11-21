@@ -13,7 +13,14 @@ export const metadata: Metadata = {
   description:
     "Publiez une demande de transport, recevez des devis de camionneurs et suivez la mission. Prix en francs CFA. Coordonnées protégées jusqu'au déblocage.",
   icons: {
-    icon: "/favicon.ico",
+    icon: [{ url: "/brand/favicon.png", type: "image/png", sizes: "32x32" }],
+    apple: "/brand/apple-touch.png",
+  },
+  openGraph: {
+    title: "WAGESSE — Transport de matériaux au Burkina Faso",
+    description:
+      "Publiez une demande de transport, recevez des devis de camionneurs et suivez la mission. Prix en francs CFA.",
+    images: ["/brand/og.jpg"],
   },
 }
 

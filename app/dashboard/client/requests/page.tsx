@@ -54,7 +54,7 @@ export default function ClientRequestsPage() {
             </div>
             <Link
               href="/dashboard/client/requests/new"
-              className="py-3 px-4 bg-[#ED8A25] text-[#13283A] rounded-lg font-medium hover:bg-[#c56f12] transition-colors flex items-center gap-2"
+              className="py-3 px-4 bg-[#FF7900] text-[#071D40] rounded-lg font-medium hover:bg-[#e56d00] transition-colors flex items-center gap-2"
             >
               <Plus size={18} />
               Nouvelle demande
@@ -66,7 +66,7 @@ export default function ClientRequestsPage() {
           ) : requests.length === 0 ? (
             <div className="card text-center py-12">
               <p className="text-gray-500 mb-4">Vous n&apos;avez pas encore créé de demande.</p>
-              <Link href="/dashboard/client/requests/new" className="text-[#ED8A25] font-medium hover:underline">
+              <Link href="/dashboard/client/requests/new" className="text-[#FF7900] font-medium hover:underline">
                 Créer votre première demande
               </Link>
             </div>

@@ -90,7 +90,7 @@ export default function SignupClient() {
                 type="button"
                 onClick={() => setRole("CLIENT")}
                 className={`min-h-12 flex-1 rounded-xl px-4 font-semibold ${
-                  role === "CLIENT" ? "bg-[#13283A] text-white" : "bg-[#F5F4F0] text-[#13283A]"
+                  role === "CLIENT" ? "bg-[#071D40] text-white" : "bg-[#F4F8FC] text-[#071D40]"
                 }`}
               >
                 Client
@@ -99,7 +99,7 @@ export default function SignupClient() {
                 type="button"
                 onClick={() => setRole("TRUCKER")}
                 className={`min-h-12 flex-1 rounded-xl px-4 font-semibold ${
-                  role === "TRUCKER" ? "bg-[#13283A] text-white" : "bg-[#F5F4F0] text-[#13283A]"
+                  role === "TRUCKER" ? "bg-[#071D40] text-white" : "bg-[#F4F8FC] text-[#071D40]"
                 }`}
               >
                 Camionneur
@@ -190,7 +190,7 @@ export default function SignupClient() {
             <div className="mt-8 text-center">
               <p className="text-gray-600">
                 Déjà un compte ?{" "}
-                <Link href="/auth/login" className="font-semibold text-[#ED8A25] hover:underline">
+                <Link href="/auth/login" className="font-semibold text-[#FF7900] hover:underline">
                   Se connecter
                 </Link>
               </p>

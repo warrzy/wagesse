@@ -31,7 +31,7 @@ function formatName(u: { firstName?: string | null; lastName?: string | null } |
 function TimelineItem({ title, meta }: { title: string; meta: string }) {
   return (
     <div className="flex gap-3">
-      <div className="mt-1 h-2 w-2 rounded-full bg-[#ED8A25]" />
+      <div className="mt-1 h-2 w-2 rounded-full bg-[#FF7900]" />
       <div>
         <p className="text-sm font-semibold text-gray-900">{title}</p>
         <p className="text-xs text-gray-500">{meta}</p>
@@ -163,7 +163,7 @@ export default function AdminCamionneurDetailsPage() {
           <p className="text-sm text-red-600 font-semibold">Erreur</p>
           <p className="mt-2 text-sm text-gray-600">{error}</p>
           <div className="mt-4">
-            <Link href="/admin/camionneurs" className="text-sm font-semibold text-[#ED8A25] hover:underline">
+            <Link href="/admin/camionneurs" className="text-sm font-semibold text-[#FF7900] hover:underline">
               Retour
             </Link>
           </div>
@@ -200,7 +200,7 @@ export default function AdminCamionneurDetailsPage() {
               setSaveError(null)
               setSaveSuccess(null)
             }}
-            className="px-4 py-2 rounded-lg bg-[#13283A] text-white text-sm font-semibold hover:bg-[#0d1c29]"
+            className="px-4 py-2 rounded-lg bg-[#071D40] text-white text-sm font-semibold hover:bg-[#041428]"
           >
             {editOpen ? "Fermer" : "Modifier"}
           </button>
@@ -278,7 +278,7 @@ export default function AdminCamionneurDetailsPage() {
                   setData(res.data)
                   setSaveLoading(false)
                 }}
-                className="px-4 py-2 rounded-lg bg-[#ED8A25] text-[#13283A] text-sm font-semibold hover:bg-[#c56f12] disabled:opacity-50"
+                className="px-4 py-2 rounded-lg bg-[#FF7900] text-[#071D40] text-sm font-semibold hover:bg-[#e56d00] disabled:opacity-50"
               >
                 {saveLoading ? "Enregistrement..." : "Enregistrer"}
               </button>
@@ -465,7 +465,7 @@ export default function AdminCamionneurDetailsPage() {
                   ) : (
                     (data.quotes || []).map((q: any) => (
                       <div key={q.id} className="py-2 text-sm flex items-center justify-between">
-                        <Link href={`/admin/offres/${q.id}`} className="text-sm font-semibold text-[#ED8A25] hover:underline">
+                        <Link href={`/admin/offres/${q.id}`} className="text-sm font-semibold text-[#FF7900] hover:underline">
                           {q.id}
                         </Link>
                         <span className="text-xs text-gray-600">{q.status}</span>
@@ -483,7 +483,7 @@ export default function AdminCamionneurDetailsPage() {
                   ) : (
                     (data.missions || []).map((m: any) => (
                       <div key={m.id} className="py-2 text-sm flex items-center justify-between">
-                        <Link href={`/admin/transports/${m.id}`} className="text-sm font-semibold text-[#ED8A25] hover:underline">
+                        <Link href={`/admin/transports/${m.id}`} className="text-sm font-semibold text-[#FF7900] hover:underline">
                           {m.missionReference || m.id}
                         </Link>
                         <span className="text-xs text-gray-600">{m.status}</span>
@@ -525,7 +525,7 @@ export default function AdminCamionneurDetailsPage() {
                       </div>
                       <div className="text-xs text-gray-500">{new Date(d.createdAt).toLocaleDateString()}</div>
                       {d.fileUrl ? (
-                        <a href={d.fileUrl} target="_blank" rel="noreferrer" className="text-xs font-semibold text-[#ED8A25] hover:underline">
+                        <a href={d.fileUrl} target="_blank" rel="noreferrer" className="text-xs font-semibold text-[#FF7900] hover:underline">
                           Ouvrir
                         </a>
                       ) : null}
@@ -563,7 +563,7 @@ export default function AdminCamionneurDetailsPage() {
                   setData(res.data)
                   setSaveSuccess("Profil validé")
                 }}
-                className="w-full px-4 py-2 rounded-lg bg-[#ED8A25] text-[#13283A] text-sm font-semibold disabled:opacity-50"
+                className="w-full px-4 py-2 rounded-lg bg-[#FF7900] text-[#071D40] text-sm font-semibold disabled:opacity-50"
               >
                 Valider le profil
               </button>
@@ -592,7 +592,7 @@ export default function AdminCamionneurDetailsPage() {
           <div className="card">
             <p className="text-sm font-semibold">Compte utilisateur</p>
             <div className="mt-4">
-              <Link href={`/admin/utilisateurs/${data.userId}`} className="text-sm font-semibold text-[#ED8A25] hover:underline">
+              <Link href={`/admin/utilisateurs/${data.userId}`} className="text-sm font-semibold text-[#FF7900] hover:underline">
                 Ouvrir la fiche utilisateur
               </Link>
             </div>

@@ -105,14 +105,14 @@ export default function LoginPage() {
             </form>
 
             <p className="mt-4 text-center text-sm">
-              <Link href="/auth/forgot" className="font-semibold text-[#ED8A25] hover:underline">
+              <Link href="/auth/forgot" className="font-semibold text-[#FF7900] hover:underline">
                 Mot de passe oublié
               </Link>
             </p>
             <div className="mt-6 pt-6 border-t border-gray-200 text-center">
               <p className="text-gray-600 text-sm">
                 Pas encore de compte ?{" "}
-                <Link href="/auth/signup" className="font-semibold text-[#ED8A25] hover:underline">
+                <Link href="/auth/signup" className="font-semibold text-[#FF7900] hover:underline">
                   S&apos;inscrire
                 </Link>
               </p>

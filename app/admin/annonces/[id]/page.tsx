@@ -39,7 +39,7 @@ function formatName(u: { firstName?: string | null; lastName?: string | null } |
 function TimelineItem({ title, meta }: { title: string; meta: string }) {
   return (
     <div className="flex gap-3">
-      <div className="mt-1 h-2 w-2 rounded-full bg-[#ED8A25]" />
+      <div className="mt-1 h-2 w-2 rounded-full bg-[#FF7900]" />
       <div>
         <p className="text-sm font-semibold text-gray-900">{title}</p>
         <p className="text-xs text-gray-500">{meta}</p>
@@ -223,7 +223,7 @@ export default function AdminAnnonceDetailsPage() {
           <p className="text-sm text-red-600 font-semibold">Erreur</p>
           <p className="mt-2 text-sm text-gray-600">{error}</p>
           <div className="mt-4">
-            <Link href="/admin/annonces" className="text-sm font-semibold text-[#ED8A25] hover:underline">
+            <Link href="/admin/annonces" className="text-sm font-semibold text-[#FF7900] hover:underline">
               Retour
             </Link>
           </div>
@@ -264,7 +264,7 @@ export default function AdminAnnonceDetailsPage() {
               setEditRequestedDate(data?.requestedDate ? String(data.requestedDate).slice(0, 10) : "")
               setEditStatus(String(data?.status || ""))
             }}
-            className="px-4 py-2 rounded-lg bg-[#13283A] text-white text-sm font-semibold hover:bg-[#0d1c29]"
+            className="px-4 py-2 rounded-lg bg-[#071D40] text-white text-sm font-semibold hover:bg-[#041428]"
           >
             {editing ? "Annuler" : "Modifier"}
           </button>
@@ -341,7 +341,7 @@ export default function AdminAnnonceDetailsPage() {
                     type="button"
                     disabled={saving}
                     onClick={onSave}
-                    className="px-4 py-2 rounded-lg bg-[#ED8A25] text-[#13283A] text-sm font-semibold hover:bg-[#c56f12] disabled:opacity-50"
+                    className="px-4 py-2 rounded-lg bg-[#FF7900] text-[#071D40] text-sm font-semibold hover:bg-[#e56d00] disabled:opacity-50"
                   >
                     {saving ? "Enregistrement…" : "Enregistrer"}
                   </button>
@@ -489,7 +489,7 @@ export default function AdminAnnonceDetailsPage() {
 
               {clientUser?.id ? (
                 <div className="mt-4">
-                  <Link href={`/admin/utilisateurs/${clientUser.id}`} className="text-sm font-semibold text-[#ED8A25] hover:underline">
+                  <Link href={`/admin/utilisateurs/${clientUser.id}`} className="text-sm font-semibold text-[#FF7900] hover:underline">
                     Voir fiche utilisateur
                   </Link>
                 </div>
@@ -522,7 +522,7 @@ export default function AdminAnnonceDetailsPage() {
               <button
                 type="button"
                 onClick={() => setEditing(true)}
-                className="w-full px-4 py-2 rounded-lg bg-[#13283A] text-white text-sm font-semibold hover:bg-[#0d1c29]"
+                className="w-full px-4 py-2 rounded-lg bg-[#071D40] text-white text-sm font-semibold hover:bg-[#041428]"
               >
                 Modifier
               </button>

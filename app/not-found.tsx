@@ -7,7 +7,7 @@ export default function NotFound() {
     <>
       <Header />
       <main className="container-max px-4 py-24 text-center">
-        <p className="text-sm font-semibold text-[#ED8A25]">404</p>
+        <p className="text-sm font-semibold text-[#FF7900]">404</p>
         <h1 className="mt-2 text-3xl font-bold text-gray-900">Cette page n&apos;existe pas</h1>
         <p className="mx-auto mt-3 max-w-md text-gray-600">
           L&apos;adresse demandée ne correspond à aucune page WAGESSE.

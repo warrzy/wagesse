@@ -2,18 +2,19 @@
 
 /* === Base Styles === */
 :root {
-  --color-primary: #ED8A25;
-  --color-secondary: #13283A;
-  --color-accent: #E8B55B;
-  --color-dark: #13283A;
-  --color-light: #F5F4F0;
+  --color-primary: #FF7900;
+  --color-secondary: #071D40;
+  --color-accent: #087DD1;
+  --color-dark: #071D40;
+  --color-light: #F4F8FC;
   --color-success: #354B44;
-  --color-warning: #E8B55B;
+  --color-warning: #FF7900;
   --color-danger: #9B3A2F;
-  --ink: #13283A;
-  --paper: #F5F4F0;
-  --sand: #E8B55B;
-  --forest: #354B44;
+  --ink: #071D40;
+  --paper: #F4F8FC;
+  --sand: #FF7900;
+  --action: #087DD1;
+  --forest: #071D40;
 }
 
 body {
@@ -34,27 +35,27 @@ body {
 
 /* === Components === */
 .button-primary {
-  @apply bg-[#ED8A25] text-[#13283A] px-6 py-3 rounded-xl font-semibold hover:bg-[#d9771a] transition-colors shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ED8A25] focus-visible:ring-offset-2 min-h-12;
+  @apply bg-[#FF7900] text-[#071D40] px-6 py-3 rounded-xl font-semibold hover:bg-[#e56d00] shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087DD1] focus-visible:ring-offset-2 min-h-12 transition duration-200 hover:-translate-y-0.5 active:translate-y-0;
 }
 
 .button-secondary {
-  @apply bg-[#13283A] text-white px-6 py-3 rounded-xl font-semibold hover:bg-[#0d1c29] transition-colors shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8B55B] focus-visible:ring-offset-2 min-h-12;
+  @apply bg-[#071D40] text-white px-6 py-3 rounded-xl font-semibold hover:bg-[#041428] transition-colors shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF7900] focus-visible:ring-offset-2 min-h-12;
 }
 
 .button-outline {
-  @apply border border-[#13283A]/15 bg-white text-[#13283A] px-6 py-3 rounded-xl font-semibold hover:bg-[#F5F4F0] transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ED8A25] focus-visible:ring-offset-2 min-h-12;
+  @apply border border-[#071D40]/15 bg-white text-[#071D40] px-6 py-3 rounded-xl font-semibold hover:bg-[#F4F8FC] transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF7900] focus-visible:ring-offset-2 min-h-12;
 }
 
 .card {
-  @apply bg-white rounded-3xl shadow-[0_12px_40px_rgba(19,40,58,0.06)] border border-[#13283A]/10 p-6;
+  @apply bg-white rounded-3xl shadow-[0_12px_40px_rgba(7,29,64,0.06)] border border-[#071D40]/10 p-6;
 }
 
 .card-hover {
-  @apply bg-white rounded-3xl shadow-[0_12px_40px_rgba(19,40,58,0.06)] border border-[#13283A]/10 p-6 transition-all hover:shadow-[0_18px_50px_rgba(19,40,58,0.1)] hover:border-[#ED8A25]/50;
+  @apply bg-white rounded-3xl shadow-[0_12px_40px_rgba(7,29,64,0.06)] border border-[#071D40]/10 p-6 transition-all hover:shadow-[0_18px_50px_rgba(7,29,64,0.1)] hover:border-[#FF7900]/50;
 }
 
 .input-field {
-  @apply w-full px-4 py-3 border border-[#13283A]/15 rounded-xl bg-white focus:outline-none focus:border-[#ED8A25] focus:ring-2 focus:ring-[#ED8A25]/25 min-h-12;
+  @apply w-full px-4 py-3 border border-[#071D40]/15 rounded-xl bg-white focus:outline-none focus:border-[#FF7900] focus:ring-2 focus:ring-[#FF7900]/25 min-h-12;
 }
 
 .badge {
@@ -128,6 +129,39 @@ body {
 }
 
 /* === Responsive === */
+.card-live {
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+
+.card-live:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 18px 40px rgba(7, 29, 64, 0.12);
+}
+
+.route-track {
+  stroke-dasharray: 10 14;
+  animation: route-flow 2.4s linear infinite;
+}
+
+.route-truck {
+  offset-path: path("M48 46C190 46 230 16 380 30s210 42 360 14 250-28 364 16");
+  animation: truck-run 8s linear infinite;
+}
+
+@keyframes route-flow {
+  to { stroke-dashoffset: -96; }
+}
+
+@keyframes truck-run {
+  to { offset-distance: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-live:hover { transform: none; }
+  .route-track, .route-truck { animation: none; }
+  .hero-video { display: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
