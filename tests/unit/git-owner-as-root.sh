@@ -35,11 +35,18 @@ runuser -u wagesse -- git -C "$repo" -c user.email=recette@example.com -c user.n
 expected=$(runuser -u wagesse -- git -C "$repo" rev-parse HEAD)
 
 set +e
-git -C "$repo" rev-parse HEAD >"$tmpdir/out" 2>"$tmpdir/err"
+git -c safe.directory= -C "$repo" rev-parse HEAD >"$tmpdir/out" 2>"$tmpdir/err"
 code=$?
 set -e
-[[ "$code" != 0 ]]
-grep -q "dubious ownership" "$tmpdir/err"
+if [[ "$code" == 0 ]]; then
+  echo "root a lu le dépôt alors que safe.directory est vide." >&2
+  exit 1
+fi
+if ! grep -q "dubious ownership" "$tmpdir/err"; then
+  echo "refus inattendu de git en root :" >&2
+  cat "$tmpdir/err" >&2
+  exit 1
+fi
 
 actual=$(git_in "$repo" rev-parse HEAD)
 [[ "$actual" == "$expected" ]]
