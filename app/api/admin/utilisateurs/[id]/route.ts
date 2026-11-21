@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { getAuthContext, unauthorized } from "@/lib/api-auth"
+import { getAuthContext, isSuperAdmin, unauthorized } from "@/lib/api-auth"
 import { hashPassword } from "@/lib/auth"
 import { writeAudit } from "@/lib/audit"
 
-const ACCOUNT_ROLES = new Set(["VISITOR", "CLIENT", "TRUCKER", "OPERATOR", "ADMIN"])
+const ACCOUNT_ROLES = new Set(["VISITOR", "CLIENT", "TRUCKER", "OPERATOR", "ADMIN", "SUPER_ADMIN"])
 const ACCOUNT_STATUSES = new Set(["ACTIVE", "BLOCKED", "SUSPENDED", "DELETED"])
 
 function isAdmin(role: string | null | undefined) {
@@ -188,6 +188,18 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     if (data.role && !ACCOUNT_ROLES.has(data.role)) {
       return NextResponse.json({ success: false, error: "Rôle inconnu" }, { status: 400 })
+    }
+    const current = await prisma.user.findUnique({ where: { id }, select: { role: true } })
+    if (!current) {
+      return NextResponse.json({ success: false, error: "Utilisateur introuvable" }, { status: 404 })
+    }
+    const promotesSelf = auth.userId === id && data.role === "SUPER_ADMIN" && current.role !== "SUPER_ADMIN"
+    const touchesSuperAdmin = data.role === "SUPER_ADMIN" || current.role === "SUPER_ADMIN"
+    if ((promotesSelf || touchesSuperAdmin) && !isSuperAdmin(auth.role)) {
+      return NextResponse.json(
+        { success: false, error: "Seul un super administrateur peut attribuer ou retirer ce rôle.", code: "SUPER_ADMIN_REQUIRED" },
+        { status: 403 }
+      )
     }
     if (data.status && !ACCOUNT_STATUSES.has(data.status)) {
       return NextResponse.json({ success: false, error: "Statut inconnu" }, { status: 400 })

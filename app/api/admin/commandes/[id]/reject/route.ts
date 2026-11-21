@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getAuthContext, isAdminRole, unauthorized } from "@/lib/api-auth"
+import { getAuthContext, isSuperAdmin, unauthorized } from "@/lib/api-auth"
 import { commercialOrderService } from "@/lib/services/commercial-order-service"
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const auth = await getAuthContext(request)
     if (!auth) return unauthorized()
-    if (!isAdminRole(auth.role)) return unauthorized("Forbidden")
+    if (!isSuperAdmin(auth.role)) {
+      return NextResponse.json(
+        { success: false, error: "Seul le super administrateur peut refuser un règlement.", code: "SUPER_ADMIN_REQUIRED" },
+        { status: 403 }
+      )
+    }
     const { id } = await params
     const body = await request.json().catch(() => ({}))
     const note = String(body?.note || "")

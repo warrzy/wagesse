@@ -175,9 +175,9 @@ export default function CheckoutSubscriptionClient() {
 
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-700">
                 <div className="rounded-xl border border-gray-200 bg-[#F4F8FC] p-4">
-                  <p className="font-semibold">{plan.monthlyCredits} crédits/mois</p>
-                  <p className="mt-1">Boosts: {plan.monthlyBoosts}/mois</p>
-                  <p className="mt-1">Cycle: {plan.cycleDays} jours</p>
+                  <p className="font-semibold">{plan.monthlyCredits} crédits inclus</p>
+                  <p className="mt-1">Cycle de {plan.cycleDays} jours</p>
+                  <p className="mt-1">Crédités après confirmation du règlement</p>
                 </div>
                 <div className="rounded-xl border border-gray-200 bg-[#F4F8FC] p-4">
                   <p className="font-semibold">Paiement</p>

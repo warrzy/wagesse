@@ -4,6 +4,7 @@ import { paymentServiceLayer } from "@/lib/services/payment-service"
 import { commercialOrderService } from "@/lib/services/commercial-order-service"
 import { getPaymentMode } from "@/lib/payment-mode"
 import { prisma } from "@/lib/prisma"
+import { purchaseAllowedForRole } from "@/lib/commercial-rules"
 
 /**
  * POST /api/credits/purchase
@@ -18,6 +19,13 @@ export async function POST(request: NextRequest) {
 
     const phoneGate = await requireVerifiedPhone(auth.userId)
     if (phoneGate) return phoneGate
+
+    if (!purchaseAllowedForRole(auth.role)) {
+      return NextResponse.json(
+        { success: false, error: "L'achat de crédits est réservé aux transporteurs.", code: "TRUCKER_PURCHASE_ONLY" },
+        { status: 403 }
+      )
+    }
 
     const body = await request.json()
     const packCode = String(body?.packCode || "")

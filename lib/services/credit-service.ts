@@ -6,6 +6,7 @@ export type CreditTransactionType =
   | "SUBSCRIPTION_MONTHLY_TOPUP"
   | "ADMIN_ADJUSTMENT"
   | "PROMO"
+  | "QUOTE_SUBMISSION"
 
 function creditDb() {
   return prisma as any
@@ -258,6 +259,64 @@ export async function adjustPurchasedCredits(params: {
     })
     return { alreadyApplied: false as const, wallet: updated }
   })
+}
+
+export async function debitQuoteCredit(
+  tx: any,
+  params: { userId: string; requestId: string; amount: number }
+) {
+  const { userId, requestId, amount } = params
+  if (!Number.isInteger(amount) || amount <= 0) throw new Error("Invalid amount")
+  const idempotencyKey = `quote:${userId}:${requestId}`
+
+  const initial = await tx.creditWallet.upsert({
+    where: { userId },
+    update: {},
+    create: {
+      userId,
+      balance: 0,
+      purchasedBalance: 0,
+      subscriptionBalance: 0,
+      subscriptionBalanceExpiresAt: null,
+    },
+  })
+  const locked = await lockWallet(tx, initial.id)
+  const existing = await tx.creditTransaction.findUnique({ where: { idempotencyKey } })
+  if (existing) {
+    return { insufficient: false as const, alreadyApplied: true as const, balance: locked?.balance ?? 0 }
+  }
+
+  const wallet = await normalizeWalletForExpiry(tx, locked)
+  const purchased = wallet.purchasedBalance ?? 0
+  const subscription = wallet.subscriptionBalance ?? 0
+  const total = purchased + subscription
+  if (total < amount) return { insufficient: true as const, balance: total }
+
+  const subscriptionSpend = Math.min(subscription, amount)
+  const purchasedSpend = amount - subscriptionSpend
+  const newSubscription = subscription - subscriptionSpend
+  const newPurchased = purchased - purchasedSpend
+  const newBalance = newSubscription + newPurchased
+
+  await tx.creditWallet.update({
+    where: { id: wallet.id },
+    data: {
+      subscriptionBalance: newSubscription,
+      purchasedBalance: newPurchased,
+      balance: newBalance,
+    },
+  })
+  await tx.creditTransaction.create({
+    data: {
+      walletId: wallet.id,
+      type: "QUOTE_SUBMISSION",
+      amount: -amount,
+      balanceAfter: newBalance,
+      idempotencyKey,
+      metadata: { requestId },
+    },
+  })
+  return { insufficient: false as const, alreadyApplied: false as const, balance: newBalance }
 }
 
 export async function consumeCreditForUnlock(params: {

@@ -2,12 +2,10 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { useRouter, useParams } from "next/navigation"
-import Link from "next/link"
 import Header from "@/components/Header"
 import Footer from "@/components/Footer"
 import { apiClient } from "@/lib/api-client"
 import { REQUEST_STATUS_LABELS } from "@/lib/config"
-import { Lock } from "lucide-react"
 
 interface LockedQuote {
   id: string
@@ -102,23 +100,6 @@ export default function ClientRequestDetailPage() {
     setActionLoading(false)
   }
 
-  const handleUnlockQuotes = async () => {
-    setActionLoading(true)
-    const res = await apiClient.unlockRequestContacts(params.id)
-    if (!res.success) {
-      if (res.code === "INSUFFICIENT_CREDITS") {
-        setError("Vous n'avez plus suffisamment de crédits. Achetez des crédits pour accéder à ce contact.")
-      } else {
-        setError(res.error || "Erreur lors du déblocage")
-      }
-      setActionLoading(false)
-      return
-    }
-
-    await load()
-    setActionLoading(false)
-  }
-
   if (loading) {
     return (
       <>
@@ -156,13 +137,6 @@ export default function ClientRequestDetailPage() {
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
               {error}
-              {error.includes("crédits") && (
-                <div className="mt-3">
-                  <Link href="/pricing" className="font-semibold underline">
-                    Acheter des crédits
-                  </Link>
-                </div>
-              )}
             </div>
           )}
 
@@ -193,16 +167,7 @@ export default function ClientRequestDetailPage() {
           <div className="card">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">Devis reçus ({request.quotes.length})</h2>
-              {request.quotes.length > 0 && !request.contactsUnlocked && (
-                <button
-                  onClick={handleUnlockQuotes}
-                  disabled={actionLoading}
-                  className="py-2 px-3 bg-[#8B6F47] text-white rounded-lg text-sm font-medium hover:bg-[#7a5f3d] transition-colors disabled:opacity-50 flex items-center gap-2"
-                >
-                  <Lock size={14} />
-                  Débloquer les devis (1 crédit)
-                </button>
-              )}
+              <p className="text-xs text-gray-500">Consultation gratuite. Le numéro est communiqué si vous acceptez le devis.</p>
             </div>
 
             {request.quotes.length === 0 ? (
@@ -211,22 +176,6 @@ export default function ClientRequestDetailPage() {
                   ? "Publiez votre demande pour recevoir des devis."
                   : "Aucun devis reçu pour le moment."}
               </p>
-            ) : !request.contactsUnlocked ? (
-              <div className="space-y-3">
-                <p className="text-sm text-gray-600">
-                  {request.quotes.length} camionneur(s) ont proposé un devis. Payez les frais de déblocage pour
-                  consulter le prix, le camionneur et le véhicule proposés.
-                </p>
-                {request.quotes.map((quote) => (
-                  <div key={quote.id} className="p-4 border border-gray-200 rounded-lg flex items-center justify-between">
-                    <p className="text-sm text-gray-500 flex items-center gap-2">
-                      <Lock size={14} />
-                      Devis reçu le {new Date(quote.createdAt).toLocaleDateString("fr-FR")}
-                    </p>
-                    <span className="badge text-xs">{quote.status}</span>
-                  </div>
-                ))}
-              </div>
             ) : (
               <div className="space-y-4">
                 {request.quotes.map((quote) => {
@@ -241,7 +190,11 @@ export default function ClientRequestDetailPage() {
                           <p className="text-xs text-gray-500">
                             Note: {quote.trucker.averageRating.toFixed(1)}/5 • Taux d&apos;acceptation: {quote.trucker.acceptanceRate}%
                           </p>
-                          <p className="text-xs text-gray-500">{quote.trucker.user.phone}</p>
+                          <p className="text-xs text-gray-500">
+                            {quote.status === "ACCEPTED"
+                              ? quote.trucker.user.phone
+                              : "Téléphone communiqué après acceptation"}
+                          </p>
                           {quote.vehicle && (
                             <p className="text-xs text-gray-500">
                               {quote.vehicle.brand} {quote.vehicle.model} ({quote.vehicle.licensePlate}) — {quote.vehicle.capacityTonnes}t

@@ -7,8 +7,6 @@ import Header from "@/components/Header"
 import Footer from "@/components/Footer"
 import { apiClient } from "@/lib/api-client"
 import { createQuoteSchema } from "@/lib/validations"
-import { Lock } from "lucide-react"
-
 interface RequestDetail {
   id: string
   materialDescription: string | null
@@ -44,11 +42,12 @@ export default function TruckerRequestDetailPage() {
   const params = useParams<{ id: string }>()
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
-  const [actionLoading, setActionLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [request, setRequest] = useState<RequestDetail | null>(null)
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [existingQuote, setExistingQuote] = useState<ExistingQuote | null>(null)
+  const [creditBalance, setCreditBalance] = useState<number | null>(null)
+  const [quoteCost, setQuoteCost] = useState(1)
 
   const [formData, setFormData] = useState({
     vehicleId: "",
@@ -59,16 +58,23 @@ export default function TruckerRequestDetailPage() {
   })
 
   const load = useCallback(async () => {
-    const [reqRes, vehiclesRes, quotesRes] = await Promise.all([
+    const [reqRes, vehiclesRes, quotesRes, balanceRes] = await Promise.all([
       apiClient.getTransportRequest(params.id),
       apiClient.getVehicles(),
       apiClient.getQuotes({ requestId: params.id }),
+      apiClient.getCreditBalance(),
     ])
 
     if (reqRes.success) setRequest(reqRes.data as any)
     else setError(reqRes.error || "Demande introuvable")
 
     if (vehiclesRes.success) setVehicles((vehiclesRes.data as Vehicle[]) || [])
+
+    if (balanceRes.success) {
+      const data = balanceRes.data as { balance?: number; quoteCost?: number }
+      setCreditBalance(typeof data.balance === "number" ? data.balance : 0)
+      setQuoteCost(typeof data.quoteCost === "number" ? data.quoteCost : 1)
+    }
 
     if (quotesRes.success) {
       const own = ((quotesRes.data as any[]) || [])[0]
@@ -77,30 +83,6 @@ export default function TruckerRequestDetailPage() {
 
     setLoading(false)
   }, [params.id])
-
-  const handleUnlockCustomerContact = async () => {
-    setActionLoading(true)
-    setError(null)
-
-    const res = await (apiClient as any).request(
-      "POST",
-      `/requests/${params.id}/unlock-customer-contact`,
-      {}
-    )
-
-    if (!res.success) {
-      if (res.code === "INSUFFICIENT_CREDITS") {
-        setError("Vous n'avez plus suffisamment de crédits. Achetez des crédits pour accéder à ce contact.")
-      } else {
-        setError(res.error || "Erreur lors du déblocage")
-      }
-      setActionLoading(false)
-      return
-    }
-
-    await load()
-    setActionLoading(false)
-  }
 
   useEffect(() => {
     const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null
@@ -140,7 +122,11 @@ export default function TruckerRequestDetailPage() {
 
       const res = await apiClient.createQuote(payload)
       if (!res.success) {
-        setError(res.error || "Erreur lors de l'envoi du devis")
+        if (res.code === "INSUFFICIENT_CREDITS") {
+          setError("Vous n'avez pas assez de crédits pour envoyer ce devis.")
+        } else {
+          setError(res.error || "Erreur lors de l'envoi du devis")
+        }
         setSubmitting(false)
         return
       }
@@ -203,39 +189,24 @@ export default function TruckerRequestDetailPage() {
             </p>
 
             <div className="mt-4 rounded-xl border border-gray-200 bg-[#F4F8FC] p-4">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-semibold text-[#071D40]">Coordonnées</p>
+              <p className="text-sm font-semibold text-[#071D40]">Coordonnées</p>
+              {request.customerContactsUnlocked ? (
+                <>
                   <p className="mt-2 text-sm text-gray-700">Téléphone : {request.customer.user.phone}</p>
                   <p className="text-sm text-gray-700">Email : {request.customer.user.email}</p>
-                </div>
-
-                {!request.customerContactsUnlocked && (
-                  <button
-                    type="button"
-                    onClick={handleUnlockCustomerContact}
-                    disabled={actionLoading}
-                    className="inline-flex items-center gap-2 rounded-xl bg-[#071D40] text-white px-4 py-2.5 text-sm font-semibold hover:bg-[#041428] transition-colors disabled:opacity-50"
-                  >
-                    <Lock size={14} />
-                    Débloquer (1 crédit)
-                  </button>
-                )}
-              </div>
-
-              {!request.customerContactsUnlocked && (
-                <p className="mt-3 text-xs text-gray-500">
-                  Celui qui initie le contact paie 1 crédit. Un contact déjà débloqué n’est jamais facturé deux fois.
+                </>
+              ) : (
+                <p className="mt-2 text-sm text-gray-700">
+                  Le numéro et l’e-mail sont transmis si le client accepte votre devis. Les consulter ne consomme pas de crédit.
                 </p>
               )}
-
-              {error && error.includes("crédits") && (
+              {error && error.includes("crédits") ? (
                 <div className="mt-3">
                   <Link href="/pricing" className="text-sm font-semibold text-[#FF7900] hover:underline">
                     Acheter des crédits
                   </Link>
                 </div>
-              )}
+              ) : null}
             </div>
 
             {request.notes && <p className="text-sm text-gray-600 mt-3">{request.notes}</p>}
@@ -247,6 +218,17 @@ export default function TruckerRequestDetailPage() {
               <p className="text-gray-700">
                 {existingQuote.totalPrice.toLocaleString("fr-FR")} Fr — <span className="badge text-xs">{existingQuote.status}</span>
               </p>
+            </div>
+          ) : creditBalance !== null && creditBalance < quoteCost ? (
+            <div className="card">
+              <h2 className="text-xl font-semibold mb-2">Crédits insuffisants</h2>
+              <p className="text-sm text-gray-700">
+                Envoyer un devis coûte {quoteCost} crédit{quoteCost > 1 ? "s" : ""}. Votre solde est de {creditBalance}.
+                La consultation de cette demande reste gratuite.
+              </p>
+              <Link href="/pricing" className="mt-4 inline-flex min-h-12 items-center justify-center rounded-xl bg-[#FF7900] px-5 font-semibold text-[#071D40]">
+                Acheter des crédits
+              </Link>
             </div>
           ) : vehicles.length === 0 ? (
             <div className="card text-center py-8">

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { paymentServiceLayer } from "@/lib/services/payment-service"
 import { commercialOrderService } from "@/lib/services/commercial-order-service"
 import { getPaymentMode } from "@/lib/payment-mode"
+import { purchaseAllowedForRole } from "@/lib/commercial-rules"
 
 /**
  * POST /api/subscription/purchase
@@ -16,6 +17,13 @@ export async function POST(request: NextRequest) {
 
     const phoneGate = await requireVerifiedPhone(auth.userId)
     if (phoneGate) return phoneGate
+
+    if (!purchaseAllowedForRole(auth.role)) {
+      return NextResponse.json(
+        { success: false, error: "Les forfaits sont réservés aux transporteurs.", code: "TRUCKER_PURCHASE_ONLY" },
+        { status: 403 }
+      )
+    }
 
     const body = await request.json()
     const planCode = String(body?.planCode || "")

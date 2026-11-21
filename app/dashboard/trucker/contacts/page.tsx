@@ -56,7 +56,7 @@ export default function TruckerContactsPage() {
           <div className="flex items-end justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold">Mes contacts</h1>
-              <p className="mt-2 text-gray-600">Retrouvez les coordonnées que vous avez déjà débloquées.</p>
+              <p className="mt-2 text-gray-600">Les coordonnées d’une mission acceptée. Envoyer un devis consomme des crédits, pas la consultation.</p>
             </div>
             <Link href="/pricing" className="text-sm font-semibold text-[#FF7900] hover:underline">
               Acheter des crédits

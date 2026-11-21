@@ -24,6 +24,8 @@ function txTypeBadgeClass(type: string) {
       return "bg-gray-50 text-gray-700 border-gray-200"
     case "PROMO":
       return "bg-blue-50 text-blue-700 border-blue-200"
+    case "QUOTE_SUBMISSION":
+      return "bg-orange-50 text-orange-800 border-orange-200"
     default:
       return "bg-gray-50 text-gray-700 border-gray-200"
   }

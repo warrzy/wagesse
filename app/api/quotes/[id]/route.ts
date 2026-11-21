@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { quoteService } from '@/lib/services/quote-service';
 import { getAuthContext, getCustomerProfileId, getTruckerProfileId, isAdminRole, unauthorized } from '@/lib/api-auth';
-import { prisma } from '@/lib/prisma';
-import { lockedQuoteView, maskContactUser } from '@/lib/contact-privacy';
+import { maskContactUser } from '@/lib/contact-privacy';
+import { contactsReleased } from '@/lib/commercial-rules';
 import { z } from 'zod';
 
 const updateQuotePriceSchema = z.object({
@@ -89,16 +89,21 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const unlock = await prisma.contactUnlock.findFirst({
-      where: { requestId: quote.requestId, unlockedByUserId: auth.userId },
-      select: { id: true },
-    });
-
-    if (ownsRequest && !unlock) {
-      return NextResponse.json({ success: true, data: lockedQuoteView(quote) });
+    if (ownsRequest && quote.trucker?.user) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          ...quote,
+          locked: false,
+          trucker: {
+            ...quote.trucker,
+            user: maskContactUser(quote.trucker.user, !contactsReleased(quote.status)),
+          },
+        },
+      });
     }
 
-    if (authored && !unlock && quote.request.customer?.user) {
+    if (authored && quote.request.customer?.user && !contactsReleased(quote.status)) {
       return NextResponse.json({
         success: true,
         data: {

@@ -3,7 +3,8 @@ import { quoteService } from '@/lib/services/quote-service';
 import { getAuthContext, getCustomerProfileId, getTruckerProfileId, unauthorized } from '@/lib/api-auth';
 import { prisma } from '@/lib/prisma';
 import { QuoteStatus } from '@prisma/client';
-import { lockedQuoteView, maskContactUser } from '@/lib/contact-privacy';
+import { maskContactUser } from '@/lib/contact-privacy';
+import { contactsReleased } from '@/lib/commercial-rules';
 
 /**
  * GET /api/quotes?requestId=xxx  -> quotes on one of the caller's own requests
@@ -32,11 +33,16 @@ export async function GET(request: NextRequest) {
       const customerId = await getCustomerProfileId(auth.userId);
       if (customerId && transportRequest.customerId === customerId) {
         const result = await quoteService.getByRequestId(requestId);
-        const unlock = await prisma.contactUnlock.findFirst({
-          where: { requestId, unlockedByUserId: auth.userId },
-          select: { id: true },
-        });
-        const data = unlock ? result : result.map((quote) => lockedQuoteView(quote));
+        const data = result.map((quote) => ({
+          ...quote,
+          locked: false as const,
+          trucker: quote.trucker
+            ? {
+                ...quote.trucker,
+                user: maskContactUser(quote.trucker.user, !contactsReleased(quote.status)),
+              }
+            : quote.trucker,
+        }));
         return NextResponse.json({ success: true, data });
       }
 
@@ -62,14 +68,8 @@ export async function GET(request: NextRequest) {
       take,
     });
 
-    const requestIds = result.quotes.map((quote) => quote.requestId);
-    const unlocks = await prisma.contactUnlock.findMany({
-      where: { unlockedByUserId: auth.userId, requestId: { in: requestIds } },
-      select: { requestId: true },
-    });
-    const unlockedIds = new Set(unlocks.map((item) => item.requestId));
     const quotes = result.quotes.map((quote) => {
-      if (unlockedIds.has(quote.requestId) || !quote.request?.customer?.user) return quote;
+      if (!quote.request?.customer?.user || contactsReleased(quote.status)) return quote;
       return {
         ...quote,
         request: {
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    const result = await quoteService.create(truckerId, body);
+    const result = await quoteService.create(truckerId, body, auth.userId);
 
     return NextResponse.json({ success: true, data: result }, { status: 201 });
   } catch (error: any) {
@@ -118,6 +118,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Validation failed', details: error.issues },
         { status: 400 }
+      );
+    }
+
+    if (error?.code === 'P2002') {
+      return NextResponse.json({ error: 'You have already quoted on this request' }, { status: 400 });
+    }
+
+    if (error.message === 'INSUFFICIENT_CREDITS') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Vous n'avez pas assez de crédits pour envoyer un devis.",
+          code: 'INSUFFICIENT_CREDITS',
+          quoteCost: error.quoteCost,
+        },
+        { status: 402 }
       );
     }
 

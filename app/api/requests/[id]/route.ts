@@ -29,7 +29,7 @@ export async function GET(
 
     const truckerId = await getTruckerProfileId(auth.userId);
     if (truckerId) {
-      const publicView = await requestService.getPublicByIdForUser(requestId, auth.userId);
+      const publicView = await requestService.getPublicByIdForUser(requestId, truckerId);
       if (!publicView) {
         return NextResponse.json({ error: 'Request not found' }, { status: 404 });
       }

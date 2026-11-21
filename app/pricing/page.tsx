@@ -17,11 +17,11 @@ function isPopularBadge(badge: string | null | undefined) {
 }
 
 export default async function PricingPage({
-  searchParams,
+  searchParams: searchParamsPromise,
 }: {
   searchParams?: Record<string, string | string[] | undefined>
 }) {
-  const sp = searchParams || {}
+  const sp = (await searchParamsPromise) || {}
   const success = sp.success === "1" || (Array.isArray(sp.success) && sp.success[0] === "1")
   const tabRaw = sp.tab
   const tab = (Array.isArray(tabRaw) ? tabRaw[0] : tabRaw) === "packs" ? "packs" : "subscriptions"
@@ -92,7 +92,7 @@ export default async function PricingPage({
         <div className="container-max">
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-[#071D40]">Des offres adaptées à votre activité</h1>
-            <p className="mt-4 text-gray-600 max-w-2xl mx-auto">Commencez gratuitement. Payez uniquement lorsque vous avez besoin de plus.</p>
+            <p className="mt-4 text-gray-600 max-w-2xl mx-auto">Ces offres concernent les transporteurs. Le client publie ses demandes gratuitement. Un crédit sert à envoyer un devis, après validation du règlement.</p>
           </div>
 
           {success ? (
@@ -128,7 +128,7 @@ export default async function PricingPage({
             <section className="mt-12">
               <div className="text-center">
                 <h2 className="text-2xl md:text-3xl font-bold text-[#071D40]">Abonnements</h2>
-                <p className="mt-2 text-sm text-gray-600">Des crédits + des boosts + des avantages supplémentaires chaque mois.</p>
+                <p className="mt-2 text-sm text-gray-600">Un prix, des crédits inclus et une activation après confirmation du règlement. Aucun prélèvement automatique.</p>
               </div>
 
               {plans.length ? (
@@ -137,9 +137,9 @@ export default async function PricingPage({
                     const benefits: string[] = Array.isArray(p.benefits) ? (p.benefits as any[]).map((x) => String(x)) : []
                     const highlight = isPopularBadge(p.badge)
                     const planNameUpper = String(p.name || "").toUpperCase()
-                    const ctaLabel =
-                      Number(p.monthlyPrice) === 0
-                        ? "Commencer gratuitement"
+                    const free = Number(p.monthlyPrice) === 0
+                    const ctaLabel = free
+                        ? "Forfait gratuit"
                         : planNameUpper.includes("PRO")
                           ? "Passer à PRO"
                           : planNameUpper.includes("BUSINESS")
@@ -169,12 +169,13 @@ export default async function PricingPage({
                         </div>
 
                         <p className="mt-6 text-4xl font-extrabold tracking-tight text-[#071D40]">
-                          {Number(p.monthlyPrice).toLocaleString("fr-FR")} <span className="text-base font-semibold text-gray-600">{p.currency}/mois</span>
+                          {free ? "Gratuit" : Number(p.monthlyPrice).toLocaleString("fr-FR")}{" "}
+                          {free ? null : <span className="text-base font-semibold text-gray-600">{p.currency}/mois</span>}
                         </p>
 
                         <div className="mt-5 rounded-xl border border-gray-200 bg-[#F4F8FC] p-4 text-sm text-gray-700">
-                          <p className="font-semibold">{Number(p.monthlyCredits || 0)} crédits/mois</p>
-                          <p className="mt-1">{Number(p.monthlyBoosts || 0)} boosts/mois</p>
+                          <p className="font-semibold">{Number(p.monthlyCredits || 0)} crédits inclus</p>
+                          <p className="mt-1">Cycle de {Number(p.cycleDays || 0)} jours, sans renouvellement bancaire</p>
                         </div>
 
                         {benefits.length ? (
@@ -196,8 +197,8 @@ export default async function PricingPage({
                           {p.code ? (
                             <Link
                               href={
-                                Number(p.monthlyPrice) === 0
-                                  ? "/abonnement"
+                                free
+                                  ? "/auth/signup?role=TRUCKER"
                                   : `/pricing/subscription-checkout?plan=${encodeURIComponent(p.code)}`
                               }
                               className={
@@ -259,7 +260,7 @@ export default async function PricingPage({
                         <div className="mt-5">
                           <p className="text-4xl font-extrabold tracking-tight text-[#071D40]">{p.credits} crédit{p.credits > 1 ? "s" : ""}</p>
                           <p className="mt-2 text-2xl font-bold text-[#071D40]">{formatXof(p.priceXof)}</p>
-                          <p className="mt-2 text-sm text-gray-600">≈ {unit.toLocaleString("fr-FR")} FCFA/contact</p>
+                          <p className="mt-2 text-sm text-gray-600">≈ {unit.toLocaleString("fr-FR")} FCFA par crédit, pour répondre à une demande</p>
                         </div>
 
                         <div className="mt-6 flex-1" />

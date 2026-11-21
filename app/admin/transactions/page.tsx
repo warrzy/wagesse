@@ -81,7 +81,7 @@ export default function AdminTransactionsPage() {
   const sourceOptions = useMemo(() => ["CreditTransaction", "Commission", "Payout"], [])
 
   const creditSubtypeOptions = useMemo(
-    () => ["PURCHASE", "UNLOCK_CONTACT", "SUBSCRIPTION_MONTHLY_TOPUP", "ADMIN_ADJUSTMENT", "PROMO"],
+    () => ["PURCHASE", "UNLOCK_CONTACT", "SUBSCRIPTION_MONTHLY_TOPUP", "ADMIN_ADJUSTMENT", "PROMO", "QUOTE_SUBMISSION"],
     []
   )
 

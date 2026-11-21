@@ -9,6 +9,7 @@ import { POST as approve } from "../../app/api/admin/commandes/[id]/approve/rout
 import { POST as createRequest } from "../../app/api/requests/route"
 import { POST as publishRequest } from "../../app/api/requests/[id]/publish/route"
 import { POST as createQuote } from "../../app/api/quotes/route"
+import { GET as listQuotes } from "../../app/api/quotes/route"
 import { POST as unlock } from "../../app/api/requests/[id]/unlock-contacts/route"
 import { POST as acceptQuote } from "../../app/api/quotes/[id]/accept/route"
 import { PATCH as missionStatus } from "../../app/api/missions/[id]/status/route"
@@ -110,19 +111,28 @@ test("le mode simple parcourt le métier sans SMS et le mode vérifié réappliq
   const published = await publishRequest(post(`/api/requests/${requestId}/publish`, {}, clientToken), { params: Promise.resolve({ id: requestId }) })
   assert.equal(published.status, 200)
 
-  const quote = await createQuote(post("/api/quotes", {
+  const pack = await prisma.creditPack.upsert({
+    where: { code: "CI" },
+    update: { isActive: true, credits: 5, priceXof: 1000 },
+    create: { code: "CI", title: "Pack de test", priceXof: 1000, credits: 5, isActive: true, sortOrder: 1 },
+  })
+  const refusedQuote = await createQuote(post("/api/quotes", {
     requestId,
     vehicleId: vehicle.id,
     totalPrice: 90000,
     proposedDate: when,
     validUntil: when,
   }, truckerToken))
-  const quoteBody = await json(quote)
-  assert.equal(quote.status, 201, note(quoteBody.error))
-  const quoteId = quoteBody.data.id as string
+  const refusedQuoteBody = await json(refusedQuote)
+  assert.equal(refusedQuote.status, 402, note(refusedQuoteBody.error))
+  assert.equal(refusedQuoteBody.code, "INSUFFICIENT_CREDITS")
 
-  const pack = await prisma.creditPack.findFirstOrThrow({ where: { isActive: true, credits: { gt: 0 } } })
-  const order = await purchase(post("/api/credits/purchase", { packCode: pack.code }, clientToken))
+  const clientPurchase = await purchase(post("/api/credits/purchase", { packCode: pack.code }, clientToken))
+  assert.equal(clientPurchase.status, 403)
+  const clientWallet = await prisma.creditWallet.findUnique({ where: { userId: createdBody.data.user.id } })
+  assert.equal(clientWallet, null)
+
+  const order = await purchase(post("/api/credits/purchase", { packCode: pack.code }, truckerToken))
   const orderBody = await json(order)
   assert.equal(order.status, 201, note(orderBody.error))
   const stillUnverified = await prisma.user.findUniqueOrThrow({ where: { phone }, select: { phoneVerified: true } })
@@ -135,7 +145,7 @@ test("le mode simple parcourt le métier sans SMS et le mode vérifié réappliq
       password: await hashPassword(password),
       firstName: "Admin",
       lastName: "Mode",
-      role: "ADMIN",
+      role: "SUPER_ADMIN",
       phoneVerified: null,
     },
   })
@@ -153,6 +163,26 @@ test("le mode simple parcourt le métier sans SMS et le mode vérifié réappliq
   const againBody = await json(again)
   assert.equal(again.status, 200)
   assert.equal(againBody.data.alreadyProcessed, true)
+
+  const quote = await createQuote(post("/api/quotes", {
+    requestId,
+    vehicleId: vehicle.id,
+    totalPrice: 90000,
+    proposedDate: when,
+    validUntil: when,
+  }, truckerToken))
+  const quoteBody = await json(quote)
+  assert.equal(quote.status, 201, note(quoteBody.error))
+  const quoteId = quoteBody.data.id as string
+  const truckerWallet = await prisma.creditWallet.findUniqueOrThrow({ where: { userId: truckerBody.data.user.id } })
+  assert.equal(truckerWallet.balance, pack.credits - 1)
+  const listed = await listQuotes(new NextRequest(`http://127.0.0.1/api/quotes?requestId=${requestId}`, {
+    headers: { Authorization: `Bearer ${clientToken}` },
+  }))
+  const listedBody = await json(listed)
+  assert.equal(listed.status, 200)
+  assert.equal(listedBody.data[0].totalPrice, 90000)
+  assert.equal(listedBody.data[0].locked, false)
 
   const opened = await unlock(post(`/api/requests/${requestId}/unlock-contacts`, {}, clientToken), { params: Promise.resolve({ id: requestId }) })
   assert.equal(opened.status, 200)
@@ -212,11 +242,11 @@ test("le mode simple parcourt le métier sans SMS et le mode vérifié réappliq
   const verifiedAt = new Date("2026-11-01T08:00:00.000Z")
   await prisma.user.update({ where: { phone }, data: { phoneVerified: verifiedAt } })
   const allowedWhenVerified = await purchase(post("/api/credits/purchase", { packCode: pack.code }, clientToken))
-  assert.equal(allowedWhenVerified.status, 201)
+  assert.equal(allowedWhenVerified.status, 403)
 
   process.env.PHONE_VERIFICATION_REQUIRED = "false"
   const restored = await purchase(post("/api/credits/purchase", { packCode: pack.code }, clientToken))
-  assert.equal(restored.status, 201)
+  assert.equal(restored.status, 403)
   process.env.PHONE_VERIFICATION_REQUIRED = "true"
   const finalUser = await prisma.user.findUniqueOrThrow({ where: { phone }, select: { phoneVerified: true } })
   assert.equal(finalUser.phoneVerified?.toISOString(), verifiedAt.toISOString())

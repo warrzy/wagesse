@@ -1,0 +1,4 @@
+-- Le super administrateur devient un rôle réel. Un devis transporteur est un mouvement de crédits.
+ALTER TABLE `User` MODIFY `role` ENUM('VISITOR', 'CLIENT', 'TRUCKER', 'OPERATOR', 'ADMIN', 'SUPER_ADMIN') NOT NULL DEFAULT 'CLIENT';
+ALTER TABLE `RolePermission` MODIFY `role` ENUM('VISITOR', 'CLIENT', 'TRUCKER', 'OPERATOR', 'ADMIN', 'SUPER_ADMIN') NOT NULL;
+ALTER TABLE `CreditTransaction` MODIFY `type` ENUM('PURCHASE', 'UNLOCK_CONTACT', 'SUBSCRIPTION_MONTHLY_TOPUP', 'ADMIN_ADJUSTMENT', 'PROMO', 'QUOTE_SUBMISSION') NOT NULL;

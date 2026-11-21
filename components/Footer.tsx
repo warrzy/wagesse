@@ -26,8 +26,8 @@ export default function Footer() {
             <div>
               <h2 className="text-sm font-semibold text-white">Clients</h2>
               <ul className="mt-4 space-y-3 text-sm text-white/70">
-                <li><Link href="/auth/signup?role=CLIENT" className="hover:text-white">Créer une demande</Link></li>
-                <li><Link href="/pricing" className="hover:text-white">Crédits et forfaits</Link></li>
+                <li><Link href="/auth/signup?role=CLIENT" className="hover:text-white">Publier gratuitement</Link></li>
+                <li><Link href="/#fonctionnement" className="hover:text-white">Comment ça marche</Link></li>
                 <li><Link href="/#faq" className="hover:text-white">Questions fréquentes</Link></li>
               </ul>
             </div>

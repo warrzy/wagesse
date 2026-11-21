@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { getAuthContext, unauthorized } from "@/lib/api-auth"
+import { getAuthContext, isSuperAdmin, unauthorized } from "@/lib/api-auth"
 import { hashPassword } from "@/lib/auth"
 
 function isAdmin(role: string | null | undefined) {
@@ -175,6 +175,12 @@ export async function POST(request: NextRequest) {
     const lastName = ((body as any).lastName ?? null) === null ? null : String((body as any).lastName || "").trim() || null
     const role = String((body as any).role || "CLIENT").trim()
     const status = String((body as any).status || "ACTIVE").trim()
+    if (role === "SUPER_ADMIN" && !isSuperAdmin(auth.role)) {
+      return NextResponse.json(
+        { success: false, error: "Seul un super administrateur peut créer ce rôle.", code: "SUPER_ADMIN_REQUIRED" },
+        { status: 403 }
+      )
+    }
 
     if (!email || !phone || !password) {
       return NextResponse.json(

@@ -6,7 +6,6 @@ import { motion, Variants } from "framer-motion"
 import Link from "next/link"
 import Header from "@/components/Header"
 import Footer from "@/components/Footer"
-import CreditsBanner from "@/components/CreditsBanner"
 import PhoneNotice from "@/components/PhoneNotice"
 import ClientGuard from "@/app/dashboard/client/client-guard"
 import { Truck, MapPin, DollarSign, Star, AlertCircle } from "lucide-react"
@@ -59,8 +58,6 @@ export default function ClientDashboard() {
   const [error, setError] = useState<string | null>(null)
   const [missions, setMissions] = useState<any[]>([])
   const [requests, setRequests] = useState<any[]>([])
-  const [creditBalance, setCreditBalance] = useState<number | null>(null)
-  const [subscription, setSubscription] = useState<any | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -76,12 +73,6 @@ export default function ClientDashboard() {
         apiClient.getTransportRequests({ take: "10" }),
       ])
 
-      const creditsRes = await apiClient.getCreditBalance()
-      if (creditsRes.success) {
-        const data = creditsRes.data as any
-        setCreditBalance(typeof data?.balance === "number" ? data.balance : null)
-      }
-
       if (missionsRes.success) {
         setMissions((missionsRes.data as any)?.missions || [])
       }
@@ -93,14 +84,6 @@ export default function ClientDashboard() {
 
     load()
   }, [router])
-
-  useEffect(() => {
-    const loadSub = async () => {
-      const res = await apiClient.getCurrentSubscription()
-      if (res.success) setSubscription((res.data as any) || null)
-    }
-    loadSub()
-  }, [])
 
   const activeMissions = missions.filter(
     (m) => !["COMPLETED", "CANCELLED", "REFUNDED"].includes(m.status)
@@ -121,31 +104,17 @@ export default function ClientDashboard() {
           {/* Header */}
           <motion.div variants={itemVariants} className="mb-8">
             <h1 className="text-3xl font-bold mb-2">Tableau de bord client</h1>
-            <p className="text-gray-600">Gérez vos demandes et missions</p>
+            <p className="text-gray-600">Publier et suivre une demande est gratuit.</p>
           </motion.div>
 
           <PhoneNotice />
 
           <motion.div variants={itemVariants} className="mb-8">
-            <CreditsBanner dashboardHref="/dashboard/client" contactsHref="/dashboard/client/contacts" />
-          </motion.div>
-
-          <motion.div variants={itemVariants} className="mb-8">
-            <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-[#071D40]">Plan actuel</p>
-                  <p className="mt-1 text-sm text-gray-600">
-                    {subscription?.plan?.code ? subscription.plan.code : "FREE"}
-                    {subscription?.nextPaymentDate
-                      ? ` • Renouvellement le ${new Date(subscription.nextPaymentDate).toLocaleDateString("fr-FR")}`
-                      : ""}
-                  </p>
-                </div>
-                <Link href="/abonnement" className="text-sm font-semibold text-[#FF7900] hover:underline">
-                  Gérer mon abonnement
-                </Link>
-              </div>
+            <div className="rounded-2xl border border-[#087DD1]/20 bg-white p-4 shadow-sm">
+              <p className="text-sm font-semibold text-[#071D40]">Aucun crédit n’est demandé</p>
+              <p className="mt-1 text-sm text-gray-600">
+                Vous publiez, comparez les devis et suivez la mission sans achat. Les coordonnées restent masquées jusqu’à l’acceptation d’un devis.
+              </p>
             </div>
           </motion.div>
 
@@ -253,17 +222,10 @@ export default function ClientDashboard() {
                 </Link>
 
                 <Link
-                  href="/dashboard/client/contacts"
+                  href="/dashboard/client/requests"
                   className="w-full py-3 px-4 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:border-[#FF7900] transition-colors flex items-center justify-center gap-2"
                 >
-                  Mes contacts
-                </Link>
-
-                <Link
-                  href="/dashboard/commandes"
-                  className="w-full py-3 px-4 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:border-[#FF7900] transition-colors flex items-center justify-center gap-2"
-                >
-                  Mes commandes
+                  Propositions reçues
                 </Link>
 
                 <Link
@@ -272,20 +234,6 @@ export default function ClientDashboard() {
                 >
                   Mon profil
                 </Link>
-              </div>
-
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <p className="text-sm font-semibold mb-3">Mes crédits</p>
-                <div className="flex items-center justify-between">
-                  <p className="text-2xl font-bold">{creditBalance === null ? "…" : String(creditBalance)}</p>
-                  <Link
-                    href="/pricing"
-                    className="text-sm font-semibold text-[#FF7900] hover:underline"
-                  >
-                    Acheter des crédits
-                  </Link>
-                </div>
-                <p className="mt-2 text-xs text-gray-500">1 crédit = 1 contact débloqué</p>
               </div>
 
               <div className="mt-6 pt-6 border-t border-gray-200">
