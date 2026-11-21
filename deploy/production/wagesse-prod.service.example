@@ -1,0 +1,16 @@
+[Unit]
+Description=WAGESSE production
+After=network.target mariadb.service
+
+[Service]
+User=wagesse-prod
+Group=wagesse-prod
+WorkingDirectory=/opt/wagesse-prod/app
+EnvironmentFile=/etc/wagesse/production.env
+ExecStart=/opt/wagesse-prod/.node/bin/node node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 3030
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

@@ -100,10 +100,10 @@ export default function AbonnementPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-[#F8FAFC] pt-10 pb-16">
+      <main className="min-h-screen bg-[#F5F4F0] pt-10 pb-16">
         <div className="container-max">
           <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-[#0F172A]">Abonnement</h1>
+            <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-[#13283A]">Abonnement</h1>
             <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
               Choisis un plan pour obtenir des crédits mensuels et plus de visibilité. La publication et la consultation restent gratuites.
             </p>
@@ -129,19 +129,19 @@ export default function AbonnementPage() {
                     key={p.id || p.code || p.name}
                     className={
                       "rounded-2xl border bg-white p-6 shadow-sm transition-all " +
-                      (isPopular ? "border-[#F97316] shadow-lg" : "border-gray-200")
+                      (isPopular ? "border-[#ED8A25] shadow-lg" : "border-gray-200")
                     }
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <h2 className="text-lg font-semibold text-[#0F172A]">{p.name}</h2>
+                      <h2 className="text-lg font-semibold text-[#13283A]">{p.name}</h2>
                       {isPopular ? (
-                        <span className="inline-flex items-center rounded-full bg-[#F97316]/10 text-[#9A3412] px-3 py-1 text-xs font-semibold">
+                        <span className="inline-flex items-center rounded-full bg-[#ED8A25]/10 text-[#9A3412] px-3 py-1 text-xs font-semibold">
                           {String(p.badge || "Le plus populaire")}
                         </span>
                       ) : null}
                     </div>
 
-                    <p className="mt-5 text-3xl font-extrabold tracking-tight text-[#0F172A]">
+                    <p className="mt-5 text-3xl font-extrabold tracking-tight text-[#13283A]">
                       {formatPrice(p.monthlyPrice)} <span className="text-base font-semibold text-gray-600">{p.currency}/mois</span>
                     </p>
 
@@ -171,8 +171,8 @@ export default function AbonnementPage() {
                           className={
                             "w-full inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold transition-colors disabled:opacity-50 " +
                             (isPopular
-                              ? "bg-[#F97316] text-white hover:bg-[#EA580C]"
-                              : "border border-gray-200 bg-white text-[#0F172A] hover:bg-[#F8FAFC]")
+                              ? "bg-[#ED8A25] text-[#13283A] hover:bg-[#c56f12]"
+                              : "border border-gray-200 bg-white text-[#13283A] hover:bg-[#F5F4F0]")
                           }
                         >
                           {submitting === p.code ? "Activation…" : !p.code ? "Non activable" : Number(p.monthlyPrice || 0) > 0 ? "Choisir ce plan" : "Activer"}
@@ -187,7 +187,7 @@ export default function AbonnementPage() {
 
           {current ? (
             <div className="mt-12 max-w-3xl mx-auto rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-[#0F172A]">Votre abonnement</h3>
+              <h3 className="text-lg font-semibold text-[#13283A]">Votre abonnement</h3>
               <div className="mt-3 text-sm text-gray-700">
                 <p>
                   Plan: <span className="font-semibold">{current.plan?.code}</span>

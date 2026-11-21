@@ -127,7 +127,7 @@ export default function TruckerVehiclesPage() {
             </div>
             <button
               onClick={() => setShowForm((v) => !v)}
-              className="py-3 px-4 bg-[#E8714D] text-white rounded-lg font-medium hover:bg-[#d45c39] transition-colors flex items-center gap-2"
+              className="py-3 px-4 bg-[#ED8A25] text-[#13283A] rounded-lg font-medium hover:bg-[#c56f12] transition-colors flex items-center gap-2"
             >
               <Plus size={18} />
               Ajouter un véhicule
@@ -198,7 +198,7 @@ export default function TruckerVehiclesPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full py-3 px-4 bg-[#E8714D] text-white rounded-lg font-medium hover:bg-[#d45c39] transition-colors disabled:opacity-50"
+                  className="w-full py-3 px-4 bg-[#ED8A25] text-[#13283A] rounded-lg font-medium hover:bg-[#c56f12] transition-colors disabled:opacity-50"
                 >
                   {submitting ? "Enregistrement…" : "Enregistrer le véhicule"}
                 </button>

@@ -58,7 +58,7 @@ export default function TruckerContactsPage() {
               <h1 className="text-3xl font-bold">Mes contacts</h1>
               <p className="mt-2 text-gray-600">Retrouvez les coordonnées que vous avez déjà débloquées.</p>
             </div>
-            <Link href="/pricing" className="text-sm font-semibold text-[#E8714D] hover:underline">
+            <Link href="/pricing" className="text-sm font-semibold text-[#ED8A25] hover:underline">
               Acheter des crédits
             </Link>
           </div>
@@ -80,7 +80,7 @@ export default function TruckerContactsPage() {
                     <div key={it.id} className="card-hover">
                       <div className="flex items-start justify-between gap-4">
                         <div>
-                          <p className="font-semibold text-[#0F172A]">
+                          <p className="font-semibold text-[#13283A]">
                             {it.request.pickupCity} → {it.request.dropoffCity}
                           </p>
                           <p className="text-sm text-gray-600">
@@ -92,20 +92,20 @@ export default function TruckerContactsPage() {
                         </div>
                         <Link
                           href={`/dashboard/trucker/requests/${it.requestId}`}
-                          className="text-sm font-semibold text-[#E8714D] hover:underline"
+                          className="text-sm font-semibold text-[#ED8A25] hover:underline"
                         >
                           Voir la demande
                         </Link>
                       </div>
 
                       <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                        <div className="rounded-xl border border-gray-200 bg-[#F8FAFC] px-4 py-3">
+                        <div className="rounded-xl border border-gray-200 bg-[#F5F4F0] px-4 py-3">
                           <p className="text-xs text-gray-500">Téléphone</p>
-                          <p className="font-semibold text-[#0F172A]">{c.phone || "—"}</p>
+                          <p className="font-semibold text-[#13283A]">{c.phone || "—"}</p>
                         </div>
-                        <div className="rounded-xl border border-gray-200 bg-[#F8FAFC] px-4 py-3">
+                        <div className="rounded-xl border border-gray-200 bg-[#F5F4F0] px-4 py-3">
                           <p className="text-xs text-gray-500">Email</p>
-                          <p className="font-semibold text-[#0F172A]">{c.email || "—"}</p>
+                          <p className="font-semibold text-[#13283A]">{c.email || "—"}</p>
                         </div>
                       </div>
                     </div>

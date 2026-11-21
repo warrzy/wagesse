@@ -202,10 +202,10 @@ export default function TruckerRequestDetailPage() {
               Client : {request.customer?.user?.firstName} {request.customer?.user?.lastName}
             </p>
 
-            <div className="mt-4 rounded-xl border border-gray-200 bg-[#F8FAFC] p-4">
+            <div className="mt-4 rounded-xl border border-gray-200 bg-[#F5F4F0] p-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm font-semibold text-[#0F172A]">Coordonnées</p>
+                  <p className="text-sm font-semibold text-[#13283A]">Coordonnées</p>
                   <p className="mt-2 text-sm text-gray-700">Téléphone : {request.customer.user.phone}</p>
                   <p className="text-sm text-gray-700">Email : {request.customer.user.email}</p>
                 </div>
@@ -215,7 +215,7 @@ export default function TruckerRequestDetailPage() {
                     type="button"
                     onClick={handleUnlockCustomerContact}
                     disabled={actionLoading}
-                    className="inline-flex items-center gap-2 rounded-xl bg-[#0F172A] text-white px-4 py-2.5 text-sm font-semibold hover:bg-[#0b1220] transition-colors disabled:opacity-50"
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#13283A] text-white px-4 py-2.5 text-sm font-semibold hover:bg-[#0d1c29] transition-colors disabled:opacity-50"
                   >
                     <Lock size={14} />
                     Débloquer (1 crédit)
@@ -231,7 +231,7 @@ export default function TruckerRequestDetailPage() {
 
               {error && error.includes("crédits") && (
                 <div className="mt-3">
-                  <Link href="/pricing" className="text-sm font-semibold text-[#E8714D] hover:underline">
+                  <Link href="/pricing" className="text-sm font-semibold text-[#ED8A25] hover:underline">
                     Acheter des crédits
                   </Link>
                 </div>
@@ -251,7 +251,7 @@ export default function TruckerRequestDetailPage() {
           ) : vehicles.length === 0 ? (
             <div className="card text-center py-8">
               <p className="text-gray-500 mb-4">Vous devez enregistrer un véhicule avant de pouvoir envoyer un devis.</p>
-              <Link href="/dashboard/trucker/vehicles" className="text-[#E8714D] font-medium hover:underline">
+              <Link href="/dashboard/trucker/vehicles" className="text-[#ED8A25] font-medium hover:underline">
                 Ajouter un véhicule
               </Link>
             </div>
@@ -334,7 +334,7 @@ export default function TruckerRequestDetailPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full py-3 px-4 bg-[#E8714D] text-white rounded-lg font-medium hover:bg-[#d45c39] transition-colors disabled:opacity-50"
+                  className="w-full py-3 px-4 bg-[#ED8A25] text-[#13283A] rounded-lg font-medium hover:bg-[#c56f12] transition-colors disabled:opacity-50"
                 >
                   {submitting ? "Envoi…" : "Envoyer le devis"}
                 </button>

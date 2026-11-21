@@ -7,6 +7,14 @@ import { Menu, X } from "lucide-react"
 import { useEffect, useState } from "react"
 import { apiClient, StoredUser } from "@/lib/api-client"
 
+const links = [
+  { href: "/#fonctionnement", label: "Fonctionnement" },
+  { href: "/#materiaux", label: "Matériaux" },
+  { href: "/#camions", label: "Camions" },
+  { href: "/pricing", label: "Tarifs" },
+  { href: "/contact", label: "Contact" },
+]
+
 export default function Header() {
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -18,7 +26,6 @@ export default function Header() {
       setUser(cached)
       return
     }
-    // Existing session (token set before user info was cached) — fetch and cache it.
     if (apiClient.getToken()) {
       apiClient.getCurrentUser().then((res) => {
         if (res.success && res.data) {
@@ -33,151 +40,97 @@ export default function Header() {
   const handleLogout = () => {
     apiClient.logout()
     setUser(null)
+    setMobileMenuOpen(false)
     router.push("/")
   }
 
-  const dashboardHref = user?.role === "TRUCKER" ? "/dashboard/trucker" : "/dashboard/client"
+  const dashboardHref = user?.role === "TRUCKER"
+    ? "/dashboard/trucker"
+    : user?.role === "ADMIN" || user?.role === "SUPER_ADMIN"
+      ? "/admin"
+      : "/dashboard/client"
 
   return (
-    <header className="sticky top-0 z-50 border-b border-[#E2E8F0] bg-white/75 backdrop-blur supports-[backdrop-filter]:bg-white/60">
-      <nav className="container-max h-[76px] flex items-center justify-between gap-6">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 font-extrabold tracking-tight text-lg text-[#0F172A]">
-          <div className="w-9 h-9 rounded-xl" style={{ backgroundColor: "#F97316" }} />
-          <span>
-            {BRAND_CONFIG.name}
+    <header className="sticky top-0 z-50 border-b border-[#13283A]/10 bg-[#F5F4F0]/90 backdrop-blur">
+      <nav className="container-max flex h-[76px] items-center justify-between gap-6">
+        <Link href="/" className="flex items-center gap-3 font-semibold tracking-tight text-[#13283A]">
+          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-[#13283A] text-sm font-semibold text-[#E8B55B]" aria-hidden="true">
+            W
           </span>
+          <span className="text-lg">{BRAND_CONFIG.name}</span>
         </Link>
 
-        {/* Desktop Menu */}
-        <div className="hidden lg:flex items-center justify-center gap-10 flex-1">
-          <Link href="#features" className="text-sm font-semibold text-[#0F172A] hover:text-[#F97316] transition-colors">
-            Fonctionnement
-          </Link>
-          <Link href="#materials" className="text-sm font-semibold text-[#0F172A] hover:text-[#F97316] transition-colors">
-            Matériaux
-          </Link>
-          <Link href="/pricing" className="text-sm font-semibold text-[#0F172A] hover:text-[#F97316] transition-colors">
-            Tarifs
-          </Link>
-          <Link href="/contact" className="text-sm font-semibold text-[#0F172A] hover:text-[#F97316] transition-colors">
-            Contact
-          </Link>
+        <div className="hidden flex-1 items-center justify-center gap-8 lg:flex">
+          {links.map((link) => (
+            <Link key={link.href} href={link.href} className="text-sm font-semibold text-[#13283A]/80 hover:text-[#ED8A25]">
+              {link.label}
+            </Link>
+          ))}
         </div>
 
-        {/* CTA Buttons */}
-        <div className="hidden lg:flex items-center gap-3">
-          <Link
-            href="/auth/signup?role=CLIENT"
-            className="inline-flex items-center justify-center rounded-xl bg-[#F97316] text-white px-5 py-3 text-sm font-semibold shadow-sm hover:shadow-md hover:bg-[#EA580C] transition-all"
-          >
-            Demander un camion
-          </Link>
-
+        <div className="hidden items-center gap-3 lg:flex">
           {user ? (
             <>
-              <Link href={dashboardHref} className="flex items-center gap-2 px-2 py-2 rounded-xl hover:bg-[#F8FAFC] transition-colors">
-                <div className="h-9 w-9 rounded-full bg-[#0F172A] text-white flex items-center justify-center text-sm font-bold">
-                  {(user.firstName?.[0] || "U").toUpperCase()}
-                </div>
-                <div className="hidden xl:block">
-                  <p className="text-sm font-semibold text-[#0F172A] leading-none">{user.firstName || "Mon compte"}</p>
-                  <p className="text-xs text-[#64748B]">Compte</p>
-                </div>
+              <Link href={dashboardHref} className="text-sm font-semibold text-[#13283A]">
+                {user.firstName || "Mon espace"}
               </Link>
-              <button
-                onClick={handleLogout}
-                className="px-4 py-3 border border-[#E2E8F0] rounded-xl text-sm font-semibold text-[#0F172A] hover:bg-[#F8FAFC] transition-colors"
-              >
+              <button type="button" onClick={handleLogout} className="button-outline px-4 py-2 text-sm">
                 Déconnexion
               </button>
             </>
           ) : (
-            <>
-              <Link
-                href="/auth/login"
-                className="px-3 py-2 text-sm font-semibold text-[#0F172A] hover:text-[#F97316] transition-colors"
-              >
-                Connexion
-              </Link>
-              <Link
-                href="/auth/signup?role=CLIENT"
-                className="px-4 py-3 border border-[#E2E8F0] rounded-xl text-sm font-semibold text-[#0F172A] hover:bg-[#F8FAFC] transition-colors"
-              >
-                Créer un compte
-              </Link>
-            </>
+            <Link href="/auth/login" className="text-sm font-semibold text-[#13283A]">
+              Connexion
+            </Link>
           )}
+          <Link href="/auth/signup?role=CLIENT" className="button-primary px-5 py-3 text-sm">
+            Trouver un camion
+          </Link>
         </div>
 
-        {/* Mobile Menu Toggle */}
         <button
-          className="lg:hidden p-2 rounded-xl hover:bg-[#F8FAFC] transition-colors"
+          className="grid h-12 w-12 place-items-center rounded-2xl border border-[#13283A]/10 lg:hidden"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          aria-expanded={mobileMenuOpen}
           aria-label={mobileMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
         >
-          {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
       </nav>
 
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-[#E2E8F0] bg-white">
-          <div className="container-max py-5 flex flex-col gap-3">
-            <Link href="#features" className="py-2 font-semibold text-[#0F172A]">
-              Fonctionnement
+      {mobileMenuOpen ? (
+        <div className="border-t border-[#13283A]/10 bg-[#F5F4F0] lg:hidden">
+          <div className="container-max flex flex-col gap-2 py-4">
+            {links.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className="min-h-12 rounded-2xl px-3 py-3 text-base font-semibold text-[#13283A]"
+              >
+                {link.label}
+              </Link>
+            ))}
+            <Link href="/auth/signup?role=CLIENT" className="button-primary mt-2" onClick={() => setMobileMenuOpen(false)}>
+              Trouver un camion
             </Link>
-            <Link href="#materials" className="py-2 font-semibold text-[#0F172A]">
-              Matériaux
-            </Link>
-            <Link href="/pricing" className="py-2 font-semibold text-[#0F172A]">
-              Tarifs
-            </Link>
-            <Link href="/contact" className="py-2 font-semibold text-[#0F172A]">
-              Contact
-            </Link>
-
-            <Link
-              href="/auth/signup?role=CLIENT"
-              className="mt-2 inline-flex items-center justify-center rounded-xl bg-[#F97316] text-white px-5 py-3 text-sm font-semibold shadow-sm hover:bg-[#EA580C] transition-colors"
-            >
-              Demander un camion
-            </Link>
-
             {user ? (
               <>
-                <Link
-                  href={dashboardHref}
-                  className="py-2 font-semibold text-[#0F172A] border-t border-[#E2E8F0] pt-4"
-                >
-                  {user.firstName || "Mon compte"}
+                <Link href={dashboardHref} className="button-secondary" onClick={() => setMobileMenuOpen(false)}>
+                  {user.firstName || "Mon espace"}
                 </Link>
-                <button
-                  onClick={handleLogout}
-                  className="px-4 py-3 border border-[#E2E8F0] rounded-xl text-center font-semibold text-[#0F172A] hover:bg-[#F8FAFC] transition-colors"
-                >
+                <button type="button" onClick={handleLogout} className="button-outline">
                   Déconnexion
                 </button>
               </>
             ) : (
-              <>
-                <Link
-                  href="/auth/login"
-                  className="py-2 font-semibold text-[#0F172A] border-t border-[#E2E8F0] pt-4"
-                >
-                  Connexion
-                </Link>
-                <Link
-                  href="/auth/signup?role=CLIENT"
-                  className="px-4 py-3 border border-[#E2E8F0] rounded-xl text-center font-semibold text-[#0F172A] hover:bg-[#F8FAFC] transition-colors"
-                >
-                  Créer un compte
-                </Link>
-              </>
+              <Link href="/auth/login" className="button-outline" onClick={() => setMobileMenuOpen(false)}>
+                Connexion
+              </Link>
             )}
           </div>
         </div>
-      )}
+      ) : null}
     </header>
   )
 }

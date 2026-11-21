@@ -7,6 +7,7 @@ import { apiClient } from "@/lib/api-client"
 import Header from "@/components/Header"
 import Footer from "@/components/Footer"
 import { MATERIAL_TYPES, BF_CITIES, QUANTITY_UNITS, TRUCK_TYPES } from "@/lib/config"
+import { REQUEST_DRAFT_KEY } from "@/components/QuickSearchCard"
 
 export default function NewRequestPage() {
   const router = useRouter()
@@ -17,6 +18,24 @@ export default function NewRequestPage() {
     const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null
     if (!token) {
       router.push("/auth/login")
+      return
+    }
+    const raw = sessionStorage.getItem(REQUEST_DRAFT_KEY)
+    if (!raw) return
+    sessionStorage.removeItem(REQUEST_DRAFT_KEY)
+    try {
+      const draft = JSON.parse(raw) as { pickupCity?: string; dropoffCity?: string; material?: string; quantity?: string }
+      const cities = new Set(BF_CITIES.map((city) => city.name))
+      const materials = new Set(MATERIAL_TYPES.map((item) => item.name))
+      setFormData((prev) => ({
+        ...prev,
+        pickupCity: draft.pickupCity && cities.has(draft.pickupCity) ? draft.pickupCity : prev.pickupCity,
+        dropoffCity: draft.dropoffCity && cities.has(draft.dropoffCity) ? draft.dropoffCity : prev.dropoffCity,
+        material: draft.material && materials.has(draft.material) ? draft.material : prev.material,
+        quantity: draft.quantity && /^\d+(\.\d+)?$/.test(draft.quantity) ? draft.quantity : prev.quantity,
+      }))
+    } catch {
+      return
     }
   }, [router])
 
@@ -288,7 +307,7 @@ export default function NewRequestPage() {
                 type="button"
                 disabled={loading}
                 onClick={(e) => handleSubmit(e as any, false)}
-                className="flex-1 py-3 px-4 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:border-[#E8714D] transition-colors disabled:opacity-50"
+                className="flex-1 py-3 px-4 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:border-[#ED8A25] transition-colors disabled:opacity-50"
               >
                 Enregistrer en brouillon
               </button>
@@ -296,7 +315,7 @@ export default function NewRequestPage() {
                 type="button"
                 disabled={loading}
                 onClick={(e) => handleSubmit(e as any, true)}
-                className="flex-1 py-3 px-4 bg-[#E8714D] text-white rounded-lg font-medium hover:bg-[#d45c39] transition-colors disabled:opacity-50"
+                className="flex-1 py-3 px-4 bg-[#ED8A25] text-[#13283A] rounded-lg font-medium hover:bg-[#c56f12] transition-colors disabled:opacity-50"
               >
                 {loading ? "Envoi…" : "Publier la demande"}
               </button>

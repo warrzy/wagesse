@@ -216,7 +216,7 @@ export default function AdminTransportsPage() {
           <button
             type="button"
             onClick={() => setCreateOpen((v) => !v)}
-            className="px-4 py-2 rounded-lg bg-[#0F172A] text-white text-sm font-semibold hover:bg-[#0b1220]"
+            className="px-4 py-2 rounded-lg bg-[#13283A] text-white text-sm font-semibold hover:bg-[#0d1c29]"
           >
             {createOpen ? "Fermer" : "Créer"}
           </button>
@@ -275,7 +275,7 @@ export default function AdminTransportsPage() {
               <button
                 type="submit"
                 disabled={creating}
-                className="px-4 py-2 rounded-lg bg-[#E8714D] text-white text-sm font-semibold hover:bg-[#D65A3A] disabled:opacity-50"
+                className="px-4 py-2 rounded-lg bg-[#ED8A25] text-[#13283A] text-sm font-semibold hover:bg-[#c56f12] disabled:opacity-50"
               >
                 {creating ? "Création…" : "Créer le transport"}
               </button>
@@ -292,7 +292,7 @@ export default function AdminTransportsPage() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="ID mission, référence, ID annonce, plaque, téléphone..."
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8714D]/40"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ED8A25]/40"
             />
           </div>
 
@@ -329,7 +329,7 @@ export default function AdminTransportsPage() {
             <button
               type="button"
               onClick={applyFilters}
-              className="px-4 py-2 rounded-lg bg-[#0F172A] text-white text-sm font-semibold hover:bg-[#0b1220]"
+              className="px-4 py-2 rounded-lg bg-[#13283A] text-white text-sm font-semibold hover:bg-[#0d1c29]"
             >
               Appliquer
             </button>
@@ -439,7 +439,7 @@ export default function AdminTransportsPage() {
                       <div className="text-xs text-gray-500 font-mono">{it.id}</div>
                     </td>
                     <td className="px-4 py-3">
-                      <Link href={`/admin/annonces/${it.request.id}`} className="text-sm font-semibold text-[#E8714D] hover:underline">
+                      <Link href={`/admin/annonces/${it.request.id}`} className="text-sm font-semibold text-[#ED8A25] hover:underline">
                         {it.request.id}
                       </Link>
                       <div className="text-xs text-gray-500">{it.request.status}</div>

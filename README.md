@@ -244,7 +244,7 @@ L'application est accessible sur `http://localhost:3000`
 ### 2. **Client**
 - Publication de demandes de transport
 - Paiement des frais de mise en relation
-- Réception de profils de camionneurs vérifiés
+- Réception de devis de camionneurs inscrits
 - Déblocage des coordonnées après paiement
 - Gestion des missions et paiements
 - Notation des camionneurs
@@ -328,14 +328,9 @@ Statuts suivis en temps réel:
 - En route vers livraison
 - Livraison complétée
 
-### 8. Livraison & Versement
+### 8. Livraison
 
-- Preuve de livraison (photo + GPS)
-- Code OTP optionnel
-- Confirmation du client
-- Calcul de la commission
-- Versement au camionneur (moins commission)
-- Notation réciproque
+La V1 suit la mission par étapes déclarées, puis le client confirme la fin. La photo de livraison, le GPS, le versement automatique et la notation ne font pas partie de cette version.
 
 ---
 
@@ -550,7 +545,7 @@ npm run validate
 
 ### Erreur: "DATABASE_URL not set"
 ```bash
-export DATABASE_URL="postgresql://user:password@localhost:5432/wagesse"
+export DATABASE_URL="mysql://user:password@127.0.0.1:3306/wagesse"
 ```
 
 ### Erreur Prisma: "Cannot find @prisma/client"
@@ -568,9 +563,7 @@ npm run dev -- -p 3001
 
 ## 📞 Support
 
-- 📧 Email: contact@wagesse.bf
--شارة WhatsApp: https://wa.me/226xxxxxxxxxxx
-- 🌐 Site: https://wagesse.bf
+- Email : contact@wagesse.bf
 
 ---
 

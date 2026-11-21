@@ -43,7 +43,7 @@ function formatName(u: { firstName?: string | null; lastName?: string | null } |
 function TimelineItem({ title, meta }: { title: string; meta: string }) {
   return (
     <div className="flex gap-3">
-      <div className="mt-1 h-2 w-2 rounded-full bg-[#E8714D]" />
+      <div className="mt-1 h-2 w-2 rounded-full bg-[#ED8A25]" />
       <div>
         <p className="text-sm font-semibold text-gray-900">{title}</p>
         <p className="text-xs text-gray-500">{meta}</p>
@@ -223,7 +223,7 @@ export default function AdminTransportDetailsPage() {
           <p className="text-sm text-red-600 font-semibold">Erreur</p>
           <p className="mt-2 text-sm text-gray-600">{error}</p>
           <div className="mt-4">
-            <Link href="/admin/transports" className="text-sm font-semibold text-[#E8714D] hover:underline">
+            <Link href="/admin/transports" className="text-sm font-semibold text-[#ED8A25] hover:underline">
               Retour
             </Link>
           </div>
@@ -261,7 +261,7 @@ export default function AdminTransportDetailsPage() {
               setEditContractPrice(Number(data?.contractPrice ?? 0))
               setEditStatus(String(data?.status || ""))
             }}
-            className="px-4 py-2 rounded-lg bg-[#0F172A] text-white text-sm font-semibold hover:bg-[#0b1220]"
+            className="px-4 py-2 rounded-lg bg-[#13283A] text-white text-sm font-semibold hover:bg-[#0d1c29]"
           >
             {editing ? "Annuler" : "Modifier"}
           </button>
@@ -284,7 +284,7 @@ export default function AdminTransportDetailsPage() {
             <p className="text-sm font-semibold">Annonce & Offre retenue</p>
             <div className="mt-3">
               {request?.id ? (
-                <Link href={`/admin/annonces/${request.id}`} className="text-sm font-semibold text-[#E8714D] hover:underline">
+                <Link href={`/admin/annonces/${request.id}`} className="text-sm font-semibold text-[#ED8A25] hover:underline">
                   {request.id}
                 </Link>
               ) : null}
@@ -301,7 +301,7 @@ export default function AdminTransportDetailsPage() {
                 <div className="mt-2 divide-y divide-gray-200">
                   {(request.quotes || []).map((q: any) => (
                     <div key={q.id} className="py-2 text-sm flex items-center justify-between">
-                      <Link href={`/admin/offres/${q.id}`} className="text-sm font-semibold text-[#E8714D] hover:underline">
+                      <Link href={`/admin/offres/${q.id}`} className="text-sm font-semibold text-[#ED8A25] hover:underline">
                         {q.id}
                       </Link>
                       <span className="text-xs text-gray-600">{Math.round(q.totalPrice)} {q.currencyCode} — {q.status}</span>
@@ -341,7 +341,7 @@ export default function AdminTransportDetailsPage() {
                     type="button"
                     disabled={saving}
                     onClick={onSave}
-                    className="px-4 py-2 rounded-lg bg-[#E8714D] text-white text-sm font-semibold hover:bg-[#D65A3A] disabled:opacity-50"
+                    className="px-4 py-2 rounded-lg bg-[#ED8A25] text-[#13283A] text-sm font-semibold hover:bg-[#c56f12] disabled:opacity-50"
                   >
                     {saving ? "Enregistrement…" : "Enregistrer"}
                   </button>
@@ -407,7 +407,7 @@ export default function AdminTransportDetailsPage() {
               <p className="text-gray-600">{client?.email || "—"}</p>
               {client?.id ? (
                 <div className="mt-4">
-                  <Link href={`/admin/utilisateurs/${client.id}`} className="text-sm font-semibold text-[#E8714D] hover:underline">
+                  <Link href={`/admin/utilisateurs/${client.id}`} className="text-sm font-semibold text-[#ED8A25] hover:underline">
                     Voir fiche utilisateur
                   </Link>
                 </div>
@@ -446,7 +446,7 @@ export default function AdminTransportDetailsPage() {
               <button
                 type="button"
                 onClick={() => setEditing(true)}
-                className="w-full px-4 py-2 rounded-lg bg-[#0F172A] text-white text-sm font-semibold hover:bg-[#0b1220]"
+                className="w-full px-4 py-2 rounded-lg bg-[#13283A] text-white text-sm font-semibold hover:bg-[#0d1c29]"
               >
                 Modifier
               </button>

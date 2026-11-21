@@ -183,7 +183,7 @@ export default function ClientRequestDetailPage() {
               <button
                 onClick={handlePublish}
                 disabled={actionLoading}
-                className="py-2 px-4 bg-[#E8714D] text-white rounded-lg font-medium hover:bg-[#d45c39] transition-colors disabled:opacity-50"
+                className="py-2 px-4 bg-[#ED8A25] text-[#13283A] rounded-lg font-medium hover:bg-[#c56f12] transition-colors disabled:opacity-50"
               >
                 Publier la demande
               </button>
@@ -249,7 +249,7 @@ export default function ClientRequestDetailPage() {
                           )}
                         </div>
                         <div className="text-right">
-                          <p className="font-bold text-[#E8714D]">{quote.totalPrice.toLocaleString("fr-FR")} Fr</p>
+                          <p className="font-bold text-[#ED8A25]">{quote.totalPrice.toLocaleString("fr-FR")} Fr</p>
                           <span className="badge text-xs">{quote.status}</span>
                         </div>
                       </div>
@@ -261,14 +261,14 @@ export default function ClientRequestDetailPage() {
                           <button
                             onClick={() => handleAccept(quote.id)}
                             disabled={actionLoading}
-                            className="flex-1 py-2 px-3 bg-[#E8714D] text-white rounded-lg text-sm font-medium hover:bg-[#d45c39] transition-colors disabled:opacity-50"
+                            className="flex-1 py-2 px-3 bg-[#ED8A25] text-[#13283A] rounded-lg text-sm font-medium hover:bg-[#c56f12] transition-colors disabled:opacity-50"
                           >
                             Accepter
                           </button>
                           <button
                             onClick={() => handleReject(quote.id)}
                             disabled={actionLoading}
-                            className="flex-1 py-2 px-3 border-2 border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:border-[#E8714D] transition-colors disabled:opacity-50"
+                            className="flex-1 py-2 px-3 border-2 border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:border-[#ED8A25] transition-colors disabled:opacity-50"
                           >
                             Refuser
                           </button>

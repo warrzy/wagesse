@@ -6,8 +6,7 @@ import Link from "next/link"
 import { signupFormSchema } from "@/lib/validations"
 import { apiClient } from "@/lib/api-client"
 import { destinationAfterAuthentication } from "@/lib/role-routing"
-import Header from "@/components/Header"
-import Footer from "@/components/Footer"
+import AuthShell from "@/components/AuthShell"
 
 export default function SignupClient() {
   const router = useRouter()
@@ -80,21 +79,18 @@ export default function SignupClient() {
   }
 
   return (
-    <>
-      <Header />
-
-      <div className="min-h-screen bg-gradient-to-br from-[#F5F1ED] to-white pt-20 pb-12">
-        <div className="container-max max-w-md">
-          <div className="bg-white rounded-lg shadow-lg p-8">
-            <h1 className="text-3xl font-bold mb-2 text-center">S&apos;inscrire</h1>
-            <p className="text-gray-600 text-center mb-8">Créez un compte {role === "CLIENT" ? "client" : "camionneur"}</p>
+    <AuthShell
+      title="Créer un compte"
+      subtitle={role === "CLIENT" ? "Compte client : publier une demande et comparer les devis." : "Compte transporteur : répondre aux demandes depuis le téléphone."}
+    >
+            <div>
 
             <div className="flex gap-4 mb-8">
               <button
                 type="button"
                 onClick={() => setRole("CLIENT")}
-                className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
-                  role === "CLIENT" ? "bg-[#E8714D] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                className={`min-h-12 flex-1 rounded-xl px-4 font-semibold ${
+                  role === "CLIENT" ? "bg-[#13283A] text-white" : "bg-[#F5F4F0] text-[#13283A]"
                 }`}
               >
                 Client
@@ -102,8 +98,8 @@ export default function SignupClient() {
               <button
                 type="button"
                 onClick={() => setRole("TRUCKER")}
-                className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
-                  role === "TRUCKER" ? "bg-[#E8714D] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                className={`min-h-12 flex-1 rounded-xl px-4 font-semibold ${
+                  role === "TRUCKER" ? "bg-[#13283A] text-white" : "bg-[#F5F4F0] text-[#13283A]"
                 }`}
               >
                 Camionneur
@@ -125,7 +121,7 @@ export default function SignupClient() {
                   value={formData.phone}
                   onChange={handleInputChange}
                   placeholder="70 00 00 00"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#E8714D] focus:border-transparent"
+                  className="input-field"
                   required
                 />
               </div>
@@ -138,7 +134,7 @@ export default function SignupClient() {
                   value={formData.firstName}
                   onChange={handleInputChange}
                   placeholder="Votre prénom"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#E8714D] focus:border-transparent"
+                  className="input-field"
                   required
                 />
               </div>
@@ -151,7 +147,7 @@ export default function SignupClient() {
                   value={formData.lastName}
                   onChange={handleInputChange}
                   placeholder="Votre nom"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#E8714D] focus:border-transparent"
+                  className="input-field"
                   required
                 />
               </div>
@@ -164,7 +160,7 @@ export default function SignupClient() {
                   value={formData.password}
                   onChange={handleInputChange}
                   placeholder="••••••••"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#E8714D] focus:border-transparent"
+                  className="input-field"
                   required
                 />
               </div>
@@ -177,7 +173,7 @@ export default function SignupClient() {
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
                   placeholder="••••••••"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#E8714D] focus:border-transparent"
+                  className="input-field"
                   required
                 />
               </div>
@@ -185,7 +181,7 @@ export default function SignupClient() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-[#E8714D] text-white py-3 px-4 rounded-lg font-medium hover:bg-[#D65A3A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="button-primary w-full disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading ? "Inscription..." : "S'inscrire"}
               </button>
@@ -194,7 +190,7 @@ export default function SignupClient() {
             <div className="mt-8 text-center">
               <p className="text-gray-600">
                 Déjà un compte ?{" "}
-                <Link href="/auth/login" className="text-[#E8714D] hover:underline font-medium">
+                <Link href="/auth/login" className="font-semibold text-[#ED8A25] hover:underline">
                   Se connecter
                 </Link>
               </p>
@@ -213,10 +209,6 @@ export default function SignupClient() {
               </p>
             </div>
           </div>
-        </div>
-      </div>
-
-      <Footer />
-    </>
+    </AuthShell>
   )
 }

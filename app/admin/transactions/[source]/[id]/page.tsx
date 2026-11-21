@@ -101,7 +101,7 @@ export default function AdminTransactionDetailsTypedPage() {
           <p className="text-sm text-red-600 font-semibold">Erreur</p>
           <p className="mt-2 text-sm text-gray-600">{error}</p>
           <div className="mt-4">
-            <Link href="/admin/transactions" className="text-sm font-semibold text-[#E8714D] hover:underline">
+            <Link href="/admin/transactions" className="text-sm font-semibold text-[#ED8A25] hover:underline">
               Retour
             </Link>
           </div>
@@ -180,7 +180,7 @@ export default function AdminTransactionDetailsTypedPage() {
             <div className="card">
               <p className="text-sm font-semibold">Mission liée</p>
               <div className="mt-3">
-                <Link href={`/admin/transports/${row.mission.id}`} className="text-sm font-semibold text-[#E8714D] hover:underline">
+                <Link href={`/admin/transports/${row.mission.id}`} className="text-sm font-semibold text-[#ED8A25] hover:underline">
                   {row.mission.missionReference || row.mission.id}
                 </Link>
                 <p className="mt-1 text-sm text-gray-600">Statut mission: {row.mission.status}</p>
@@ -204,7 +204,7 @@ export default function AdminTransactionDetailsTypedPage() {
               <p className="text-gray-600">{user?.email || "—"}</p>
               {user?.id ? (
                 <div className="mt-4">
-                  <Link href={`/admin/utilisateurs/${user.id}`} className="text-sm font-semibold text-[#E8714D] hover:underline">
+                  <Link href={`/admin/utilisateurs/${user.id}`} className="text-sm font-semibold text-[#ED8A25] hover:underline">
                     Voir utilisateur
                   </Link>
                 </div>

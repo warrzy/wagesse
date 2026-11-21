@@ -6,8 +6,7 @@ import Link from "next/link"
 import { loginSchema } from "@/lib/validations"
 import { apiClient } from "@/lib/api-client"
 import { destinationAfterAuthentication } from "@/lib/role-routing"
-import Header from "@/components/Header"
-import Footer from "@/components/Footer"
+import AuthShell from "@/components/AuthShell"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -64,16 +63,8 @@ export default function LoginPage() {
   }
 
   return (
-    <>
-      <Header />
-
-      <div className="min-h-screen bg-gradient-to-br from-[#F5F1ED] to-white pt-20 pb-12">
-        <div className="container-max max-w-md">
-          <div className="bg-white rounded-lg shadow-lg p-8">
-            <h1 className="text-3xl font-bold mb-2 text-center">Se connecter</h1>
-            <p className="text-gray-600 text-center mb-8">
-              Accédez à votre espace Wagesse
-            </p>
+    <AuthShell title="Se connecter" subtitle="Téléphone et mot de passe. Aucun code SMS n’est demandé.">
+            <div>
 
             {error && (
               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
@@ -107,30 +98,26 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 bg-[#E8714D] text-white rounded-lg font-semibold hover:bg-[#d45c39] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="button-primary w-full"
               >
                 {loading ? "Connexion en cours..." : "Se connecter"}
               </button>
             </form>
 
             <p className="mt-4 text-center text-sm">
-              <Link href="/auth/forgot" className="text-[#E8714D] font-semibold hover:underline">
+              <Link href="/auth/forgot" className="font-semibold text-[#ED8A25] hover:underline">
                 Mot de passe oublié
               </Link>
             </p>
             <div className="mt-6 pt-6 border-t border-gray-200 text-center">
               <p className="text-gray-600 text-sm">
                 Pas encore de compte ?{" "}
-                <Link href="/auth/signup" className="text-[#E8714D] font-semibold hover:underline">
+                <Link href="/auth/signup" className="font-semibold text-[#ED8A25] hover:underline">
                   S&apos;inscrire
                 </Link>
               </p>
             </div>
           </div>
-        </div>
-      </div>
-
-      <Footer />
-    </>
+    </AuthShell>
   )
 }

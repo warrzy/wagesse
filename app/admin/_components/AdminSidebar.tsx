@@ -84,8 +84,8 @@ function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () 
                   href={item.href}
                   onClick={onNavigate}
                   className={
-                    "block rounded-lg px-3 py-2 text-sm transition-colors " +
-                    (active ? "bg-white/10 text-white" : "text-white/80 hover:bg-white/10 hover:text-white")
+                    "block min-h-11 rounded-xl px-3 py-2 text-sm transition-colors " +
+                    (active ? "bg-[#ED8A25] text-[#13283A]" : "text-white/80 hover:bg-white/10 hover:text-white")
                   }
                 >
                   {item.label}
@@ -105,13 +105,13 @@ export default function AdminSidebar() {
 
   return (
     <>
-      <div className="lg:hidden bg-[#0B1220] text-white px-4 py-3">
+      <div className="bg-[#13283A] px-4 py-3 text-white lg:hidden">
         <button type="button" className="text-sm font-semibold" onClick={() => setOpen((value) => !value)}>
           {open ? "Fermer le menu" : "Menu"}
         </button>
         {open ? <NavLinks pathname={pathname} onNavigate={() => setOpen(false)} /> : null}
       </div>
-      <aside className="hidden lg:flex lg:flex-col lg:w-72 bg-[#0B1220] text-white border-r border-white/10">
+      <aside className="hidden w-72 flex-col border-r border-white/10 bg-[#13283A] text-white lg:flex">
       <div className="px-6 py-5 border-b border-white/10">
         <p className="text-xs text-white/70">Administration</p>
         <p className="text-lg font-bold tracking-tight">WAGESSE</p>

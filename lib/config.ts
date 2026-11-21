@@ -7,11 +7,11 @@ export const BRAND_CONFIG = {
     "Plateforme de mise en relation entre clients et camionneurs pour les transports de matériaux au Burkina Faso",
   website: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
   colors: {
-    primary: "#E8714D", // Terracotta / Orange
-    secondary: "#8B6F47", // Earth
-    accent: "#D4B896", // Sand
-    dark: "#2C3E50", // Anthracite
-    light: "#F5F1ED", // Cream
+    primary: "#ED8A25",
+    secondary: "#13283A",
+    accent: "#E8B55B",
+    dark: "#13283A",
+    light: "#F5F4F0",
     success: "#4CAF50",
     warning: "#FFA500",
     danger: "#EF4444",

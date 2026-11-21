@@ -1,11 +1,11 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
 import { motion, useReducedMotion } from "framer-motion"
-import { ArrowRight, CheckCircle } from "lucide-react"
-import TruckOfferCard from "@/components/TruckOfferCard"
+import { ArrowRight } from "lucide-react"
+import CatalogImage from "@/components/CatalogImage"
 import QuickSearchCard from "@/components/QuickSearchCard"
+import { marketplaceImage } from "@/lib/marketplace-images"
 
 type HeroProps = {
   clientCtaHref: string
@@ -14,156 +14,55 @@ type HeroProps = {
 
 export default function Hero({ clientCtaHref, truckerCtaHref }: HeroProps) {
   const reduceMotion = useReducedMotion()
-
-  const fadeUp = {
-    hidden: { opacity: 0, y: 14 },
-    visible: { opacity: 1, y: 0 },
-  }
+  const photo = marketplaceImage("benne-carriere")
+  const fade = reduceMotion ? undefined : { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0 } }
 
   return (
-    <section className="relative bg-[#F8FAFC] overflow-hidden">
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-b from-white to-[#F8FAFC]" />
-        <div
-          className="absolute -top-44 -right-44 h-[520px] w-[520px] rounded-full blur-3xl opacity-25"
-          style={{ background: "radial-gradient(circle, rgba(249,115,22,0.35), transparent 60%)" }}
-        />
-        <div
-          className="absolute -bottom-56 -left-56 h-[520px] w-[520px] rounded-full blur-3xl opacity-25"
-          style={{ background: "radial-gradient(circle, rgba(15,23,42,0.25), transparent 60%)" }}
-        />
-      </div>
+    <section className="relative isolate overflow-hidden bg-[#13283A] text-white">
+      <CatalogImage src={photo.src} alt={photo.alt} priority sizes="100vw" className="object-[28%_center]" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#13283A]/95 via-[#13283A]/75 to-[#13283A]/40" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#13283A]/80 via-transparent to-[#13283A]/35" />
 
-      <div className="container-max relative pt-14 md:pt-20 pb-24 md:pb-28">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-          <div className="lg:col-span-7">
-            <motion.div
-              initial={reduceMotion ? undefined : "hidden"}
-              animate={reduceMotion ? undefined : "visible"}
-              variants={{
-                hidden: {},
-                visible: { transition: { staggerChildren: 0.08 } },
-              }}
+      <div className="container-max relative pb-10 pt-12 md:pb-16 md:pt-20">
+        <motion.div
+          initial={reduceMotion ? undefined : "hidden"}
+          animate={reduceMotion ? undefined : "visible"}
+          variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
+          className="max-w-3xl"
+        >
+          <motion.p variants={fade} className="text-sm font-semibold uppercase tracking-[0.18em] text-[#E8B55B]">
+            Burkina Faso · Matériaux
+          </motion.p>
+          <motion.h1
+            variants={fade}
+            className="mt-4 max-w-[14ch] text-5xl font-semibold leading-[0.95] text-white md:text-7xl"
+          >
+            Le camion qu’il faut pour le chantier.
+          </motion.h1>
+          <motion.p variants={fade} className="mt-6 max-w-xl text-lg leading-relaxed text-white/80">
+            Décrivez le matériau, la quantité et le trajet. Les camionneurs répondent par un devis. Vous comparez, puis vous suivez la mission.
+          </motion.p>
+          <motion.div variants={fade} className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <Link
+              href={clientCtaHref}
+              className="inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-[#ED8A25] px-7 text-base font-semibold text-[#13283A] hover:bg-[#d9771a]"
             >
-              <motion.div
-                variants={fadeUp}
-                transition={{ duration: 0.35, ease: "easeOut" }}
-                className="inline-flex items-center gap-2 rounded-full bg-[#F97316]/10 px-4 py-2 text-sm font-semibold text-[#9A3412]"
-              >
-                <span className="h-2 w-2 rounded-full bg-[#F97316]" aria-hidden="true" />
-                Transport de matériaux simplifié au Burkina Faso
-              </motion.div>
-
-              <motion.h1
-                variants={fadeUp}
-                transition={{ duration: 0.45, ease: "easeOut" }}
-                className="mt-7 text-[44px] leading-[1.02] md:text-[64px] lg:text-[72px] font-extrabold tracking-tight text-[#0F172A] max-w-[16ch]"
-              >
-                Votre camion.
-                <br />
-                <span className="text-[#F97316]">Au bon prix.</span>
-                <br />
-                Au bon moment.
-              </motion.h1>
-
-              <motion.p
-                variants={fadeUp}
-                transition={{ duration: 0.35, ease: "easeOut" }}
-                className="mt-6 text-base md:text-lg text-[#64748B] leading-relaxed max-w-xl"
-              >
-                Décrivez votre besoin, recevez les offres de camionneurs vérifiés et choisissez celle qui vous convient.
-              </motion.p>
-
-              <motion.div
-                variants={fadeUp}
-                transition={{ duration: 0.35, ease: "easeOut" }}
-                className="mt-9 flex flex-col sm:flex-row gap-3"
-              >
-                <Link
-                  href={clientCtaHref}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#F97316] text-white px-7 py-4 text-sm md:text-base font-semibold shadow-[0_12px_40px_rgba(249,115,22,0.25)] hover:bg-[#EA580C] transition-all hover:-translate-y-0.5"
-                >
-                  Trouver un camion
-                  <ArrowRight size={18} />
-                </Link>
-                <Link
-                  href={truckerCtaHref}
-                  className="inline-flex items-center justify-center rounded-xl border border-[#E2E8F0] bg-white px-7 py-4 text-sm md:text-base font-semibold text-[#0F172A] hover:bg-[#F8FAFC] transition-colors"
-                >
-                  Je suis camionneur
-                </Link>
-              </motion.div>
-
-              <motion.div
-                variants={fadeUp}
-                transition={{ duration: 0.35, ease: "easeOut" }}
-                className="mt-6 flex flex-wrap gap-3 text-sm text-[#64748B]"
-              >
-                {[
-                  "Camionneurs vérifiés",
-                  "Paiement sécurisé",
-                  "Support local",
-                ].map((t) => (
-                  <span key={t} className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 border border-gray-200">
-                    <CheckCircle size={16} className="text-[#F97316]" aria-hidden="true" />
-                    {t}
-                  </span>
-                ))}
-              </motion.div>
-
-              <motion.div
-                variants={fadeUp}
-                transition={{ duration: 0.35, ease: "easeOut" }}
-                className="mt-7 flex items-center gap-3"
-                aria-label="Preuve sociale"
-              >
-                <div className="inline-flex items-center gap-1 text-[#F97316]">
-                  <span className="text-sm font-semibold">★★★★★</span>
-                  <span className="text-sm text-[#64748B]">4,8/5</span>
-                </div>
-                <span className="text-sm text-[#64748B]">Des demandes de transport réalisées</span>
-              </motion.div>
-            </motion.div>
-          </div>
-
-          <div className="lg:col-span-5">
-            <motion.div
-              initial={reduceMotion ? undefined : { opacity: 0, y: 10 }}
-              animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, ease: "easeOut" }}
-              className="relative"
+              Trouver un camion
+              <ArrowRight size={18} aria-hidden="true" />
+            </Link>
+            <Link
+              href={truckerCtaHref}
+              className="inline-flex min-h-14 items-center justify-center rounded-2xl border border-white/30 bg-white/10 px-7 text-base font-semibold text-white backdrop-blur hover:bg-white hover:text-[#13283A]"
             >
-              <div className="absolute -inset-4 rounded-[28px] bg-[#F97316]/10 blur-2xl" aria-hidden="true" />
+              Je suis transporteur
+            </Link>
+          </motion.div>
+        </motion.div>
 
-              <div className="relative rounded-[24px] overflow-hidden border border-gray-200 shadow-[0_24px_80px_rgba(15,23,42,0.18)]">
-                <div className="relative aspect-[4/3]">
-                  <Image
-                    src="/PosterMyWall_GeneratedImage_faa2675e.png"
-                    alt="Camion benne sur un chantier au Burkina Faso"
-                    fill
-                    priority
-                    sizes="(max-width: 1024px) 100vw, 520px"
-                    className="object-cover"
-                  />
-
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A]/60 via-transparent to-transparent" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#0F172A]/15" />
-
-                  <div className="absolute bottom-6 left-4 lg:-left-10">
-                    <TruckOfferCard />
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
+        <div className="mt-10">
+          <QuickSearchCard />
         </div>
-
-        <div className="relative mt-12">
-          <div className="lg:absolute lg:left-0 lg:right-0 lg:top-0 lg:translate-y-1/2">
-            <QuickSearchCard />
-          </div>
-          <div className="hidden lg:block h-32" />
-        </div>
+        <p className="mt-4 text-xs text-white/60">Photographie d’illustration · {photo.photographer}, Pexels</p>
       </div>
     </section>
   )

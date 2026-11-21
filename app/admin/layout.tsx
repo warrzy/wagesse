@@ -6,7 +6,7 @@ import AdminTopbar from "@/app/admin/_components/AdminTopbar"
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
     <AdminGuard>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-[#F5F4F0]">
         <div className="flex min-h-screen flex-col lg:flex-row">
           <AdminSidebar />
           <div className="flex-1 min-w-0">

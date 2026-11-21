@@ -34,7 +34,7 @@ function formatName(u: { firstName?: string | null; lastName?: string | null } |
 function TimelineItem({ title, meta }: { title: string; meta: string }) {
   return (
     <div className="flex gap-3">
-      <div className="mt-1 h-2 w-2 rounded-full bg-[#E8714D]" />
+      <div className="mt-1 h-2 w-2 rounded-full bg-[#ED8A25]" />
       <div>
         <p className="text-sm font-semibold text-gray-900">{title}</p>
         <p className="text-xs text-gray-500">{meta}</p>
@@ -133,7 +133,7 @@ export default function AdminPaiementDetailsPage() {
           <p className="text-sm text-red-600 font-semibold">Erreur</p>
           <p className="mt-2 text-sm text-gray-600">{error}</p>
           <div className="mt-4">
-            <Link href="/admin/paiements" className="text-sm font-semibold text-[#E8714D] hover:underline">
+            <Link href="/admin/paiements" className="text-sm font-semibold text-[#ED8A25] hover:underline">
               Retour
             </Link>
           </div>
@@ -204,7 +204,7 @@ export default function AdminPaiementDetailsPage() {
             <div className="card">
               <p className="text-sm font-semibold">Mission liée</p>
               <div className="mt-3">
-                <Link href={`/admin/transports/${mission.id}`} className="text-sm font-semibold text-[#E8714D] hover:underline">
+                <Link href={`/admin/transports/${mission.id}`} className="text-sm font-semibold text-[#ED8A25] hover:underline">
                   {mission.missionReference || mission.id}
                 </Link>
                 <p className="mt-1 text-sm text-gray-600">Statut: {mission.status}</p>
@@ -250,7 +250,7 @@ export default function AdminPaiementDetailsPage() {
               <p className="text-gray-600">{payer?.email || "—"}</p>
               {payer?.id ? (
                 <div className="mt-4">
-                  <Link href={`/admin/utilisateurs/${payer.id}`} className="text-sm font-semibold text-[#E8714D] hover:underline">
+                  <Link href={`/admin/utilisateurs/${payer.id}`} className="text-sm font-semibold text-[#ED8A25] hover:underline">
                     Voir utilisateur
                   </Link>
                 </div>

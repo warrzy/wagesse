@@ -78,7 +78,7 @@ export default function PaymentConfirmPage() {
               <p className="text-green-600 font-semibold mb-4">Paiement déjà confirmé.</p>
               <button
                 onClick={() => router.push(returnTo)}
-                className="w-full py-3 bg-[#E8714D] text-white rounded-lg font-semibold hover:bg-[#d45c39] transition-colors"
+                className="w-full py-3 bg-[#ED8A25] text-[#13283A] rounded-lg font-semibold hover:bg-[#c56f12] transition-colors"
               >
                 Continuer
               </button>
@@ -109,7 +109,7 @@ export default function PaymentConfirmPage() {
           </div>
           <div className="flex justify-between">
             <span className="text-gray-500">Montant</span>
-            <span className="font-bold text-[#E8714D]">
+            <span className="font-bold text-[#ED8A25]">
               {payment.amount.toLocaleString("fr-FR")} {payment.currency}
             </span>
           </div>

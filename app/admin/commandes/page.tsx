@@ -61,7 +61,7 @@ export default function AdminCommandesPage() {
           <option value="CREDIT_PACK">Pack de crédits</option>
           <option value="SUBSCRIPTION">Forfait</option>
         </select>
-        <button type="button" onClick={load} className="rounded-lg bg-[#E8714D] text-white text-sm font-semibold">
+        <button type="button" onClick={load} className="rounded-lg bg-[#ED8A25] text-[#13283A] text-sm font-semibold">
           Filtrer
         </button>
       </div>
@@ -81,7 +81,7 @@ export default function AdminCommandesPage() {
             {items.map((item) => (
               <tr key={item.id} className="border-t border-gray-100">
                 <td className="px-4 py-3">
-                  <Link href={`/admin/commandes/${item.id}`} className="font-semibold text-[#E8714D]">
+                  <Link href={`/admin/commandes/${item.id}`} className="font-semibold text-[#ED8A25]">
                     {item.reference}
                   </Link>
                 </td>

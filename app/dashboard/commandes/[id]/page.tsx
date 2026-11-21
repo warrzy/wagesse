@@ -52,7 +52,7 @@ export default function CommandePage() {
       <Header />
       <main className="min-h-screen bg-gray-50 pt-10 pb-16">
         <div className="container-max max-w-2xl">
-          <Link href="/dashboard/commandes" className="text-sm font-semibold text-[#E8714D]">
+          <Link href="/dashboard/commandes" className="text-sm font-semibold text-[#ED8A25]">
             Toutes mes commandes
           </Link>
           {error ? <p className="mt-6 text-sm text-red-600">{error}</p> : null}
@@ -76,8 +76,8 @@ export default function CommandePage() {
                   ))}
                 </ul>
               ) : null}
-              <div className="mt-6 rounded-xl border border-gray-200 bg-[#F8FAFC] p-4 text-sm text-gray-700">
-                <p className="font-semibold text-[#0F172A]">Instructions de règlement</p>
+              <div className="mt-6 rounded-xl border border-gray-200 bg-[#F5F4F0] p-4 text-sm text-gray-700">
+                <p className="font-semibold text-[#13283A]">Instructions de règlement</p>
                 <p className="mt-2 whitespace-pre-wrap">{order.paymentInstructions}</p>
               </div>
               {order.decisionNote ? <p className="mt-4 text-sm text-gray-700">Décision : {order.decisionNote}</p> : null}
