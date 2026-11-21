@@ -76,6 +76,26 @@ Cette commande crée des comptes fictifs `781xxxxx`, fait valider un paiement ma
 WAGESSE_PREPROD_AUTHORIZE=yes bash deploy/preprod/run-step.sh auth-simple-cycle <commit déployé>
 ```
 
+Le contrôle de politique de ce cycle utilise `python3 deploy/preprod/check-phone-policy.py`. Il n'utilise pas `node -` : avec cette forme, le premier argument lu par `readFileSync(process.argv[1])` est le tiret de l'entrée standard, et Node.js cherche un fichier nommé `-`.
+
+## Mise à jour des scripts seuls
+
+Quand l'application en service est déjà le bon commit, la copie `/root/wagesse-preprod-src` peut avancer sans toucher `/opt/wagesse-preprod/app`. Ne pas lancer `run-step.sh auth-simple` ni `run-step.sh deploy`.
+
+```bash
+cd /root/wagesse-preprod-src
+git fetch --no-tags origin <commit des scripts>
+git checkout --detach <commit des scripts>
+test "$(git rev-parse HEAD)" = "<commit des scripts>"
+( cd deploy/preprod && sha256sum -c SHA256SUMS )
+```
+
+La recette, après autorisation, reçoit le commit réellement installé dans l'application, pas le commit des scripts s'ils diffèrent :
+
+```bash
+WAGESSE_PREPROD_AUTHORIZE=yes bash deploy/preprod/run-step.sh auth-simple-cycle <commit installé>
+```
+
 Le mode `PHONE_VERIFICATION_REQUIRED=true` se vérifie sur la base de test locale, pas sur la préproduction. Sans fournisseur SMS, l'inscription répond HTTP 503 et aucun compte n'est créé.
 
 ## Retour arrière

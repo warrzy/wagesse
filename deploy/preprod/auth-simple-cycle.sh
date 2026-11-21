@@ -28,18 +28,33 @@ actual=$(git_in "$APP" rev-parse HEAD)
 git_in "$APP" merge-base --is-ancestor "$AUTH" "$actual" || die "Le commit déployé ne contient pas l'authentification simple. Cycle arrêté."
 
 policy_file=$(mktemp /dev/shm/wagesse-policy.XXXXXX)
+reason_file=$(mktemp /dev/shm/wagesse-policy-reason.XXXXXX)
+chmod 600 "$policy_file" "$reason_file"
+cleanup_policy() {
+  shred -u "$policy_file" "$reason_file" 2>/dev/null || rm -f "$policy_file" "$reason_file"
+}
 policy_code=$(curl -sS -o "$policy_file" -w '%{http_code}' --max-time 10 http://127.0.0.1:3020/api/auth/phone-verification || true)
 if [[ "$policy_code" == "404" ]]; then
-  rm -f "$policy_file"
+  cleanup_policy
   die "GET /api/auth/phone-verification HTTP 404"
 fi
-[[ "$policy_code" == "200" ]] || { rm -f "$policy_file"; die "GET /api/auth/phone-verification HTTP ${policy_code}"; }
-node - "$policy_file" <<'PY' || { rm -f "$policy_file"; die "La préproduction n'est pas en mode simple. Cycle arrêté."; }
-const fs = require("fs")
-const body = JSON.parse(fs.readFileSync(process.argv[1], "utf8"))
-if (!body.data || body.data.required !== false) process.exit(1)
-PY
-rm -f "$policy_file"
+if [[ "$policy_code" != "200" ]]; then
+  cleanup_policy
+  die "GET /api/auth/phone-verification HTTP ${policy_code}"
+fi
+py=0
+python3 "$DIR/check-phone-policy.py" "$policy_file" 2>"$reason_file" || py=$?
+token=$(tr -cd 'a-z-' < "$reason_file" || true)
+token=${token:0:32}
+cleanup_policy
+if [[ "$py" != 0 ]]; then
+  case "$token" in
+    policy-shape) die "GET /api/auth/phone-verification HTTP ${policy_code}, mode simple refusé." ;;
+    secret-pattern) die "GET /api/auth/phone-verification HTTP ${policy_code}, réponse refusée." ;;
+    invalid-json) die "GET /api/auth/phone-verification HTTP ${policy_code}, réponse illisible." ;;
+    *) die "Contrôle de politique interrompu." ;;
+  esac
+fi
 
 umask 077
 tmp=$(mktemp /dev/shm/wagesse-auth-simple.XXXXXX)
