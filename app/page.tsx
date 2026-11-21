@@ -1,463 +1,274 @@
 "use client"
 
-import { motion, Variants } from "framer-motion"
+import { motion, useReducedMotion, Variants } from "framer-motion"
 import { MATERIAL_TYPES, TRUCK_TYPES } from "@/lib/config"
+import { marketplaceImage } from "@/lib/marketplace-images"
 import Header from "@/components/Header"
 import Footer from "@/components/Footer"
 import Hero from "@/components/Hero"
+import CatalogImage from "@/components/CatalogImage"
 import Link from "next/link"
-import {
-  ArrowRight,
-  CheckCircle,
-  Clipboard,
-  CreditCard,
-  MapPinned,
-  Scale,
-  Shield,
-  Star,
-  Truck,
-  Users,
-} from "lucide-react"
+import { useState } from "react"
+import { ArrowRight, ClipboardList, Lock, Route, Truck, Wallet } from "lucide-react"
 
-const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.2,
-    },
-  },
-}
+const materials = [
+  { id: "sand", image: "terrassement" },
+  { id: "gravel", image: "tombereau-granite" },
+  { id: "granite", image: "pelle-chargement" },
+  { id: "earth", image: "benne-carriere" },
+]
 
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.7, ease: "easeOut" },
+const trucks = [
+  { id: "dump3", image: "benne-carriere" },
+  { id: "dump4", image: "terrassement" },
+  { id: "dump5", image: "piste-chantier" },
+  { id: "articulated", image: "tombereau-granite" },
+  { id: "flatbed", image: "piste-chantier" },
+  { id: "container", image: "pelle-chargement" },
+]
+
+const faqs = [
+  {
+    q: "Comment publier une demande ?",
+    a: "Créez un compte client avec votre numéro et un mot de passe. Indiquez le matériau, la quantité, la ville de départ, la ville d’arrivée et la date. Vous pouvez enregistrer un brouillon ou publier la demande.",
   },
-}
+  {
+    q: "Comment arrivent les devis ?",
+    a: "Un transporteur inscrit consulte les demandes publiées et envoie un devis : prix, véhicule et date proposée. Vous comparez les devis reçus avant d’en accepter un.",
+  },
+  {
+    q: "Quand voit-on les coordonnées ?",
+    a: "Les numéros restent masqués. Le déblocage d’un contact consomme un crédit. Rien n’est débloqué tant que le crédit n’a pas été accordé.",
+  },
+  {
+    q: "Comment paie-t-on les crédits et les forfaits ?",
+    a: "La commande est enregistrée en paiement manuel. L’administration la valide ou la refuse. Les crédits ou le forfait ne sont attribués qu’après validation.",
+  },
+  {
+    q: "Comment suit-on une mission ?",
+    a: "Après l’acceptation du devis, la mission avance par étapes : route vers le chargement, chargement, route vers la livraison, livraison, puis confirmation du client.",
+  },
+  {
+    q: "Faut-il un code SMS pour s’inscrire ?",
+    a: "Non pour ce lancement. L’inscription et la connexion se font avec le numéro de téléphone et le mot de passe. La vérification par SMS reste dans le produit, elle n’est pas exigée.",
+  },
+]
 
 export default function Home() {
+  const reduceMotion = useReducedMotion()
+  const [openFaq, setOpenFaq] = useState<number | null>(0)
+  const item: Variants = {
+    hidden: { opacity: reduceMotion ? 1 : 0, y: reduceMotion ? 0 : 16 },
+    visible: { opacity: 1, y: 0, transition: { duration: reduceMotion ? 0 : 0.45 } },
+  }
+
   return (
     <>
       <Header />
-
       <Hero clientCtaHref="/auth/signup?role=CLIENT" truckerCtaHref="/auth/signup?role=TRUCKER" />
 
-      {/* How It Works */}
-      <section id="features" className="py-20 bg-gray-50">
-        <motion.div
-          className="container-max"
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-        >
-          <motion.div variants={itemVariants} className="text-center mb-14">
-            <h2 className="text-4xl md:text-5xl font-semibold tracking-tight text-[#0F172A]">Comment ça fonctionne</h2>
-            <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
-              Un parcours simple et rassurant: décrivez le besoin, comparez, payez, suivez la livraison.
-            </p>
-          </motion.div>
+      <section id="fonctionnement" className="bg-[#F5F4F0] py-20">
+        <div className="container-max">
+          <div className="max-w-2xl">
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#354B44]">Deux parcours</p>
+            <h2 className="mt-3 text-4xl text-[#13283A] md:text-5xl">Un trajet clair, de la demande à la livraison.</h2>
+          </div>
+          <div className="mt-12 grid gap-6 lg:grid-cols-2">
+            <article className="rounded-3xl bg-white p-8 shadow-[0_16px_50px_rgba(19,40,58,0.06)]">
+              <h3 className="text-2xl">Pour le client</h3>
+              <ol className="mt-6 space-y-5">
+                {[
+                  ["Décrire le besoin", "Matériau, quantité, départ, destination et date."],
+                  ["Recevoir des devis", "Chaque devis indique un prix en FCFA et une date."],
+                  ["Débloquer le contact", "Les coordonnées restent masquées jusqu’à l’usage d’un crédit."],
+                  ["Confirmer la mission", "Vous validez la fin du transport après la livraison."],
+                ].map(([title, text], index) => (
+                  <li key={title} className="flex gap-4">
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#13283A] text-sm font-semibold text-[#E8B55B]">{index + 1}</span>
+                    <span>
+                      <span className="block font-semibold text-[#13283A]">{title}</span>
+                      <span className="mt-1 block text-sm leading-relaxed text-[#13283A]/70">{text}</span>
+                    </span>
+                  </li>
+                ))}
+              </ol>
+              <Link href="/auth/signup?role=CLIENT" className="button-primary mt-8 inline-flex">
+                Publier une demande
+              </Link>
+            </article>
+            <article className="overflow-hidden rounded-3xl bg-[#13283A] text-white">
+              <div className="relative h-52">
+                <CatalogImage src={marketplaceImage("pelle-chargement").src} alt={marketplaceImage("pelle-chargement").alt} sizes="(max-width: 1024px) 100vw, 50vw" />
+              </div>
+              <div className="p-8">
+                <h3 className="text-2xl text-white">Pour le transporteur</h3>
+                <ol className="mt-6 space-y-5">
+                  {[
+                    ["Créer le compte", "Téléphone et mot de passe, depuis le téléphone."],
+                    ["Déclarer les véhicules", "Plaque, type et capacité en tonnes."],
+                    ["Répondre à une demande", "Un devis : prix, véhicule et date."],
+                    ["Avancer la mission", "Chaque étape se met à jour jusqu’à la confirmation du client."],
+                  ].map(([title, text], index) => (
+                    <li key={title} className="flex gap-4">
+                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#ED8A25] text-sm font-semibold text-[#13283A]">{index + 1}</span>
+                      <span>
+                        <span className="block font-semibold">{title}</span>
+                        <span className="mt-1 block text-sm leading-relaxed text-white/70">{text}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+                <Link href="/auth/signup?role=TRUCKER" className="mt-8 inline-flex min-h-12 items-center rounded-xl bg-white px-6 font-semibold text-[#13283A]">
+                  Je transporte
+                </Link>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
 
-          <div className="hidden lg:block">
-            <div className="grid grid-cols-5 gap-4 items-stretch">
-              {[
-                { icon: <Clipboard size={22} />, title: "Décrire le besoin", desc: "Matériau, quantité, départ, destination." },
-                { icon: <Truck size={22} />, title: "Recevoir plusieurs offres", desc: "Des camionneurs répondent rapidement." },
-                { icon: <Scale size={22} />, title: "Comparer", desc: "Prix, disponibilité, avis." },
-                { icon: <CreditCard size={22} />, title: "Payer", desc: "Paiement sécurisé et simple." },
-                { icon: <MapPinned size={22} />, title: "Livraison", desc: "Suivi et validation à l'arrivée." },
-              ].map((s, idx) => (
-                <motion.div
-                  key={s.title}
-                  variants={itemVariants}
-                  className="relative rounded-2xl border border-gray-200 bg-white p-6 shadow-sm"
-                >
-                  {idx > 0 && (
-                    <div className="absolute -left-2 top-1/2 h-[2px] w-4 bg-gradient-to-r from-[#F97316] to-transparent" />
-                  )}
-                  <div className="h-11 w-11 rounded-2xl bg-[#F97316]/10 text-[#F97316] flex items-center justify-center">
-                    {s.icon}
-                  </div>
-                  <h3 className="mt-4 text-base font-semibold text-[#0F172A]">{s.title}</h3>
-                  <p className="mt-2 text-sm text-gray-600">{s.desc}</p>
-                </motion.div>
-              ))}
+      <section id="materiaux" className="bg-white py-20">
+        <div className="container-max">
+          <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
+            <div className="max-w-xl">
+              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#354B44]">Matériaux</p>
+              <h2 className="mt-3 text-4xl md:text-5xl">Ce qui se transporte vraiment.</h2>
             </div>
+            <p className="max-w-sm text-sm leading-relaxed text-[#13283A]/70">
+              Sable, gravier, granite, terre, béton, briques, métaux et déchets de chantier. La disponibilité dépend des camionneurs qui répondent.
+            </p>
           </div>
+          <div className="mt-10 grid grid-cols-2 gap-4 lg:grid-cols-4">
+            {materials.map((itemMaterial) => {
+              const material = MATERIAL_TYPES.find((entry) => entry.id === itemMaterial.id)
+              const photo = marketplaceImage(itemMaterial.image)
+              if (!material) return null
+              return (
+                <article key={material.id} className="group overflow-hidden rounded-3xl bg-[#F5F4F0]">
+                  <div className="relative aspect-[4/5]">
+                    <CatalogImage src={photo.src} alt={photo.alt} sizes="(max-width: 1024px) 50vw, 25vw" className="transition duration-500 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#13283A] via-[#13283A]/10 to-transparent" />
+                    <h3 className="absolute bottom-5 left-5 right-5 text-2xl text-white">{material.name}</h3>
+                  </div>
+                </article>
+              )
+            })}
+          </div>
+          <ul className="mt-6 flex flex-wrap gap-2 text-sm text-[#13283A]/75">
+            {MATERIAL_TYPES.map((material) => (
+              <li key={material.id} className="rounded-full border border-[#13283A]/10 bg-[#F5F4F0] px-3 py-2">{material.name}</li>
+            ))}
+          </ul>
+        </div>
+      </section>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:hidden">
+      <section id="camions" className="bg-[#F5F4F0] py-20">
+        <div className="container-max">
+          <div className="max-w-2xl">
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#354B44]">Camions</p>
+            <h2 className="mt-3 text-4xl md:text-5xl">La capacité se choisit en tonnes.</h2>
+          </div>
+          <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {TRUCK_TYPES.map((truck) => {
+              const photo = marketplaceImage(trucks.find((item) => item.id === truck.id)?.image || "benne-carriere")
+              return (
+                <article key={truck.id} className="overflow-hidden rounded-3xl bg-white shadow-[0_12px_40px_rgba(19,40,58,0.05)]">
+                  <div className="relative h-52">
+                    <CatalogImage src={photo.src} alt={photo.alt} sizes="(max-width: 768px) 100vw, 33vw" />
+                  </div>
+                  <div className="p-6">
+                    <h3 className="text-xl">{truck.name}</h3>
+                    <p className="mt-2 text-sm text-[#13283A]/70">{truck.minCapacity} à {truck.maxCapacity} tonnes</p>
+                  </div>
+                </article>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white py-20">
+        <div className="container-max">
+          <h2 className="max-w-xl text-4xl md:text-5xl">Ce que la plateforme fait, et rien de plus.</h2>
+          <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[
-              { icon: <Clipboard size={22} />, title: "Décrire le besoin", desc: "Matériau, quantité, départ, destination." },
-              { icon: <Truck size={22} />, title: "Recevoir plusieurs offres", desc: "Des camionneurs répondent rapidement." },
-              { icon: <Scale size={22} />, title: "Comparer", desc: "Prix, disponibilité, avis." },
-              { icon: <CreditCard size={22} />, title: "Payer", desc: "Paiement sécurisé et simple." },
-              { icon: <MapPinned size={22} />, title: "Livraison", desc: "Suivi et validation à l'arrivée." },
-            ].map((s) => (
-              <motion.div
-                key={s.title}
-                variants={itemVariants}
-                className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-2xl bg-[#F97316]/10 text-[#F97316] flex items-center justify-center">
-                    {s.icon}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-[#0F172A]">{s.title}</p>
-                    <p className="text-sm text-gray-600">{s.desc}</p>
-                  </div>
-                </div>
-              </motion.div>
+              [ClipboardList, "Demande structurée", "Matériau, quantité, villes et date. Le brouillon reste privé tant qu’il n’est pas publié."],
+              [Truck, "Devis comparables", "Prix en FCFA, véhicule et date proposée. Vous acceptez un devis, pas une promesse automatique."],
+              [Lock, "Contacts protégés", "Le numéro de l’autre partie reste masqué jusqu’au déblocage par crédit."],
+              [Wallet, "Paiement manuel", "Crédits et forfaits sont commandés, puis validés par l’administration. Rien n’est attribué avant."],
+              [Route, "Mission par étapes", "Du départ vers le chargement jusqu’à la confirmation du client. Pas de position GPS."],
+              [ArrowRight, "Comptes distincts", "Client et transporteur n’ont pas le même espace. L’administration a le sien."],
+            ].map(([Icon, title, text]) => (
+              <article key={String(title)} className="rounded-3xl border border-[#13283A]/10 p-6">
+                <Icon size={22} className="text-[#ED8A25]" aria-hidden="true" />
+                <h3 className="mt-4 text-lg">{String(title)}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-[#13283A]/70">{String(text)}</p>
+              </article>
             ))}
           </div>
-        </motion.div>
+        </div>
       </section>
 
-      {/* Materials Section */}
-      <section id="materials" className="py-20 bg-white">
-        <motion.div
-          className="container-max"
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-        >
-          <motion.div variants={itemVariants} className="text-center mb-14">
-            <h2 className="text-4xl md:text-5xl font-semibold tracking-tight text-[#0F172A]">Matériaux</h2>
-            <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
-              Les matériaux les plus demandés, avec des camions adaptés à chaque type de chargement.
+      <section id="tarifs" className="bg-[#354B44] py-20 text-white">
+        <div className="container-max grid items-center gap-10 lg:grid-cols-2">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#E8B55B]">Tarifs</p>
+            <h2 className="mt-3 text-4xl text-white md:text-5xl">Les prix affichés sont ceux publiés.</h2>
+            <p className="mt-5 max-w-xl text-white/75">
+              La publication d’une demande ne débite pas de crédit. Les crédits servent à débloquer un contact. Les forfaits ajoutent des crédits et des avantages, seulement après validation du paiement manuel.
             </p>
-          </motion.div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-            {MATERIAL_TYPES.slice(0, 8).map((material) => (
-              <motion.div
-                key={material.id}
-                variants={itemVariants}
-                className="group rounded-2xl border border-gray-200 bg-white p-5 shadow-sm hover:shadow-lg transition-all hover:-translate-y-0.5"
-              >
-                <div className="h-12 w-12 rounded-2xl bg-[#F97316]/10 text-[#F97316] flex items-center justify-center">
-                  <Truck size={20} />
-                </div>
-                <div className="mt-4">
-                  <p className="text-sm font-semibold text-[#0F172A]">{material.name}</p>
-                  <p className="text-xs text-gray-500 mt-1">Disponible selon zones</p>
-                </div>
-                <div className="mt-4 h-16 rounded-xl border border-gray-200 bg-gradient-to-br from-[#F8FAFC] to-white" />
-                <div className="mt-4 text-xs text-[#F97316] font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
-                  Voir les options
-                </div>
-              </motion.div>
-            ))}
+            <Link href="/pricing" className="mt-8 inline-flex min-h-12 items-center rounded-xl bg-[#ED8A25] px-6 font-semibold text-[#13283A]">
+              Voir les forfaits et les crédits
+            </Link>
           </div>
-        </motion.div>
-      </section>
-
-      {/* Truck Types */}
-      <section className="py-20 bg-gray-50">
-        <motion.div
-          className="container-max"
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-        >
-          <motion.div variants={itemVariants} className="text-center mb-14">
-            <h2 className="text-4xl md:text-5xl font-semibold tracking-tight text-[#0F172A]">Types de camions</h2>
-            <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
-              Choisis le bon camion selon la charge, la distance et le terrain.
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {TRUCK_TYPES.map((truck) => (
-              <motion.div
-                key={truck.id}
-                variants={itemVariants}
-                className="group rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-lg transition-all"
-              >
-                <div className="h-40 rounded-2xl border border-gray-200 bg-gradient-to-br from-[#F8FAFC] to-white" />
-                <div className="mt-5 flex items-start justify-between gap-4">
-                  <div>
-                    <h3 className="text-base font-semibold text-[#0F172A]">{truck.name}</h3>
-                    <p className="text-sm text-gray-600 mt-1">Capacité: {truck.minCapacity}–{truck.maxCapacity} t</p>
-                  </div>
-                  <div className="h-10 w-10 rounded-2xl bg-[#F97316]/10 text-[#F97316] flex items-center justify-center">
-                    <Truck size={18} />
-                  </div>
-                </div>
-
-                <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
-                  <div className="rounded-xl border border-gray-200 bg-[#F8FAFC] px-3 py-2">
-                    <p className="text-xs text-gray-500">Min</p>
-                    <p className="font-semibold text-[#0F172A]">{truck.minCapacity} t</p>
-                  </div>
-                  <div className="rounded-xl border border-gray-200 bg-[#F8FAFC] px-3 py-2">
-                    <p className="text-xs text-gray-500">Max</p>
-                    <p className="font-semibold text-[#0F172A]">{truck.maxCapacity} t</p>
-                  </div>
-                </div>
-
-                <div className="mt-6">
-                  <Link href="/pricing" className="inline-flex items-center gap-2 text-sm font-semibold text-[#F97316] hover:underline">
-                    Voir les tarifs
-                    <ArrowRight size={16} />
-                  </Link>
-                </div>
-              </motion.div>
-            ))}
+          <div className="relative min-h-72 overflow-hidden rounded-3xl">
+            <CatalogImage src={marketplaceImage("terrassement").src} alt={marketplaceImage("terrassement").alt} sizes="(max-width: 1024px) 100vw, 50vw" />
           </div>
-        </motion.div>
+        </div>
       </section>
 
-      {/* Services */}
-      <section className="py-20 bg-white">
-        <motion.div
-          className="container-max"
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-        >
-          <motion.div variants={itemVariants} className="text-center mb-14">
-            <h2 className="text-4xl md:text-5xl font-semibold tracking-tight text-[#0F172A]">Avantages</h2>
-            <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
-              Une expérience premium: confiance, transparence, support et performance.
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              {
-                icon: <Shield size={32} />,
-                title: "Vérification rigoureuse",
-                description:
-                  "Tous les camionneurs et documents sont vérifiés avant activation.",
-              },
-              {
-                icon: <Users size={32} />,
-                title: "Support 24/7",
-                description:
-                  "Siège au Burkina Faso pour vous assister en français.",
-              },
-              {
-                icon: <CheckCircle size={32} />,
-                title: "Paiement sécurisé",
-                description:
-                  "Versement au camionneur seulement après livraison confirmée.",
-              },
-              {
-                icon: <Star size={32} />,
-                title: "Prix transparents",
-                description:
-                  "Comparez les offres et choisissez selon votre budget.",
-              },
-              {
-                icon: <MapPinned size={32} />,
-                title: "Suivi GPS",
-                description:
-                  "Suivez l'état de votre mission du chargement à la livraison.",
-              },
-              {
-                icon: <Shield size={32} />,
-                title: "Assurance livraison",
-                description:
-                  "Réduction des risques et médiation en cas de litige.",
-              },
-            ].map((service, index) => (
-              <motion.div
-                key={index}
-                variants={itemVariants}
-                className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-lg transition-all hover:-translate-y-0.5"
-              >
-                <div className="h-12 w-12 rounded-2xl bg-[#F97316]/10 text-[#F97316] flex items-center justify-center">
-                  {service.icon}
-                </div>
-                <h3 className="mt-5 text-base font-semibold text-[#0F172A]">{service.title}</h3>
-                <p className="mt-2 text-sm text-gray-600 leading-relaxed">{service.description}</p>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      </section>
-
-      <section className="py-20 bg-[#F5F1ED]">
-        <motion.div
-          className="container-max"
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-        >
-          <motion.div variants={itemVariants} className="text-center mb-14">
-            <h2 className="text-4xl md:text-5xl font-semibold tracking-tight text-[#0F172A]">Présents là où ça compte</h2>
-            <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
-              Depuis notre siège à Ouagadougou, nous opérons en Afrique de l’Ouest pour être au plus près de nos clients et partenaires.
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              {
-                flag: "🇧🇫",
-                city: "Ouagadougou",
-                country: "Burkina Faso",
-                tag: "Siège social",
-                desc: "Siège social et centre de développement principal",
-                featured: true,
-              },
-              {
-                flag: "🇨🇮",
-                city: "Abidjan",
-                country: "Côte d’Ivoire",
-                tag: "Bureau",
-                desc: "Bureau commercial et support client Afrique de l’Ouest",
-                featured: false,
-              },
-              {
-                flag: "🇧🇯",
-                city: "Cotonou",
-                country: "Bénin",
-                tag: "Représentation",
-                desc: "Représentation commerciale",
-                featured: false,
-              },
-              {
-                flag: "🇳🇪",
-                city: "Niamey",
-                country: "Niger",
-                tag: "Représentation",
-                desc: "Représentation commerciale",
-                featured: false,
-              },
-            ].map((l) => (
-              <motion.div
-                key={l.city}
-                variants={itemVariants}
-                className={
-                  "rounded-2xl border shadow-sm p-6 transition-all " +
-                  (l.featured
-                    ? "bg-[#0F172A] text-white border-[#0F172A]"
-                    : "bg-white text-[#0F172A] border-gray-200 hover:shadow-lg hover:-translate-y-0.5")
-                }
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-2xl" aria-hidden="true">{l.flag}</span>
-                  <span
-                    className={
-                      "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold " +
-                      (l.featured
-                        ? "bg-white/10 text-white"
-                        : "bg-[#F97316]/10 text-[#9A3412]")
-                    }
+      <section id="faq" className="bg-[#F5F4F0] py-20">
+        <div className="container-max grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
+          <h2 className="text-4xl md:text-5xl">Questions fréquentes</h2>
+          <div className="divide-y divide-[#13283A]/10 rounded-3xl bg-white px-6">
+            {faqs.map((faq, index) => {
+              const open = openFaq === index
+              return (
+                <div key={faq.q} className="py-2">
+                  <button
+                    type="button"
+                    className="flex min-h-14 w-full items-center justify-between gap-4 text-left font-semibold text-[#13283A]"
+                    aria-expanded={open}
+                    onClick={() => setOpenFaq(open ? null : index)}
                   >
-                    {l.tag}
-                  </span>
+                    {faq.q}
+                    <span aria-hidden="true" className="text-[#ED8A25]">{open ? "–" : "+"}</span>
+                  </button>
+                  {open ? <p className="pb-4 text-sm leading-relaxed text-[#13283A]/75">{faq.a}</p> : null}
                 </div>
+              )
+            })}
+          </div>
+        </div>
+      </section>
 
-                <div className="mt-5">
-                  <h3 className={"text-lg font-semibold tracking-tight " + (l.featured ? "text-white" : "text-[#0F172A]")}>{l.city}</h3>
-                  <p className={"mt-1 text-sm " + (l.featured ? "text-white/70" : "text-gray-500")}>{l.country}</p>
-                </div>
-
-                <p className={"mt-5 text-sm leading-relaxed " + (l.featured ? "text-white/70" : "text-gray-600")}>{l.desc}</p>
-              </motion.div>
-            ))}
+      <section className="relative overflow-hidden bg-[#13283A] py-24 text-white">
+        <div className="absolute inset-0 opacity-30">
+          <CatalogImage src={marketplaceImage("piste-chantier").src} alt="" sizes="100vw" />
+        </div>
+        <div className="absolute inset-0 bg-[#13283A]/75" />
+        <motion.div variants={item} initial="hidden" whileInView="visible" viewport={{ once: true }} className="container-max relative">
+          <h2 className="max-w-2xl text-4xl text-white md:text-6xl">Le prochain voyage commence par une demande.</h2>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <Link href="/auth/signup?role=CLIENT" className="inline-flex min-h-14 items-center justify-center rounded-2xl bg-[#ED8A25] px-7 font-semibold text-[#13283A]">
+              Trouver un camion
+            </Link>
+            <Link href="/auth/signup?role=TRUCKER" className="inline-flex min-h-14 items-center justify-center rounded-2xl border border-white/30 px-7 font-semibold text-white">
+              Je suis transporteur
+            </Link>
           </div>
         </motion.div>
       </section>
-
-      <section className="py-20 bg-[#F8FAFC]">
-        <motion.div
-          className="container-max"
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-        >
-          <motion.div variants={itemVariants} className="text-center mb-14">
-            <h2 className="text-4xl md:text-5xl font-semibold tracking-tight text-[#0F172A]">Avis clients</h2>
-            <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
-              Des chantiers livrés à temps, avec des transporteurs vérifiés.
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              { name: "Aïcha Z.", city: "Ouagadougou", quote: "Service impeccable. J'ai reçu des offres en quelques minutes." },
-              { name: "Issa K.", city: "Bobo-Dioulasso", quote: "Simple, rapide et rassurant. Le suivi est très clair." },
-              { name: "Mariam T.", city: "Koudougou", quote: "Bon prix et camionneur sérieux. Je recommande." },
-            ].map((t) => (
-              <motion.div
-                key={t.name}
-                variants={itemVariants}
-                className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-lg transition-shadow"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-[#F97316]">
-                    <Star size={16} />
-                    <Star size={16} />
-                    <Star size={16} />
-                    <Star size={16} />
-                    <Star size={16} />
-                  </div>
-                  <span className="text-xs text-gray-500">★★★★★</span>
-                </div>
-                <p className="mt-4 text-sm text-gray-700 leading-relaxed">“{t.quote}”</p>
-                <div className="mt-6 flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-[#F97316]/25 to-[#0F172A]/10 border border-gray-200" />
-                  <div>
-                    <p className="text-sm font-semibold text-[#0F172A]">{t.name}</p>
-                    <p className="text-xs text-gray-500">{t.city}</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 bg-[#2C3E50] text-white">
-        <motion.div
-          className="container-max text-center"
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-        >
-          <motion.h2 variants={itemVariants} className="text-4xl md:text-5xl font-semibold tracking-tight mb-6">
-            Besoin d'un camion aujourd'hui ?
-          </motion.h2>
-          <motion.p variants={itemVariants} className="text-lg text-white/75 mb-10 max-w-2xl mx-auto">
-            Publiez votre demande et recevez plusieurs offres. Choisissez en confiance.
-          </motion.p>
-
-          <motion.div
-            variants={itemVariants}
-            className="flex flex-col sm:flex-row gap-4 justify-center"
-          >
-            <Link
-              href="/auth/signup?role=CLIENT"
-              className="px-9 py-4 bg-[#F97316] text-white rounded-2xl font-semibold hover:bg-[#ea6a12] transition-colors inline-flex items-center justify-center gap-2 shadow-sm hover:shadow-lg"
-            >
-              Demander un camion
-              <ArrowRight size={18} />
-            </Link>
-            <Link
-              href="/auth/signup?role=TRUCKER"
-              className="px-9 py-4 border border-white/30 text-white rounded-2xl font-semibold hover:bg-white hover:text-[#0F172A] transition-colors"
-            >
-              Devenir camionneur
-            </Link>
-          </motion.div>
-        </motion.div>
-      </section>
-
       <Footer />
     </>
   )

@@ -1,93 +1,91 @@
 "use client"
 
-import { motion, useReducedMotion } from "framer-motion"
-import { ArrowRight, MapPin, ArrowRightLeft } from "lucide-react"
-import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { FormEvent, useState } from "react"
+import { ArrowRight, MapPin } from "lucide-react"
+import { BF_CITIES, MATERIAL_TYPES } from "@/lib/config"
 
 type QuickSearchCardProps = {
   className?: string
 }
 
+export const REQUEST_DRAFT_KEY = "wagesse-request-draft"
+
 export default function QuickSearchCard({ className }: QuickSearchCardProps) {
-  const reduceMotion = useReducedMotion()
+  const router = useRouter()
+  const [depart, setDepart] = useState("Ouagadougou")
+  const [destination, setDestination] = useState("")
+  const [material, setMaterial] = useState("Sable")
+  const [quantity, setQuantity] = useState("")
+
+  const submit = (event: FormEvent) => {
+    event.preventDefault()
+    const amount = quantity.trim()
+    sessionStorage.setItem(
+      REQUEST_DRAFT_KEY,
+      JSON.stringify({
+        pickupCity: depart,
+        dropoffCity: destination,
+        material,
+        quantity: amount,
+      })
+    )
+    router.push("/auth/signup?role=CLIENT")
+  }
 
   return (
-    <motion.div
-      initial={reduceMotion ? undefined : { opacity: 0, y: 14 }}
-      whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-120px" }}
-      transition={{ duration: 0.35, ease: "easeOut" }}
-      className={
-        "rounded-[20px] bg-white shadow-[0_20px_60px_rgba(15,23,42,0.14)] border border-[#E2E8F0] " +
-        (className ?? "")
-      }
-    >
-      <form className="p-4 md:p-5" action="#">
-        <div className="grid grid-cols-1 md:grid-cols-[1.2fr_auto_1.2fr_1fr_1fr_auto] gap-3 items-stretch">
-          <label className="flex flex-col">
-            <span className="text-xs font-semibold text-gray-500">Départ</span>
-            <div className="mt-1 flex items-center gap-2 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-3">
-              <MapPin size={18} className="text-[#F97316]" />
-              <input
-                className="w-full bg-transparent outline-none text-sm text-[#0F172A] placeholder:text-[#64748B]"
-                placeholder="Ouagadougou"
-                aria-label="Départ"
-              />
-            </div>
-          </label>
-
-          <div className="hidden md:flex items-end justify-center pb-1">
-            <div className="h-11 w-11 rounded-xl border border-gray-200 bg-white flex items-center justify-center">
-              <ArrowRightLeft size={18} className="text-gray-500" />
-            </div>
-          </div>
-
-          <label className="flex flex-col">
-            <span className="text-xs font-semibold text-gray-500">Destination</span>
-            <div className="mt-1 flex items-center gap-2 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-3">
-              <MapPin size={18} className="text-[#F97316]" />
-              <input
-                className="w-full bg-transparent outline-none text-sm text-[#0F172A] placeholder:text-[#64748B]"
-                placeholder="Où livrer ?"
-                aria-label="Destination"
-              />
-            </div>
-          </label>
-
-          <label className="flex flex-col">
-            <span className="text-xs font-semibold text-gray-500">Matériau</span>
-            <select
-              className="mt-1 w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-3 text-sm text-[#0F172A] outline-none focus:border-[#F97316] focus:ring-2 focus:ring-[#F97316]/20"
-              aria-label="Matériau"
-              defaultValue="Sable"
-            >
-              <option>Sable</option>
-              <option>Gravier</option>
-              <option>Granite</option>
-              <option>Béton</option>
+    <div className={"rounded-3xl border border-white/20 bg-white p-4 text-[#13283A] shadow-[0_20px_60px_rgba(19,40,58,0.25)] md:p-5 " + (className ?? "")}>
+      <form onSubmit={submit} className="grid grid-cols-1 items-end gap-3 md:grid-cols-12">
+        <label className="md:col-span-3">
+          <span className="text-xs font-semibold text-[#13283A]/60">Départ</span>
+          <span className="mt-1 flex min-h-12 items-center gap-2 rounded-xl border border-[#13283A]/10 bg-[#F5F4F0] px-3">
+            <MapPin size={18} className="text-[#ED8A25]" aria-hidden="true" />
+            <select aria-label="Départ" value={depart} onChange={(event) => setDepart(event.target.value)} className="w-full bg-transparent text-sm outline-none">
+              {BF_CITIES.map((city) => (
+                <option key={city.name}>{city.name}</option>
+              ))}
             </select>
-          </label>
-
-          <label className="flex flex-col">
-            <span className="text-xs font-semibold text-gray-500">Quantité</span>
-            <input
-              className="mt-1 w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-3 text-sm text-[#0F172A] outline-none placeholder:text-[#64748B] focus:border-[#F97316] focus:ring-2 focus:ring-[#F97316]/20"
-              placeholder="20 tonnes"
-              aria-label="Quantité"
-            />
-          </label>
-
-          <div className="flex items-end">
-            <Link
-              href="/auth/signup?role=CLIENT"
-              className="w-full md:w-auto h-14 inline-flex items-center justify-center gap-2 rounded-xl bg-[#F97316] text-white px-6 text-sm font-semibold hover:bg-[#EA580C] transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5"
-            >
-              Trouver un camion
-              <ArrowRight size={16} />
-            </Link>
-          </div>
+          </span>
+        </label>
+        <label className="md:col-span-3">
+          <span className="text-xs font-semibold text-[#13283A]/60">Destination</span>
+          <span className="mt-1 flex min-h-12 items-center gap-2 rounded-xl border border-[#13283A]/10 bg-[#F5F4F0] px-3">
+            <MapPin size={18} className="text-[#ED8A25]" aria-hidden="true" />
+            <select aria-label="Destination" value={destination} onChange={(event) => setDestination(event.target.value)} className="w-full bg-transparent text-sm outline-none">
+              <option value="">Choisir</option>
+              {BF_CITIES.map((city) => (
+                <option key={city.name}>{city.name}</option>
+              ))}
+            </select>
+          </span>
+        </label>
+        <label className="md:col-span-2">
+          <span className="text-xs font-semibold text-[#13283A]/60">Matériau</span>
+          <select aria-label="Matériau" value={material} onChange={(event) => setMaterial(event.target.value)} className="mt-1 min-h-12 w-full rounded-xl border border-[#13283A]/10 bg-[#F5F4F0] px-3 text-sm outline-none">
+            {MATERIAL_TYPES.map((item) => (
+              <option key={item.id}>{item.name}</option>
+            ))}
+          </select>
+        </label>
+        <label className="md:col-span-2">
+          <span className="text-xs font-semibold text-[#13283A]/60">Quantité (tonnes)</span>
+          <input
+            aria-label="Quantité en tonnes"
+            inputMode="decimal"
+            value={quantity}
+            onChange={(event) => setQuantity(event.target.value)}
+            placeholder="20"
+            className="mt-1 min-h-12 w-full rounded-xl border border-[#13283A]/10 bg-[#F5F4F0] px-3 text-sm outline-none"
+          />
+        </label>
+        <div className="md:col-span-2">
+          <button type="submit" className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#ED8A25] px-4 text-sm font-semibold text-[#13283A]">
+            Créer la demande
+            <ArrowRight size={16} aria-hidden="true" />
+          </button>
         </div>
       </form>
-    </motion.div>
+      <p className="mt-3 text-xs text-[#13283A]/55">Le trajet est repris dans le formulaire après la création du compte. Rien n’est publié avant votre validation.</p>
+    </div>
   )
 }

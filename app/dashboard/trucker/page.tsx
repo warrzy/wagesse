@@ -112,7 +112,7 @@ export default function TruckerDashboard() {
     <ClientGuard>
       <Header />
 
-      <div className="min-h-screen bg-gray-50 pt-8 pb-12">
+      <div className="min-h-screen bg-[#F5F4F0] pt-8 pb-12">
         <motion.div
           className="container-max"
           variants={containerVariants}
@@ -143,7 +143,7 @@ export default function TruckerDashboard() {
                       : ""}
                   </p>
                 </div>
-                <Link href="/abonnement" className="text-sm font-semibold text-[#E8714D] hover:underline">
+                <Link href="/abonnement" className="text-sm font-semibold text-[#ED8A25] hover:underline">
                   Gérer mon abonnement
                 </Link>
               </div>
@@ -179,7 +179,7 @@ export default function TruckerDashboard() {
             ].map((stat, index) => (
               <motion.div key={index} variants={itemVariants} className="card-hover flex flex-col">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="text-[#E8714D]">{stat.icon}</div>
+                  <div className="text-[#ED8A25]">{stat.icon}</div>
                 </div>
                 <p className="text-gray-600 text-sm mb-2">{stat.label}</p>
                 <p className="text-2xl font-bold">{stat.value}</p>
@@ -206,7 +206,7 @@ export default function TruckerDashboard() {
                     <Link
                       key={mission.id}
                       href={`/dashboard/missions/${mission.id}`}
-                      className="block p-4 border border-gray-200 rounded-lg hover:border-[#E8714D] transition-colors cursor-pointer"
+                      className="block p-4 border border-gray-200 rounded-lg hover:border-[#ED8A25] transition-colors cursor-pointer"
                     >
                       <div className="flex items-start justify-between mb-2">
                         <div>
@@ -219,7 +219,7 @@ export default function TruckerDashboard() {
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="font-bold text-[#E8714D]">
+                          <p className="font-bold text-[#ED8A25]">
                             {mission.contractPrice.toLocaleString("fr-FR")} Fr
                           </p>
                           <span className="badge badge-info text-xs">
@@ -235,7 +235,7 @@ export default function TruckerDashboard() {
 
                       <div className="flex justify-between items-center text-xs text-gray-500">
                         <p>{new Date(mission.scheduledDate).toLocaleDateString("fr-FR")}</p>
-                        <span className="text-[#E8714D] font-medium">Détails →</span>
+                        <span className="text-[#ED8A25] font-medium">Détails →</span>
                       </div>
                     </Link>
                   ))}
@@ -270,35 +270,35 @@ export default function TruckerDashboard() {
               <div className="space-y-3">
                 <Link
                   href="/dashboard/trucker/requests"
-                  className="w-full py-3 px-4 bg-[#E8714D] text-white rounded-lg font-medium hover:bg-[#d45c39] transition-colors flex items-center justify-center"
+                  className="flex min-h-12 w-full items-center justify-center rounded-xl bg-[#ED8A25] px-4 font-semibold text-[#13283A]"
                 >
                   Trouver des demandes
                 </Link>
 
                 <Link
                   href="/dashboard/trucker/vehicles"
-                  className="w-full py-3 px-4 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:border-[#E8714D] transition-colors flex items-center justify-center"
+                  className="w-full py-3 px-4 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:border-[#ED8A25] transition-colors flex items-center justify-center"
                 >
                   Gérer mes véhicules
                 </Link>
 
                 <Link
                   href="/dashboard/trucker/contacts"
-                  className="w-full py-3 px-4 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:border-[#E8714D] transition-colors flex items-center justify-center"
+                  className="w-full py-3 px-4 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:border-[#ED8A25] transition-colors flex items-center justify-center"
                 >
                   Mes contacts
                 </Link>
 
                 <Link
                   href="/dashboard/commandes"
-                  className="w-full py-3 px-4 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:border-[#E8714D] transition-colors flex items-center justify-center"
+                  className="w-full py-3 px-4 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:border-[#ED8A25] transition-colors flex items-center justify-center"
                 >
                   Mes commandes
                 </Link>
 
                 <Link
                   href="/dashboard/trucker/profil"
-                  className="w-full py-3 px-4 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:border-[#E8714D] transition-colors flex items-center justify-center"
+                  className="w-full py-3 px-4 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:border-[#ED8A25] transition-colors flex items-center justify-center"
                 >
                   Mon profil
                 </Link>
@@ -308,7 +308,7 @@ export default function TruckerDashboard() {
                 <p className="text-sm font-semibold mb-3">Mes crédits</p>
                 <div className="flex items-center justify-between">
                   <p className="text-2xl font-bold">{creditBalance === null ? "…" : String(creditBalance)}</p>
-                  <Link href="/pricing" className="text-sm font-semibold text-[#E8714D] hover:underline">
+                  <Link href="/pricing" className="text-sm font-semibold text-[#ED8A25] hover:underline">
                     Acheter des crédits
                   </Link>
                 </div>

@@ -2,66 +2,59 @@
 
 /* === Base Styles === */
 :root {
-  --color-primary: #F97316;
-  --color-secondary: #0F172A;
-  --color-accent: #F8FAFC;
-  --color-dark: #0F172A;
-  --color-light: #F8FAFC;
-  --color-success: #4CAF50;
-  --color-warning: #FFA500;
-  --color-danger: #EF4444;
+  --color-primary: #ED8A25;
+  --color-secondary: #13283A;
+  --color-accent: #E8B55B;
+  --color-dark: #13283A;
+  --color-light: #F5F4F0;
+  --color-success: #354B44;
+  --color-warning: #E8B55B;
+  --color-danger: #9B3A2F;
+  --ink: #13283A;
+  --paper: #F5F4F0;
+  --sand: #E8B55B;
+  --forest: #354B44;
 }
 
 body {
-  font-family: Inter, system-ui, sans-serif;
-  color: var(--color-dark);
-  background-color: #FFFFFF;
+  font-family: var(--font-sans), "Plus Jakarta Sans", Inter, system-ui, sans-serif;
+  color: var(--ink);
+  background-color: var(--paper);
+  text-rendering: optimizeLegibility;
 }
 
 /* === Typography === */
-h1, h2, h3, h4, h5, h6 {
-  font-weight: 600;
-  color: var(--color-dark);
-}
-
-h1 {
-  font-size: 2.5rem;
-  line-height: 1.2;
-}
-
-h2 {
-  font-size: 2rem;
-  line-height: 1.3;
-}
-
-h3 {
-  font-size: 1.5rem;
-  line-height: 1.4;
+@layer base {
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 650;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+  }
 }
 
 /* === Components === */
 .button-primary {
-  @apply bg-[#F97316] text-white px-6 py-3 rounded-xl font-semibold hover:bg-[#ea6a12] transition-colors shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F97316]/30;
+  @apply bg-[#ED8A25] text-[#13283A] px-6 py-3 rounded-xl font-semibold hover:bg-[#d9771a] transition-colors shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ED8A25] focus-visible:ring-offset-2 min-h-12;
 }
 
 .button-secondary {
-  @apply bg-[#0F172A] text-white px-6 py-3 rounded-xl font-semibold hover:bg-[#0b1220] transition-colors shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20;
+  @apply bg-[#13283A] text-white px-6 py-3 rounded-xl font-semibold hover:bg-[#0d1c29] transition-colors shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8B55B] focus-visible:ring-offset-2 min-h-12;
 }
 
 .button-outline {
-  @apply border border-gray-300 bg-white/70 text-[#0F172A] px-6 py-3 rounded-xl font-semibold hover:bg-white transition-colors shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F97316]/20;
+  @apply border border-[#13283A]/15 bg-white text-[#13283A] px-6 py-3 rounded-xl font-semibold hover:bg-[#F5F4F0] transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ED8A25] focus-visible:ring-offset-2 min-h-12;
 }
 
 .card {
-  @apply bg-white rounded-2xl shadow-sm border border-gray-200 p-6;
+  @apply bg-white rounded-3xl shadow-[0_12px_40px_rgba(19,40,58,0.06)] border border-[#13283A]/10 p-6;
 }
 
 .card-hover {
-  @apply bg-white rounded-2xl shadow-sm border border-gray-200 p-6 transition-all hover:shadow-lg hover:border-[#F97316];
+  @apply bg-white rounded-3xl shadow-[0_12px_40px_rgba(19,40,58,0.06)] border border-[#13283A]/10 p-6 transition-all hover:shadow-[0_18px_50px_rgba(19,40,58,0.1)] hover:border-[#ED8A25]/50;
 }
 
 .input-field {
-  @apply w-full px-4 py-3 border border-gray-300 rounded-xl bg-white focus:outline-none focus:border-[#F97316] focus:ring-2 focus:ring-[#F97316]/20;
+  @apply w-full px-4 py-3 border border-[#13283A]/15 rounded-xl bg-white focus:outline-none focus:border-[#ED8A25] focus:ring-2 focus:ring-[#ED8A25]/25 min-h-12;
 }
 
 .badge {
@@ -135,23 +128,12 @@ h3 {
 }
 
 /* === Responsive === */
-@media (max-width: 640px) {
-  h1 {
-    font-size: 1.75rem;
-  }
-
-  h2 {
-    font-size: 1.5rem;
-  }
-
-  h3 {
-    font-size: 1.25rem;
-  }
-
-  .button-primary,
-  .button-secondary,
-  .button-outline {
-    @apply w-full;
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

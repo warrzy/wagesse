@@ -111,7 +111,7 @@ export default function ClientDashboard() {
     <ClientGuard>
       <Header />
 
-      <div className="min-h-screen bg-gray-50 pt-8 pb-12">
+      <div className="min-h-screen bg-[#F5F4F0] pt-8 pb-12">
         <motion.div
           className="container-max"
           variants={containerVariants}
@@ -142,7 +142,7 @@ export default function ClientDashboard() {
                       : ""}
                   </p>
                 </div>
-                <Link href="/abonnement" className="text-sm font-semibold text-[#E8714D] hover:underline">
+                <Link href="/abonnement" className="text-sm font-semibold text-[#ED8A25] hover:underline">
                   Gérer mon abonnement
                 </Link>
               </div>
@@ -178,7 +178,7 @@ export default function ClientDashboard() {
             ].map((stat, index) => (
               <motion.div key={index} variants={itemVariants} className="card-hover flex flex-col">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="text-[#E8714D]">{stat.icon}</div>
+                  <div className="text-[#ED8A25]">{stat.icon}</div>
                 </div>
                 <p className="text-gray-600 text-sm mb-2">{stat.label}</p>
                 <p className="text-2xl font-bold">{stat.value}</p>
@@ -205,7 +205,7 @@ export default function ClientDashboard() {
                     <Link
                       key={mission.id}
                       href={`/dashboard/missions/${mission.id}`}
-                      className="block p-4 border border-gray-200 rounded-lg hover:border-[#E8714D] transition-colors cursor-pointer"
+                      className="block p-4 border border-gray-200 rounded-lg hover:border-[#ED8A25] transition-colors cursor-pointer"
                     >
                       <div className="flex items-start justify-between mb-2">
                         <div>
@@ -238,7 +238,7 @@ export default function ClientDashboard() {
               <div className="space-y-3">
                 <Link
                   href="/dashboard/client/requests/new"
-                  className="w-full py-3 px-4 bg-[#E8714D] text-white rounded-lg font-medium hover:bg-[#d45c39] transition-colors flex items-center justify-center gap-2"
+                  className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#ED8A25] px-4 font-semibold text-[#13283A]"
                 >
                   <Truck size={18} />
                   Nouvelle demande
@@ -246,7 +246,7 @@ export default function ClientDashboard() {
 
                 <Link
                   href="/dashboard/client/requests"
-                  className="w-full py-3 px-4 border-2 border-[#E8714D] text-[#E8714D] rounded-lg font-medium hover:bg-[#E8714D] hover:text-white transition-colors flex items-center justify-center gap-2"
+                  className="w-full py-3 px-4 border-2 border-[#ED8A25] text-[#ED8A25] rounded-lg font-medium hover:bg-[#ED8A25] hover:text-white transition-colors flex items-center justify-center gap-2"
                 >
                   <MapPin size={18} />
                   Mes demandes
@@ -254,21 +254,21 @@ export default function ClientDashboard() {
 
                 <Link
                   href="/dashboard/client/contacts"
-                  className="w-full py-3 px-4 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:border-[#E8714D] transition-colors flex items-center justify-center gap-2"
+                  className="w-full py-3 px-4 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:border-[#ED8A25] transition-colors flex items-center justify-center gap-2"
                 >
                   Mes contacts
                 </Link>
 
                 <Link
                   href="/dashboard/commandes"
-                  className="w-full py-3 px-4 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:border-[#E8714D] transition-colors flex items-center justify-center gap-2"
+                  className="w-full py-3 px-4 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:border-[#ED8A25] transition-colors flex items-center justify-center gap-2"
                 >
                   Mes commandes
                 </Link>
 
                 <Link
                   href="/dashboard/client/profil"
-                  className="w-full py-3 px-4 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:border-[#E8714D] transition-colors flex items-center justify-center gap-2"
+                  className="w-full py-3 px-4 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:border-[#ED8A25] transition-colors flex items-center justify-center gap-2"
                 >
                   Mon profil
                 </Link>
@@ -280,7 +280,7 @@ export default function ClientDashboard() {
                   <p className="text-2xl font-bold">{creditBalance === null ? "…" : String(creditBalance)}</p>
                   <Link
                     href="/pricing"
-                    className="text-sm font-semibold text-[#E8714D] hover:underline"
+                    className="text-sm font-semibold text-[#ED8A25] hover:underline"
                   >
                     Acheter des crédits
                   </Link>
