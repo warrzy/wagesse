@@ -92,14 +92,20 @@ await expect(
 
 const packs = await expect("catalogue crédits", await call("GET", "/api/credits/packs"), 200)
 const pack = packs.json.data[0]
-const blocked = await call("POST", "/api/credits/purchase", { token: clientB.token, body: { packCode: pack.code } })
-await expect("achat sans téléphone vérifié", blocked, 403)
-
-await expect(
-  "vérification fictive client-b",
-  await call("POST", "/api/admin/recette/verify-phone", { token: admin.token, body: { userId: clientB.id } }),
-  200
-)
+const policy = await call("GET", "/api/auth/phone-verification")
+const smsRequired = policy.json?.data?.required === true
+if (smsRequired) {
+  const blocked = await call("POST", "/api/credits/purchase", { token: clientB.token, body: { packCode: pack.code } })
+  await expect("achat sans téléphone vérifié", blocked, 403)
+  await expect(
+    "vérification fictive client-b",
+    await call("POST", "/api/admin/recette/verify-phone", { token: admin.token, body: { userId: clientB.id } }),
+    200
+  )
+} else {
+  const open = await call("POST", "/api/credits/purchase", { token: clientB.token, body: { packCode: pack.code } })
+  await expect("achat autorisé sans SMS", open, 201)
+}
 
 async function balance(token) {
   const result = await call("GET", "/api/credits/balance", { token })

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { hashPassword, generateToken } from "@/lib/auth"
+import { assertAuthAttemptAllowed, generateToken, hashPassword, recordAuthFailure } from "@/lib/auth"
 import { issueOtp } from "@/lib/otp-delivery"
+import { phoneVerificationMisconfigured, phoneVerificationRequired } from "@/lib/phone-policy"
 import { signupSchema } from "@/lib/validations"
 import { prisma } from "@/lib/prisma"
 
@@ -22,12 +23,29 @@ export async function POST(request: NextRequest) {
     }
 
     const data = validation.data
+    if (phoneVerificationMisconfigured()) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "La vérification SMS est exigée, mais aucun fournisseur n'est configuré.",
+          code: "PHONE_VERIFICATION_MISCONFIGURED",
+        },
+        { status: 503 }
+      )
+    }
+    if (!assertAuthAttemptAllowed("signup", data.phone).ok) {
+      return NextResponse.json(
+        { success: false, error: "Trop de tentatives. Réessayez plus tard.", code: "AUTH_RATE_LIMIT" },
+        { status: 429 }
+      )
+    }
     const email = `${data.phone}@wagesse.local`
 
     const existingUser = await prisma.user.findFirst({
       where: { OR: [{ phone: data.phone }, { email }] },
     })
     if (existingUser) {
+      recordAuthFailure("signup", data.phone)
       return NextResponse.json(
         {
           success: false,
@@ -72,12 +90,19 @@ export async function POST(request: NextRequest) {
       return createdUser
     })
 
-    const issued = await issueOtp(data.phone, "verify")
-    if (!issued.ok) {
-      return NextResponse.json(
-        { success: false, error: "Trop de demandes de code. Réessayez plus tard.", code: "OTP_RATE_LIMIT" },
-        { status: 429 }
-      )
+    const verificationRequired = phoneVerificationRequired()
+    let smsDelivered = false
+    let debugOtp: string | undefined
+    if (verificationRequired) {
+      const issued = await issueOtp(data.phone, "verify")
+      if (!issued.ok) {
+        return NextResponse.json(
+          { success: false, error: "Trop de demandes de code. Réessayez plus tard.", code: "OTP_RATE_LIMIT" },
+          { status: 429 }
+        )
+      }
+      smsDelivered = issued.delivered
+      debugOtp = issued.debugOtp
     }
 
     const token = generateToken(user.id, user.email, user.role)
@@ -87,9 +112,9 @@ export async function POST(request: NextRequest) {
         success: true,
         data: {
           token,
-          phoneVerificationRequired: true,
-          smsDelivered: issued.delivered,
-          ...(issued.debugOtp ? { debugOtp: issued.debugOtp } : {}),
+          phoneVerificationRequired: verificationRequired,
+          smsDelivered,
+          ...(debugOtp ? { debugOtp } : {}),
           user: {
             id: user.id,
             phone: user.phone,
@@ -99,7 +124,9 @@ export async function POST(request: NextRequest) {
             phoneVerified: user.phoneVerified,
           },
         },
-        message: "Inscription réussie. Vérifiez votre numéro pour les opérations payantes.",
+        message: verificationRequired
+          ? "Inscription réussie. Vérifiez votre numéro pour les opérations payantes."
+          : "Inscription réussie.",
       },
       { status: 201 }
     )

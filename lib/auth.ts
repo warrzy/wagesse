@@ -84,6 +84,36 @@ type OtpSendWindow = {
   hourCount: number
 }
 
+const AUTH_MAX_ATTEMPTS = 5
+const AUTH_LOCK_MS = 15 * 60 * 1000
+const authAttempts = new Map<string, { count: number; lockedUntil: number }>()
+
+export function clearAuthAttempts(): void {
+  authAttempts.clear()
+}
+
+/** Limits repeated login and signup attempts. The key must not be written to logs. */
+export function assertAuthAttemptAllowed(scope: string, key: string): { ok: true } | { ok: false } {
+  const entry = authAttempts.get(`${scope}:${key}`)
+  if (entry && entry.lockedUntil > Date.now()) return { ok: false }
+  return { ok: true }
+}
+
+export function recordAuthFailure(scope: string, key: string): void {
+  const id = `${scope}:${key}`
+  const entry = authAttempts.get(id) || { count: 0, lockedUntil: 0 }
+  entry.count += 1
+  if (entry.count >= AUTH_MAX_ATTEMPTS) {
+    entry.lockedUntil = Date.now() + AUTH_LOCK_MS
+    entry.count = 0
+  }
+  authAttempts.set(id, entry)
+}
+
+export function clearAuthFailure(scope: string, key: string): void {
+  authAttempts.delete(`${scope}:${key}`)
+}
+
 const OTP_MAX_ATTEMPTS = 5
 const OTP_LOCK_MS = 15 * 60 * 1000
 const OTP_RESEND_COOLDOWN_MS = 60 * 1000

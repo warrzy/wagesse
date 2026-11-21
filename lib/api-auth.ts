@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { verifyToken } from "@/lib/auth"
+import { phoneVerificationMisconfigured, phoneVerificationRequired } from "@/lib/phone-policy"
 import { prisma } from "@/lib/prisma"
 
 export interface AuthContext {
@@ -31,6 +32,17 @@ export function unauthorized(message = "Unauthorized") {
 }
 
 export async function requireVerifiedPhone(userId: string) {
+  if (!phoneVerificationRequired()) return null
+  if (phoneVerificationMisconfigured()) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "La vérification SMS est exigée, mais aucun fournisseur n'est configuré.",
+        code: "PHONE_VERIFICATION_MISCONFIGURED",
+      },
+      { status: 503 }
+    )
+  }
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { phoneVerified: true },

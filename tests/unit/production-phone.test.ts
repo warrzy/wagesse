@@ -20,16 +20,33 @@ function run(contents: string): { status: number; output: string } {
   }
 }
 
-test("la production refuse le mécanisme de recette et exige un SMS HTTP", () => {
-  const closed = run(`NODE_ENV=production
+test("la production refuse le mécanisme de recette et exige un mode SMS explicite", () => {
+  const simple = run(`NODE_ENV=production
 WAGESSE_DEPLOYMENT=production
 DATABASE_URL=mysql://app:placeholder@127.0.0.1:3306/wagesse
+PHONE_VERIFICATION_REQUIRED=false
+`)
+  assert.equal(simple.status, 0)
+  assert.equal(simple.output.includes("mysql://"), false)
+
+  const verified = run(`NODE_ENV=production
+WAGESSE_DEPLOYMENT=production
+DATABASE_URL=mysql://app:placeholder@127.0.0.1:3306/wagesse
+PHONE_VERIFICATION_REQUIRED=true
 SMS_PROVIDER=http
 SMS_HTTP_URL=https://sms.example.invalid/send
 SMS_HTTP_KEY=placeholder
 `)
-  assert.equal(closed.status, 0)
-  assert.equal(closed.output.includes("mysql://"), false)
+  assert.equal(verified.status, 0)
+
+  const smsMissing = run(`NODE_ENV=production
+WAGESSE_DEPLOYMENT=production
+DATABASE_URL=mysql://app:placeholder@127.0.0.1:3306/wagesse
+PHONE_VERIFICATION_REQUIRED=true
+SMS_PROVIDER=http
+`)
+  assert.equal(smsMissing.status, 1)
+  assert.match(smsMissing.output, /sms-http-absent/)
 
   const copied = run(`NODE_ENV=production
 WAGESSE_DEPLOYMENT=preprod
@@ -42,7 +59,7 @@ SMS_PROVIDER=simulate
   assert.equal(copied.status, 1)
   assert.match(copied.output, /verification-fictive/)
   assert.match(copied.output, /base-preprod/)
-  assert.match(copied.output, /sms-http-absent/)
+  assert.match(copied.output, /verification-telephone-absente/)
   assert.equal(copied.output.includes("placeholder"), false)
   assert.equal(copied.output.includes("mysql://"), false)
 })

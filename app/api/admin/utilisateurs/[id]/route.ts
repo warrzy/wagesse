@@ -179,8 +179,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
       if ((body as any).password !== undefined) {
         const password = String((body as any).password || "")
-        if (password.length < 6) {
-          return NextResponse.json({ success: false, error: "Mot de passe trop court" }, { status: 400 })
+        if (!/^(?=.*[A-Za-z])(?=.*[0-9]).{8,}$/.test(password)) {
+          return NextResponse.json({ success: false, error: "Le mot de passe doit contenir au moins 8 caractères, une lettre et un chiffre" }, { status: 400 })
         }
         data.password = await hashPassword(password)
       }
