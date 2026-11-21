@@ -57,7 +57,7 @@ export default function ForgotPasswordPage() {
             {step === "phone" ? (
               <form onSubmit={requestCode} className="space-y-4">
                 <input className="input-field" aria-label="Numéro de téléphone" placeholder="Numéro de téléphone" value={phone} onChange={(e) => setPhone(e.target.value)} required />
-                <button type="submit" disabled={loading} className="w-full py-3 bg-[#E8714D] text-white rounded-lg font-semibold disabled:opacity-50">
+                <button type="submit" disabled={loading} className="w-full py-3 bg-[#ED8A25] text-[#13283A] rounded-lg font-semibold disabled:opacity-50">
                   {loading ? "Envoi…" : "Recevoir le code"}
                 </button>
               </form>
@@ -65,13 +65,13 @@ export default function ForgotPasswordPage() {
               <form onSubmit={reset} className="space-y-4">
                 <input className="input-field" aria-label="Code" placeholder="Code à 6 chiffres" value={code} onChange={(e) => setCode(e.target.value)} inputMode="numeric" maxLength={6} required />
                 <input className="input-field" aria-label="Nouveau mot de passe" placeholder="Nouveau mot de passe" type="password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={8} required />
-                <button type="submit" disabled={loading} className="w-full py-3 bg-[#E8714D] text-white rounded-lg font-semibold disabled:opacity-50">
+                <button type="submit" disabled={loading} className="w-full py-3 bg-[#ED8A25] text-[#13283A] rounded-lg font-semibold disabled:opacity-50">
                   {loading ? "Mise à jour…" : "Enregistrer"}
                 </button>
               </form>
             )}
             <p className="mt-6 text-center text-sm">
-              <Link href="/auth/login" className="text-[#E8714D] font-semibold">Retour à la connexion</Link>
+              <Link href="/auth/login" className="text-[#ED8A25] font-semibold">Retour à la connexion</Link>
             </p>
           </div>
         </div>

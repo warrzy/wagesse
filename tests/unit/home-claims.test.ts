@@ -24,7 +24,8 @@ test("l'accueil ne reprend pas les affirmations non vérifiées", () => {
   }
   const home = readFileSync(path.join(root, "app/page.tsx"), "utf8")
   assert.match(home, /Paiement manuel/)
-  assert.match(home, /Pas de position GPS/)
+  assert.match(home, /Le client confirme la fin/)
+  assert.equal(home.includes("GPS"), false)
   assert.match(home, /francs CFA|FCFA/)
   const images = readFileSync(path.join(root, "lib/marketplace-images.ts"), "utf8")
   assert.match(images, /Pexels License/)

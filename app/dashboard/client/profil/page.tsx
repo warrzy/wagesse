@@ -63,7 +63,7 @@ export default function ClientProfilePage() {
               <input className="input-field" aria-label="Ville" value={city} onChange={(e) => setCity(e.target.value)} required />
               <input className="input-field" aria-label="Société" placeholder="Société" value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
               <input className="input-field" aria-label="Secteur" placeholder="Secteur" value={sector} onChange={(e) => setSector(e.target.value)} />
-              <button type="submit" disabled={saving} className="w-full py-3 bg-[#E8714D] text-white rounded-lg font-semibold disabled:opacity-50">
+              <button type="submit" disabled={saving} className="w-full py-3 bg-[#ED8A25] text-[#13283A] rounded-lg font-semibold disabled:opacity-50">
                 {saving ? "Enregistrement…" : "Enregistrer"}
               </button>
             </form>

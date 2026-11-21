@@ -201,7 +201,7 @@ export default function AdminAbonnementPlanDetailsPage() {
                 const benefits = Array.isArray((plan as any).benefits) ? ((plan as any).benefits as any[]).map((x) => String(x)).join("\n") : ""
                 setEditBenefits(benefits)
               }}
-              className="rounded-xl bg-[#0F172A] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0b1220]"
+              className="rounded-xl bg-[#13283A] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0d1c29]"
             >
               {editing ? "Annuler" : "Modifier"}
             </button>
@@ -211,14 +211,14 @@ export default function AdminAbonnementPlanDetailsPage() {
               type="button"
               disabled={archiving || saving}
               onClick={onArchive}
-              className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-[#0F172A] hover:bg-[#F8FAFC] disabled:opacity-50"
+              className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-[#13283A] hover:bg-[#F5F4F0] disabled:opacity-50"
             >
               {archiving ? "Désactivation…" : "Désactiver"}
             </button>
           ) : null}
           <Link
             href="/admin/abonnements"
-            className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-[#0F172A] hover:bg-[#F8FAFC]"
+            className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-[#13283A] hover:bg-[#F5F4F0]"
           >
             Retour
           </Link>
@@ -244,7 +244,7 @@ export default function AdminAbonnementPlanDetailsPage() {
           <div className="card">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-xl font-bold text-[#0F172A]">{plan.name}</h2>
+                <h2 className="text-xl font-bold text-[#13283A]">{plan.name}</h2>
                 <p className="mt-1 text-sm text-gray-600">{plan.code || plan.id}</p>
               </div>
               <span
@@ -329,7 +329,7 @@ export default function AdminAbonnementPlanDetailsPage() {
                   type="button"
                   disabled={saving}
                   onClick={onSave}
-                  className="rounded-xl bg-[#E8714D] px-4 py-2 text-sm font-semibold text-white hover:bg-[#D65A3A] disabled:opacity-50"
+                  className="rounded-xl bg-[#ED8A25] px-4 py-2 text-sm font-semibold text-[#13283A] hover:bg-[#c56f12] disabled:opacity-50"
                 >
                   {saving ? "Enregistrement…" : "Enregistrer"}
                 </button>

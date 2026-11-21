@@ -23,7 +23,7 @@ export default function AuthShell({
       <main className="bg-[#F5F4F0]">
         <div className="container-max grid items-center gap-8 py-10 lg:grid-cols-2 lg:py-16">
           <div className="relative hidden min-h-[560px] overflow-hidden rounded-[2rem] lg:block">
-            <Image src={photo.src} alt={photo.alt} fill priority sizes="50vw" className="object-cover" />
+            <Image src={photo.src} alt={photo.alt} fill priority sizes="50vw" className="object-cover object-left" />
             <div className="absolute inset-0 bg-gradient-to-t from-[#13283A] via-[#13283A]/20 to-transparent" />
             <p className="absolute bottom-8 left-8 right-8 text-3xl font-semibold leading-tight text-white">
               Un compte. Un numéro. Le chantier peut avancer.

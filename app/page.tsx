@@ -196,7 +196,7 @@ export default function Home() {
               [Truck, "Devis comparables", "Prix en FCFA, véhicule et date proposée. Vous acceptez un devis, pas une promesse automatique."],
               [Lock, "Contacts protégés", "Le numéro de l’autre partie reste masqué jusqu’au déblocage par crédit."],
               [Wallet, "Paiement manuel", "Crédits et forfaits sont commandés, puis validés par l’administration. Rien n’est attribué avant."],
-              [Route, "Mission par étapes", "Du départ vers le chargement jusqu’à la confirmation du client. Pas de position GPS."],
+              [Route, "Mission par étapes", "Le transporteur déclare le chargement, la route et la livraison. Le client confirme la fin."],
               [ArrowRight, "Comptes distincts", "Client et transporteur n’ont pas le même espace. L’administration a le sien."],
             ].map(([Icon, title, text]) => (
               <article key={String(title)} className="rounded-3xl border border-[#13283A]/10 p-6">

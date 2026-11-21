@@ -34,8 +34,8 @@ export default function Footer() {
               <h2 className="text-sm font-semibold text-white">Transporteurs</h2>
               <ul className="mt-4 space-y-3 text-sm text-white/70">
                 <li><Link href="/auth/signup?role=TRUCKER" className="hover:text-white">Créer un compte</Link></li>
-                <li><Link href="/dashboard/trucker/requests" className="hover:text-white">Demandes publiées</Link></li>
-                <li><Link href="/dashboard/trucker/vehicles" className="hover:text-white">Véhicules</Link></li>
+                <li><Link href="/auth/login" className="hover:text-white">Connexion</Link></li>
+                <li><Link href="/pricing" className="hover:text-white">Crédits et forfaits</Link></li>
               </ul>
             </div>
             <div>

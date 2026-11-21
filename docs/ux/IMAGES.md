@@ -12,4 +12,6 @@ Licence : [Pexels License](https://www.pexels.com/license/). Usage commercial au
 | `terrassement.jpg` | Chargeuses et benne sur terrassement | Ahmed Al-Hilali | https://www.pexels.com/photo/excavators-and-truck-with-sand-15439962/ |
 | `piste-chantier.jpg` | Camions sur une piste de chantier | Artem Makarov | https://www.pexels.com/photo/truck-driving-on-dirt-road-13151135/ |
 
+Chaque fichier est un JPEG de 1600×1067 px, recadré en paysage et compressé. `piste-chantier.jpg` était un portrait de 1800×2700 : le recadrage garde le bas de l’image, où se trouvent les camions. Poids : benne 151 Ko, tombereau 347 Ko, pelle 215 Ko, terrassement 291 Ko, piste 300 Ko.
+
 Aucune image n’a été copiée depuis un site sans licence identifiable.

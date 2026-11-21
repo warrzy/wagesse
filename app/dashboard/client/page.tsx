@@ -134,7 +134,7 @@ export default function ClientDashboard() {
             <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div>
-                  <p className="text-sm font-semibold text-[#0F172A]">Plan actuel</p>
+                  <p className="text-sm font-semibold text-[#13283A]">Plan actuel</p>
                   <p className="mt-1 text-sm text-gray-600">
                     {subscription?.plan?.code ? subscription.plan.code : "FREE"}
                     {subscription?.nextPaymentDate
@@ -246,7 +246,7 @@ export default function ClientDashboard() {
 
                 <Link
                   href="/dashboard/client/requests"
-                  className="w-full py-3 px-4 border-2 border-[#ED8A25] text-[#ED8A25] rounded-lg font-medium hover:bg-[#ED8A25] hover:text-white transition-colors flex items-center justify-center gap-2"
+                  className="w-full py-3 px-4 border-2 border-[#ED8A25] text-[#ED8A25] rounded-lg font-medium hover:bg-[#ED8A25] hover:text-[#13283A] transition-colors flex items-center justify-center gap-2"
                 >
                   <MapPin size={18} />
                   Mes demandes

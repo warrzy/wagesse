@@ -107,7 +107,7 @@ export default async function PricingPage({
                 href="/pricing?tab=subscriptions"
                 className={
                   "px-4 py-2 text-sm font-semibold rounded-xl transition-colors " +
-                  (tab === "subscriptions" ? "bg-[#13283A] text-white" : "text-[#13283A] hover:bg-[#F8FAFC]")
+                  (tab === "subscriptions" ? "bg-[#13283A] text-white" : "text-[#13283A] hover:bg-[#F5F4F0]")
                 }
               >
                 Abonnements
@@ -116,7 +116,7 @@ export default async function PricingPage({
                 href="/pricing?tab=packs"
                 className={
                   "px-4 py-2 text-sm font-semibold rounded-xl transition-colors " +
-                  (tab === "packs" ? "bg-[#13283A] text-white" : "text-[#13283A] hover:bg-[#F8FAFC]")
+                  (tab === "packs" ? "bg-[#13283A] text-white" : "text-[#13283A] hover:bg-[#F5F4F0]")
                 }
               >
                 Packs de crédits
@@ -151,7 +151,7 @@ export default async function PricingPage({
                         key={p.id}
                         className={
                           "relative rounded-2xl border bg-white p-6 shadow-sm flex flex-col " +
-                          (highlight ? "border-[#F97316] shadow-lg md:-translate-y-1" : "border-gray-200")
+                          (highlight ? "border-[#ED8A25] shadow-lg md:-translate-y-1" : "border-gray-200")
                         }
                       >
                         <div className="flex items-start justify-between gap-3">
@@ -161,7 +161,7 @@ export default async function PricingPage({
                           {p.badge ? (
                             <span className={
                               "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold " +
-                              (highlight ? "bg-[#F97316] text-white" : "bg-[#F97316]/10 text-[#9A3412]")
+                              (highlight ? "bg-[#ED8A25] text-[#13283A]" : "bg-[#ED8A25]/10 text-[#9A3412]")
                             }>
                               {p.badge}
                             </span>
@@ -172,7 +172,7 @@ export default async function PricingPage({
                           {Number(p.monthlyPrice).toLocaleString("fr-FR")} <span className="text-base font-semibold text-gray-600">{p.currency}/mois</span>
                         </p>
 
-                        <div className="mt-5 rounded-xl border border-gray-200 bg-[#F8FAFC] p-4 text-sm text-gray-700">
+                        <div className="mt-5 rounded-xl border border-gray-200 bg-[#F5F4F0] p-4 text-sm text-gray-700">
                           <p className="font-semibold">{Number(p.monthlyCredits || 0)} crédits/mois</p>
                           <p className="mt-1">{Number(p.monthlyBoosts || 0)} boosts/mois</p>
                         </div>
@@ -202,7 +202,7 @@ export default async function PricingPage({
                               }
                               className={
                                 "w-full inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold transition-colors " +
-                                (highlight ? "bg-[#F97316] text-white hover:bg-[#EA580C]" : "bg-[#13283A] text-white hover:bg-[#0b1220]")
+                                (highlight ? "bg-[#ED8A25] text-[#13283A] hover:bg-[#c56f12]" : "bg-[#13283A] text-white hover:bg-[#0d1c29]")
                               }
                             >
                               {ctaLabel}
@@ -241,7 +241,7 @@ export default async function PricingPage({
                         key={p.code}
                         className={
                           "rounded-2xl border bg-white p-6 shadow-sm hover:shadow-lg transition-all flex flex-col " +
-                          (highlight ? "border-[#F97316]" : "border-gray-200")
+                          (highlight ? "border-[#ED8A25]" : "border-gray-200")
                         }
                       >
                         <div className="flex items-start justify-between gap-3">
@@ -249,7 +249,7 @@ export default async function PricingPage({
                           {p.badge ? (
                             <span className={
                               "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold " +
-                              (highlight ? "bg-[#F97316] text-white" : "bg-[#F97316]/10 text-[#9A3412]")
+                              (highlight ? "bg-[#ED8A25] text-[#13283A]" : "bg-[#ED8A25]/10 text-[#9A3412]")
                             }>
                               {p.badge}
                             </span>
@@ -267,7 +267,7 @@ export default async function PricingPage({
                         <div className="pt-6">
                           <Link
                             href={`/pricing/checkout?pack=${encodeURIComponent(p.code)}`}
-                            className="w-full inline-flex items-center justify-center rounded-xl bg-[#F97316] text-white px-5 py-3 text-sm font-semibold hover:bg-[#EA580C] transition-colors"
+                            className="w-full inline-flex items-center justify-center rounded-xl bg-[#ED8A25] text-[#13283A] px-5 py-3 text-sm font-semibold hover:bg-[#c56f12] transition-colors"
                           >
                             Acheter {p.credits} crédit{p.credits > 1 ? "s" : ""}
                           </Link>
@@ -288,15 +288,15 @@ export default async function PricingPage({
             <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
               <h3 className="text-lg font-semibold text-[#13283A]">Quel choix pour moi ?</h3>
               <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-700">
-                <div className="rounded-xl border border-gray-200 bg-[#F8FAFC] p-4">
+                <div className="rounded-xl border border-gray-200 bg-[#F5F4F0] p-4">
                   <p className="font-semibold">Besoin occasionnel</p>
                   <p className="mt-2">→ Pack de crédits</p>
                 </div>
-                <div className="rounded-xl border border-gray-200 bg-[#F8FAFC] p-4">
+                <div className="rounded-xl border border-gray-200 bg-[#F5F4F0] p-4">
                   <p className="font-semibold">Plusieurs transports chaque mois</p>
                   <p className="mt-2">→ PRO</p>
                 </div>
-                <div className="rounded-xl border border-gray-200 bg-[#F8FAFC] p-4">
+                <div className="rounded-xl border border-gray-200 bg-[#F5F4F0] p-4">
                   <p className="font-semibold">Entreprise / courtier / activité intensive</p>
                   <p className="mt-2">→ BUSINESS</p>
                 </div>

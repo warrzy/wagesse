@@ -152,7 +152,7 @@ export default function AdminCamionneursPage() {
           <button
             type="button"
             onClick={() => setCreateOpen((v) => !v)}
-            className="px-4 py-2 rounded-lg bg-[#0F172A] text-white text-sm font-semibold hover:bg-[#0b1220]"
+            className="px-4 py-2 rounded-lg bg-[#13283A] text-white text-sm font-semibold hover:bg-[#0d1c29]"
           >
             {createOpen ? "Fermer" : "Créer"}
           </button>
@@ -269,7 +269,7 @@ export default function AdminCamionneursPage() {
                 await load()
                 setCreateLoading(false)
               }}
-              className="px-4 py-2 rounded-lg bg-[#E8714D] text-white text-sm font-semibold hover:bg-[#d95f3c] disabled:opacity-50"
+              className="px-4 py-2 rounded-lg bg-[#ED8A25] text-[#13283A] text-sm font-semibold hover:bg-[#c56f12] disabled:opacity-50"
             >
               {createLoading ? "Création..." : "Créer"}
             </button>
@@ -285,7 +285,7 @@ export default function AdminCamionneursPage() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="ID, nom, téléphone, email, ville, OM/MM..."
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8714D]/40"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ED8A25]/40"
             />
           </div>
 
@@ -325,7 +325,7 @@ export default function AdminCamionneursPage() {
             <button
               type="button"
               onClick={applyFilters}
-              className="px-4 py-2 rounded-lg bg-[#0F172A] text-white text-sm font-semibold hover:bg-[#0b1220]"
+              className="px-4 py-2 rounded-lg bg-[#13283A] text-white text-sm font-semibold hover:bg-[#0d1c29]"
             >
               Appliquer
             </button>

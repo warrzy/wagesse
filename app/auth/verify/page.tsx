@@ -75,11 +75,11 @@ function VerifyForm() {
               <label className="block text-sm font-medium mb-2">Code à 6 chiffres</label>
               <input className="input-field" value={code} onChange={(e) => setCode(e.target.value)} inputMode="numeric" maxLength={6} required />
             </div>
-            <button type="submit" disabled={loading} className="w-full rounded-lg bg-[#E8714D] text-white font-semibold py-3 disabled:opacity-50">
+            <button type="submit" disabled={loading} className="w-full rounded-lg bg-[#ED8A25] text-[#13283A] font-semibold py-3 disabled:opacity-50">
               {loading ? "Vérification…" : "Valider"}
             </button>
           </form>
-          <button type="button" onClick={resend} className="mt-4 w-full text-sm font-semibold text-[#E8714D]">
+          <button type="button" onClick={resend} className="mt-4 w-full text-sm font-semibold text-[#ED8A25]">
             Renvoyer un code
           </button>
         </div>

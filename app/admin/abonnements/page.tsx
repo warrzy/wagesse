@@ -176,7 +176,7 @@ export default function AdminAbonnementsPage() {
         <button
           type="button"
           onClick={() => setCreateOpen((v) => !v)}
-          className="rounded-xl bg-[#0F172A] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0b1220]"
+          className="rounded-xl bg-[#13283A] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0d1c29]"
         >
           {createOpen ? "Fermer" : "Créer un plan"}
         </button>
@@ -241,7 +241,7 @@ export default function AdminAbonnementsPage() {
               <button
                 type="submit"
                 disabled={creating}
-                className="rounded-xl bg-[#E8714D] px-4 py-2 text-sm font-semibold text-white hover:bg-[#D65A3A] disabled:opacity-50"
+                className="rounded-xl bg-[#ED8A25] px-4 py-2 text-sm font-semibold text-[#13283A] hover:bg-[#c56f12] disabled:opacity-50"
               >
                 {creating ? "Création…" : "Créer"}
               </button>
@@ -320,11 +320,11 @@ export default function AdminAbonnementsPage() {
               <button
                 type="button"
                 onClick={() => load({ page: page })}
-                className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-[#0F172A] hover:bg-[#F8FAFC]"
+                className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-[#13283A] hover:bg-[#F5F4F0]"
               >
                 Rafraîchir
               </button>
-              <button type="submit" className="rounded-xl bg-[#0F172A] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0b1220]">
+              <button type="submit" className="rounded-xl bg-[#13283A] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0d1c29]">
                 Rechercher
               </button>
             </div>
@@ -368,7 +368,7 @@ export default function AdminAbonnementsPage() {
               {data.items.map((p) => (
                 <tr key={p.id} className="hover:bg-gray-50/60">
                   <td className="px-4 py-3">
-                    <Link href={`/admin/abonnements/${p.id}`} className="font-semibold text-[#0F172A] hover:underline">
+                    <Link href={`/admin/abonnements/${p.id}`} className="font-semibold text-[#13283A] hover:underline">
                       {p.name}
                     </Link>
                     <div className="text-xs text-gray-500">{p.code || p.id}</div>
@@ -408,7 +408,7 @@ export default function AdminAbonnementsPage() {
                 setPage(nextPage)
                 await load({ page: nextPage })
               }}
-              className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-[#0F172A] hover:bg-[#F8FAFC] disabled:opacity-50"
+              className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-[#13283A] hover:bg-[#F5F4F0] disabled:opacity-50"
             >
               Précédent
             </button>
@@ -420,7 +420,7 @@ export default function AdminAbonnementsPage() {
                 setPage(nextPage)
                 await load({ page: nextPage })
               }}
-              className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-[#0F172A] hover:bg-[#F8FAFC] disabled:opacity-50"
+              className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-[#13283A] hover:bg-[#F5F4F0] disabled:opacity-50"
             >
               Suivant
             </button>

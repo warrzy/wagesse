@@ -35,7 +35,7 @@ export default function CreditsBanner({ dashboardHref, contactsHref }: CreditsBa
     <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-[#0F172A]">Mes crédits</p>
+          <p className="text-sm font-semibold text-[#13283A]">Mes crédits</p>
           <p className="mt-1 text-sm text-gray-600">
             Solde: {loading ? "…" : balance === null ? "—" : `${balance} crédit${balance > 1 ? "s" : ""}`}
             <span className="text-gray-400"> • </span>
@@ -49,10 +49,10 @@ export default function CreditsBanner({ dashboardHref, contactsHref }: CreditsBa
           ) : null}
         </div>
         <div className="flex flex-wrap gap-3">
-          <Link href="/pricing" className="text-sm font-semibold text-[#E8714D] hover:underline">
+          <Link href="/pricing" className="text-sm font-semibold text-[#ED8A25] hover:underline">
             Acheter des crédits
           </Link>
-          <Link href={contactsHref} className="text-sm font-semibold text-[#E8714D] hover:underline">
+          <Link href={contactsHref} className="text-sm font-semibold text-[#ED8A25] hover:underline">
             Mes contacts
           </Link>
           <Link href={dashboardHref} className="text-sm font-semibold text-gray-700 hover:underline">

@@ -122,7 +122,7 @@ export default function CheckoutClient() {
           <div className="container-max max-w-xl">
             <p className="text-sm text-red-600">{error || "Pack introuvable"}</p>
             <div className="mt-4">
-              <Link href="/pricing" className="text-sm font-semibold text-[#E8714D] hover:underline">
+              <Link href="/pricing" className="text-sm font-semibold text-[#ED8A25] hover:underline">
                 Retour aux tarifs
               </Link>
             </div>
@@ -143,23 +143,23 @@ export default function CheckoutClient() {
               <h1 className="text-2xl font-bold">Acheter des crédits</h1>
               <p className="mt-2 text-sm text-gray-600">Vous ne payez que pour débloquer un contact.</p>
 
-              <div className="mt-6 rounded-2xl border border-gray-200 bg-[#F8FAFC] p-5">
+              <div className="mt-6 rounded-2xl border border-gray-200 bg-[#F5F4F0] p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-[#0F172A]">{pack.title}</p>
+                    <p className="text-sm font-semibold text-[#13283A]">{pack.title}</p>
                     <p className="mt-1 text-sm text-gray-600">
                       {pack.credits} crédit{pack.credits > 1 ? "s" : ""}
                     </p>
                   </div>
                   {pack.badge ? (
-                    <span className="inline-flex items-center rounded-full bg-[#F97316]/10 text-[#9A3412] px-3 py-1 text-xs font-semibold">
+                    <span className="inline-flex items-center rounded-full bg-[#ED8A25]/10 text-[#9A3412] px-3 py-1 text-xs font-semibold">
                       {pack.badge}
                     </span>
                   ) : null}
                 </div>
 
                 <div className="mt-4 flex items-end justify-between">
-                  <p className="text-3xl font-extrabold tracking-tight text-[#0F172A]">
+                  <p className="text-3xl font-extrabold tracking-tight text-[#13283A]">
                     {pack.priceXof.toLocaleString("fr-FR")} <span className="text-base font-semibold text-gray-600">FCFA</span>
                   </p>
                   {unitPrice !== null ? (
@@ -173,8 +173,8 @@ export default function CheckoutClient() {
               ) : null}
 
               {paymentMode === "MANUAL" ? (
-                <div className="mt-6 rounded-xl border border-gray-200 bg-[#F8FAFC] p-4 text-sm text-gray-700">
-                  <p className="font-semibold text-[#0F172A]">Règlement hors plateforme</p>
+                <div className="mt-6 rounded-xl border border-gray-200 bg-[#F5F4F0] p-4 text-sm text-gray-700">
+                  <p className="font-semibold text-[#13283A]">Règlement hors plateforme</p>
                   <p className="mt-2">{instructions}</p>
                 </div>
               ) : (
@@ -208,7 +208,7 @@ export default function CheckoutClient() {
               <div className="mt-6 flex gap-3">
                 <Link
                   href="/pricing"
-                  className="flex-1 inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-[#0F172A] hover:bg-[#F8FAFC] transition-colors"
+                  className="flex-1 inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-[#13283A] hover:bg-[#F5F4F0] transition-colors"
                 >
                   Retour
                 </Link>
@@ -216,7 +216,7 @@ export default function CheckoutClient() {
                   type="button"
                   onClick={handlePay}
                   disabled={submitting}
-                  className="flex-1 inline-flex items-center justify-center rounded-xl bg-[#F97316] text-white px-5 py-3 text-sm font-semibold hover:bg-[#EA580C] transition-colors disabled:opacity-50"
+                  className="flex-1 inline-flex items-center justify-center rounded-xl bg-[#ED8A25] text-[#13283A] px-5 py-3 text-sm font-semibold hover:bg-[#c56f12] transition-colors disabled:opacity-50"
                 >
                   {submitting ? "Enregistrement…" : paymentMode === "MANUAL" ? "Confirmer la demande" : "Payer"}
                 </button>
@@ -224,14 +224,14 @@ export default function CheckoutClient() {
             </div>
 
             <div className="card">
-              <h2 className="text-lg font-semibold text-[#0F172A]">Comment ça marche</h2>
+              <h2 className="text-lg font-semibold text-[#13283A]">Comment ça marche</h2>
               <div className="mt-4 space-y-3 text-sm text-gray-700">
                 <p>1 crédit = 1 contact débloqué</p>
                 <p>Celui qui initie le contact paie</p>
                 <p>Un contact déjà débloqué n’est jamais facturé deux fois</p>
               </div>
 
-              <div className="mt-6 rounded-xl border border-gray-200 bg-[#F8FAFC] p-4 text-sm text-gray-700">
+              <div className="mt-6 rounded-xl border border-gray-200 bg-[#F5F4F0] p-4 text-sm text-gray-700">
                 <p className="font-semibold">Important</p>
                 <p className="mt-2">Le portefeuille est crédité uniquement après confirmation côté serveur.</p>
               </div>

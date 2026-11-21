@@ -63,7 +63,7 @@ export default function TruckerProfilePage() {
               <input className="input-field" aria-label="Ville" value={city} onChange={(e) => setCity(e.target.value)} required />
               <input className="input-field" aria-label="Permis" placeholder="Permis d'exploitation" value={operatingLicense} onChange={(e) => setOperatingLicense(e.target.value)} />
               <input className="input-field" aria-label="Orange Money" placeholder="Numéro Orange Money" value={orangeMoneyNumber} onChange={(e) => setOrangeMoneyNumber(e.target.value)} />
-              <button type="submit" disabled={saving} className="w-full py-3 bg-[#E8714D] text-white rounded-lg font-semibold disabled:opacity-50">
+              <button type="submit" disabled={saving} className="w-full py-3 bg-[#ED8A25] text-[#13283A] rounded-lg font-semibold disabled:opacity-50">
                 {saving ? "Enregistrement…" : "Enregistrer"}
               </button>
             </form>
