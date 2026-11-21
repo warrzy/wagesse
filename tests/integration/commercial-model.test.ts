@@ -6,6 +6,9 @@ import { generateToken, hashPassword } from "../../lib/auth"
 import { POST as purchase } from "../../app/api/credits/purchase/route"
 import { POST as approve } from "../../app/api/admin/commandes/[id]/approve/route"
 import { POST as quote } from "../../app/api/quotes/route"
+import { PATCH as updateUser } from "../../app/api/admin/utilisateurs/[id]/route"
+import { POST as adjustWallet } from "../../app/api/admin/wallet/[id]/route"
+import { POST as signup } from "../../app/api/auth/signup/route"
 import { commercialOrderService } from "../../lib/services/commercial-order-service"
 import { QUOTE_CREDIT_COST_KEY } from "../../lib/commercial-rules"
 
@@ -209,6 +212,60 @@ test("un coût de devis enregistré est appliqué et une valeur navigateur est i
   } finally {
     await prisma.platformSetting.deleteMany({ where: { key: QUOTE_CREDIT_COST_KEY } })
   }
+})
+
+test("personne ne s'attribue le rôle super administrateur ni un portefeuille", async () => {
+  const admin = await createUser("ADMIN")
+  const client = await createUser("CLIENT")
+  const trucker = await createUser("TRUCKER")
+  const adminToken = generateToken(admin.id, admin.email, "ADMIN")
+  const clientToken = generateToken(client.id, client.email, "CLIENT")
+  const forged = generateToken(admin.id, admin.email, "SUPER_ADMIN")
+
+  const self = await updateUser(
+    post("/api/admin/utilisateurs/" + admin.id, adminToken, { role: "SUPER_ADMIN" }),
+    { params: Promise.resolve({ id: admin.id }) }
+  )
+  assert.equal(self.status, 403)
+  const forgedUpdate = await updateUser(
+    post("/api/admin/utilisateurs/" + admin.id, forged, { role: "SUPER_ADMIN" }),
+    { params: Promise.resolve({ id: admin.id }) }
+  )
+  assert.equal(forgedUpdate.status, 403)
+  const clientUpdate = await updateUser(
+    post("/api/admin/utilisateurs/" + client.id, clientToken, { role: "SUPER_ADMIN" }),
+    { params: Promise.resolve({ id: client.id }) }
+  )
+  assert.equal(clientUpdate.status, 401)
+  const rejectedPhone = `7${String(phoneSeq + 80).padStart(7, "0")}`
+  const signed = await signup(post("/api/auth/signup", clientToken, {
+    phone: rejectedPhone,
+    password,
+    firstName: "Nouveau",
+    lastName: "Role",
+    role: "SUPER_ADMIN",
+  }))
+  assert.equal(signed.status, 400)
+  const stillAdmin = await prisma.user.findUniqueOrThrow({ where: { id: admin.id } })
+  assert.equal(stillAdmin.role, "ADMIN")
+  const created = await prisma.user.findUnique({ where: { phone: rejectedPhone } })
+  assert.equal(created, null)
+
+  const wallet = await prisma.creditWallet.create({
+    data: { userId: trucker.id, balance: 1, purchasedBalance: 1, subscriptionBalance: 0 },
+  })
+  const debit = await adjustWallet(
+    post("/api/admin/wallet/" + wallet.id, clientToken, { amount: 50, reason: "moi", idempotencyKey: "client-" + wallet.id }),
+    { params: Promise.resolve({ id: wallet.id }) }
+  )
+  assert.equal(debit.status, 403)
+  const adminDebit = await adjustWallet(
+    post("/api/admin/wallet/" + wallet.id, adminToken, { amount: 50, reason: "admin", idempotencyKey: "admin-" + wallet.id }),
+    { params: Promise.resolve({ id: wallet.id }) }
+  )
+  assert.equal(adminDebit.status, 403)
+  const unchanged = await prisma.creditWallet.findUniqueOrThrow({ where: { id: wallet.id } })
+  assert.equal(unchanged.balance, 1)
 })
 })
 

@@ -19,6 +19,8 @@ test("les scripts de recette ne lancent pas git en root sur le dépôt applicati
     "deploy/preprod/rotate-recette-secrets.sh",
     "deploy/preprod/deploy-auth-simple.sh",
     "deploy/preprod/auth-simple-cycle.sh",
+    "deploy/preprod/deploy-monetisation.sh",
+    "deploy/preprod/designate-super-admin.sh",
   ]
   for (const relative of checked) {
     const text = source(relative)

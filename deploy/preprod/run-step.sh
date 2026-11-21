@@ -7,6 +7,8 @@
 #   WAGESSE_PREPROD_AUTHORIZE=yes bash deploy/preprod/run-step.sh cycle
 #   WAGESSE_PREPROD_AUTHORIZE=yes bash deploy/preprod/run-step.sh auth-simple <commit>
 #   WAGESSE_PREPROD_AUTHORIZE=yes bash deploy/preprod/run-step.sh auth-simple-cycle <commit>
+#   WAGESSE_PREPROD_AUTHORIZE=yes bash deploy/preprod/run-step.sh monetisation <commit>
+#   WAGESSE_PREPROD_AUTHORIZE=yes bash deploy/preprod/run-step.sh super-admin <telephone>
 set -euo pipefail
 
 DIR=$(cd "$(dirname "$0")" && pwd)
@@ -36,8 +38,16 @@ case "$step" in
     [[ "${2:-}" =~ ^[0-9a-f]{40}$ ]] || { echo "Commit déployé requis." >&2; exit 1; }
     bash "$DIR/auth-simple-cycle.sh" "$2"
     ;;
+  monetisation)
+    [[ -n "${2:-}" ]] || { echo "Commit complet requis." >&2; exit 1; }
+    bash "$DIR/deploy-monetisation.sh" "$2"
+    ;;
+  super-admin)
+    [[ -n "${2:-}" ]] || { echo "Téléphone de l'administrateur requis." >&2; exit 1; }
+    bash "$DIR/designate-super-admin.sh" "$2"
+    ;;
   *)
-    echo "Étape inconnue. Utiliser preflight, rotate, deploy, restore, cycle, auth-simple ou auth-simple-cycle." >&2
+    echo "Étape inconnue. Utiliser preflight, rotate, deploy, restore, cycle, auth-simple, auth-simple-cycle, monetisation ou super-admin." >&2
     exit 1
     ;;
 esac

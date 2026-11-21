@@ -189,15 +189,17 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (data.role && !ACCOUNT_ROLES.has(data.role)) {
       return NextResponse.json({ success: false, error: "Rôle inconnu" }, { status: 400 })
     }
-    if (data.role === "SUPER_ADMIN" || data.role) {
-      const current = await prisma.user.findUnique({ where: { id }, select: { role: true } })
-      const touchesSuperAdmin = data.role === "SUPER_ADMIN" || current?.role === "SUPER_ADMIN"
-      if (touchesSuperAdmin && !isSuperAdmin(auth.role)) {
-        return NextResponse.json(
-          { success: false, error: "Seul un super administrateur peut attribuer ou retirer ce rôle.", code: "SUPER_ADMIN_REQUIRED" },
-          { status: 403 }
-        )
-      }
+    const current = await prisma.user.findUnique({ where: { id }, select: { role: true } })
+    if (!current) {
+      return NextResponse.json({ success: false, error: "Utilisateur introuvable" }, { status: 404 })
+    }
+    const promotesSelf = auth.userId === id && data.role === "SUPER_ADMIN" && current.role !== "SUPER_ADMIN"
+    const touchesSuperAdmin = data.role === "SUPER_ADMIN" || current.role === "SUPER_ADMIN"
+    if ((promotesSelf || touchesSuperAdmin) && !isSuperAdmin(auth.role)) {
+      return NextResponse.json(
+        { success: false, error: "Seul un super administrateur peut attribuer ou retirer ce rôle.", code: "SUPER_ADMIN_REQUIRED" },
+        { status: 403 }
+      )
     }
     if (data.status && !ACCOUNT_STATUSES.has(data.status)) {
       return NextResponse.json({ success: false, error: "Statut inconnu" }, { status: 400 })
