@@ -78,6 +78,8 @@ WAGESSE_PREPROD_AUTHORIZE=yes bash deploy/preprod/run-step.sh auth-simple-cycle 
 
 Le contrôle de politique de ce cycle utilise `python3 deploy/preprod/check-phone-policy.py`. Il n'utilise pas `node -` : avec cette forme, le premier argument lu par `readFileSync(process.argv[1])` est le tiret de l'entrée standard, et Node.js cherche un fichier nommé `-`.
 
+La commande de forfait ignore le plan gratuit publié en premier. Elle retient le premier plan dont `monthlyPrice` est un nombre strictement positif. Un catalogue sans plan payant est signalé, puis le cycle continue par l'achat de crédits.
+
 ## Mise à jour des scripts seuls
 
 Quand l'application en service est déjà le bon commit, la copie `/root/wagesse-preprod-src` peut avancer sans toucher `/opt/wagesse-preprod/app`. Ne pas lancer `run-step.sh auth-simple` ni `run-step.sh deploy`.

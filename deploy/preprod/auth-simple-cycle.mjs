@@ -1,6 +1,7 @@
 import http from "node:http"
 import { randomBytes, randomInt } from "node:crypto"
 import { readFileSync } from "node:fs"
+import { payablePlanCode } from "./paid-plan.mjs"
 
 const registry = JSON.parse(readFileSync(process.argv[2], "utf8"))
 const adminAccount = registry.accounts.find((account) => account.phone === "78003021")
@@ -232,9 +233,9 @@ const pack = packs.json.data[0]
 if (!pack?.code) fail("catalogue crédits", "aucun pack")
 const plans = await call("GET", "/api/subscription/plans")
 if (plans.status === 200 && plans.json?.data?.length) {
-  const planCode = plans.json.data.find((item) => item.code)?.code
+  const planCode = payablePlanCode(plans.json.data)
   if (!planCode) {
-    console.log("BLOCKED forfait code absent")
+    console.log("BLOCKED forfait aucun plan payant publié")
   } else {
     const order = await expect(
       "commande forfait",
