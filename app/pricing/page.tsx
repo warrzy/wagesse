@@ -88,10 +88,10 @@ export default async function PricingPage({
     <>
       <Header />
 
-      <main className="min-h-screen bg-[#F5F4F0] pb-16 pt-10">
+      <main className="min-h-screen bg-[#F4F8FC] pb-16 pt-10">
         <div className="container-max">
           <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-[#13283A]">Des offres adaptées à votre activité</h1>
+            <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-[#071D40]">Des offres adaptées à votre activité</h1>
             <p className="mt-4 text-gray-600 max-w-2xl mx-auto">Commencez gratuitement. Payez uniquement lorsque vous avez besoin de plus.</p>
           </div>
 
@@ -107,7 +107,7 @@ export default async function PricingPage({
                 href="/pricing?tab=subscriptions"
                 className={
                   "px-4 py-2 text-sm font-semibold rounded-xl transition-colors " +
-                  (tab === "subscriptions" ? "bg-[#13283A] text-white" : "text-[#13283A] hover:bg-[#F5F4F0]")
+                  (tab === "subscriptions" ? "bg-[#071D40] text-white" : "text-[#071D40] hover:bg-[#F4F8FC]")
                 }
               >
                 Abonnements
@@ -116,7 +116,7 @@ export default async function PricingPage({
                 href="/pricing?tab=packs"
                 className={
                   "px-4 py-2 text-sm font-semibold rounded-xl transition-colors " +
-                  (tab === "packs" ? "bg-[#13283A] text-white" : "text-[#13283A] hover:bg-[#F5F4F0]")
+                  (tab === "packs" ? "bg-[#071D40] text-white" : "text-[#071D40] hover:bg-[#F4F8FC]")
                 }
               >
                 Packs de crédits
@@ -127,7 +127,7 @@ export default async function PricingPage({
           {tab === "subscriptions" ? (
             <section className="mt-12">
               <div className="text-center">
-                <h2 className="text-2xl md:text-3xl font-bold text-[#13283A]">Abonnements</h2>
+                <h2 className="text-2xl md:text-3xl font-bold text-[#071D40]">Abonnements</h2>
                 <p className="mt-2 text-sm text-gray-600">Des crédits + des boosts + des avantages supplémentaires chaque mois.</p>
               </div>
 
@@ -151,28 +151,28 @@ export default async function PricingPage({
                         key={p.id}
                         className={
                           "relative rounded-2xl border bg-white p-6 shadow-sm flex flex-col " +
-                          (highlight ? "border-[#ED8A25] shadow-lg md:-translate-y-1" : "border-gray-200")
+                          (highlight ? "border-[#FF7900] shadow-lg md:-translate-y-1" : "border-gray-200")
                         }
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <h3 className="text-lg font-semibold text-[#13283A]">{p.name}</h3>
+                            <h3 className="text-lg font-semibold text-[#071D40]">{p.name}</h3>
                           </div>
                           {p.badge ? (
                             <span className={
                               "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold " +
-                              (highlight ? "bg-[#ED8A25] text-[#13283A]" : "bg-[#ED8A25]/10 text-[#9A3412]")
+                              (highlight ? "bg-[#FF7900] text-[#071D40]" : "bg-[#FF7900]/10 text-[#9A3412]")
                             }>
                               {p.badge}
                             </span>
                           ) : null}
                         </div>
 
-                        <p className="mt-6 text-4xl font-extrabold tracking-tight text-[#13283A]">
+                        <p className="mt-6 text-4xl font-extrabold tracking-tight text-[#071D40]">
                           {Number(p.monthlyPrice).toLocaleString("fr-FR")} <span className="text-base font-semibold text-gray-600">{p.currency}/mois</span>
                         </p>
 
-                        <div className="mt-5 rounded-xl border border-gray-200 bg-[#F5F4F0] p-4 text-sm text-gray-700">
+                        <div className="mt-5 rounded-xl border border-gray-200 bg-[#F4F8FC] p-4 text-sm text-gray-700">
                           <p className="font-semibold">{Number(p.monthlyCredits || 0)} crédits/mois</p>
                           <p className="mt-1">{Number(p.monthlyBoosts || 0)} boosts/mois</p>
                         </div>
@@ -202,7 +202,7 @@ export default async function PricingPage({
                               }
                               className={
                                 "w-full inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold transition-colors " +
-                                (highlight ? "bg-[#ED8A25] text-[#13283A] hover:bg-[#c56f12]" : "bg-[#13283A] text-white hover:bg-[#0d1c29]")
+                                (highlight ? "bg-[#FF7900] text-[#071D40] hover:bg-[#e56d00]" : "bg-[#071D40] text-white hover:bg-[#041428]")
                               }
                             >
                               {ctaLabel}
@@ -226,7 +226,7 @@ export default async function PricingPage({
           ) : (
             <section className="mt-12">
               <div className="text-center">
-                <h2 className="text-2xl md:text-3xl font-bold text-[#13283A]">Besoin de crédits sans abonnement ?</h2>
+                <h2 className="text-2xl md:text-3xl font-bold text-[#071D40]">Besoin de crédits sans abonnement ?</h2>
                 <p className="mt-2 text-sm text-gray-600">Achetez des crédits quand vous en avez besoin. Vos crédits achetés n’expirent pas.</p>
               </div>
 
@@ -241,15 +241,15 @@ export default async function PricingPage({
                         key={p.code}
                         className={
                           "rounded-2xl border bg-white p-6 shadow-sm hover:shadow-lg transition-all flex flex-col " +
-                          (highlight ? "border-[#ED8A25]" : "border-gray-200")
+                          (highlight ? "border-[#FF7900]" : "border-gray-200")
                         }
                       >
                         <div className="flex items-start justify-between gap-3">
-                          <h3 className="text-lg font-semibold text-[#13283A]">{p.title}</h3>
+                          <h3 className="text-lg font-semibold text-[#071D40]">{p.title}</h3>
                           {p.badge ? (
                             <span className={
                               "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold " +
-                              (highlight ? "bg-[#ED8A25] text-[#13283A]" : "bg-[#ED8A25]/10 text-[#9A3412]")
+                              (highlight ? "bg-[#FF7900] text-[#071D40]" : "bg-[#FF7900]/10 text-[#9A3412]")
                             }>
                               {p.badge}
                             </span>
@@ -257,8 +257,8 @@ export default async function PricingPage({
                         </div>
 
                         <div className="mt-5">
-                          <p className="text-4xl font-extrabold tracking-tight text-[#13283A]">{p.credits} crédit{p.credits > 1 ? "s" : ""}</p>
-                          <p className="mt-2 text-2xl font-bold text-[#13283A]">{formatXof(p.priceXof)}</p>
+                          <p className="text-4xl font-extrabold tracking-tight text-[#071D40]">{p.credits} crédit{p.credits > 1 ? "s" : ""}</p>
+                          <p className="mt-2 text-2xl font-bold text-[#071D40]">{formatXof(p.priceXof)}</p>
                           <p className="mt-2 text-sm text-gray-600">≈ {unit.toLocaleString("fr-FR")} FCFA/contact</p>
                         </div>
 
@@ -267,7 +267,7 @@ export default async function PricingPage({
                         <div className="pt-6">
                           <Link
                             href={`/pricing/checkout?pack=${encodeURIComponent(p.code)}`}
-                            className="w-full inline-flex items-center justify-center rounded-xl bg-[#ED8A25] text-[#13283A] px-5 py-3 text-sm font-semibold hover:bg-[#c56f12] transition-colors"
+                            className="w-full inline-flex items-center justify-center rounded-xl bg-[#FF7900] text-[#071D40] px-5 py-3 text-sm font-semibold hover:bg-[#e56d00] transition-colors"
                           >
                             Acheter {p.credits} crédit{p.credits > 1 ? "s" : ""}
                           </Link>
@@ -286,17 +286,17 @@ export default async function PricingPage({
 
           <section className="mt-12">
             <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-[#13283A]">Quel choix pour moi ?</h3>
+              <h3 className="text-lg font-semibold text-[#071D40]">Quel choix pour moi ?</h3>
               <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-700">
-                <div className="rounded-xl border border-gray-200 bg-[#F5F4F0] p-4">
+                <div className="rounded-xl border border-gray-200 bg-[#F4F8FC] p-4">
                   <p className="font-semibold">Besoin occasionnel</p>
                   <p className="mt-2">→ Pack de crédits</p>
                 </div>
-                <div className="rounded-xl border border-gray-200 bg-[#F5F4F0] p-4">
+                <div className="rounded-xl border border-gray-200 bg-[#F4F8FC] p-4">
                   <p className="font-semibold">Plusieurs transports chaque mois</p>
                   <p className="mt-2">→ PRO</p>
                 </div>
-                <div className="rounded-xl border border-gray-200 bg-[#F5F4F0] p-4">
+                <div className="rounded-xl border border-gray-200 bg-[#F4F8FC] p-4">
                   <p className="font-semibold">Entreprise / courtier / activité intensive</p>
                   <p className="mt-2">→ BUSINESS</p>
                 </div>

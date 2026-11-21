@@ -179,7 +179,7 @@ export default function AdminPaiementsPage() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="ID, référence, providerRef, payerId, téléphone..."
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ED8A25]/40"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF7900]/40"
             />
           </div>
 
@@ -219,7 +219,7 @@ export default function AdminPaiementsPage() {
             <button
               type="button"
               onClick={applyFilters}
-              className="px-4 py-2 rounded-lg bg-[#13283A] text-white text-sm font-semibold hover:bg-[#0d1c29]"
+              className="px-4 py-2 rounded-lg bg-[#071D40] text-white text-sm font-semibold hover:bg-[#041428]"
             >
               Appliquer
             </button>
@@ -349,7 +349,7 @@ export default function AdminPaiementsPage() {
                   </td>
                   <td className="px-4 py-3">
                     {it.mission ? (
-                      <Link href={`/admin/transports/${it.mission.id}`} className="text-sm font-semibold text-[#ED8A25] hover:underline">
+                      <Link href={`/admin/transports/${it.mission.id}`} className="text-sm font-semibold text-[#FF7900] hover:underline">
                         {it.mission.missionReference || it.mission.id}
                       </Link>
                     ) : (

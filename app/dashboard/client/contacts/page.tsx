@@ -58,7 +58,7 @@ export default function ClientContactsPage() {
               <h1 className="text-3xl font-bold">Mes contacts</h1>
               <p className="mt-2 text-gray-600">Retrouvez les coordonnées que vous avez déjà débloquées.</p>
             </div>
-            <Link href="/pricing" className="text-sm font-semibold text-[#ED8A25] hover:underline">
+            <Link href="/pricing" className="text-sm font-semibold text-[#FF7900] hover:underline">
               Acheter des crédits
             </Link>
           </div>
@@ -80,7 +80,7 @@ export default function ClientContactsPage() {
                     <div key={it.id} className="card-hover">
                       <div className="flex items-start justify-between gap-4">
                         <div>
-                          <p className="font-semibold text-[#13283A]">
+                          <p className="font-semibold text-[#071D40]">
                             {it.request.pickupCity} → {it.request.dropoffCity}
                           </p>
                           <p className="text-sm text-gray-600">
@@ -92,20 +92,20 @@ export default function ClientContactsPage() {
                         </div>
                         <Link
                           href={`/dashboard/client/requests/${it.requestId}`}
-                          className="text-sm font-semibold text-[#ED8A25] hover:underline"
+                          className="text-sm font-semibold text-[#FF7900] hover:underline"
                         >
                           Voir la demande
                         </Link>
                       </div>
 
                       <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                        <div className="rounded-xl border border-gray-200 bg-[#F5F4F0] px-4 py-3">
+                        <div className="rounded-xl border border-gray-200 bg-[#F4F8FC] px-4 py-3">
                           <p className="text-xs text-gray-500">Téléphone</p>
-                          <p className="font-semibold text-[#13283A]">{c.phone || "—"}</p>
+                          <p className="font-semibold text-[#071D40]">{c.phone || "—"}</p>
                         </div>
-                        <div className="rounded-xl border border-gray-200 bg-[#F5F4F0] px-4 py-3">
+                        <div className="rounded-xl border border-gray-200 bg-[#F4F8FC] px-4 py-3">
                           <p className="text-xs text-gray-500">Email</p>
-                          <p className="font-semibold text-[#13283A]">{c.email || "—"}</p>
+                          <p className="font-semibold text-[#071D40]">{c.email || "—"}</p>
                         </div>
                       </div>
                     </div>

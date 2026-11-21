@@ -59,7 +59,7 @@ function AdjustCredits({ walletId, onDone }: { walletId: string; onDone: () => P
       <div className="mt-4 space-y-2">
         <input className="input-field" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Montant (+ ou -)" />
         <textarea className="input-field min-h-20" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Justification" />
-        <button type="button" disabled={busy} onClick={submit} className="w-full px-4 py-2 rounded-lg bg-[#ED8A25] text-[#13283A] text-sm font-semibold disabled:opacity-50">
+        <button type="button" disabled={busy} onClick={submit} className="w-full px-4 py-2 rounded-lg bg-[#FF7900] text-[#071D40] text-sm font-semibold disabled:opacity-50">
           Enregistrer l'ajustement
         </button>
         {message ? <p className="text-xs text-gray-600">{message}</p> : null}
@@ -113,7 +113,7 @@ export default function AdminWalletDetailsPage() {
           <p className="text-sm text-red-600 font-semibold">Erreur</p>
           <p className="mt-2 text-sm text-gray-600">{error}</p>
           <div className="mt-4">
-            <Link href="/admin/wallet" className="text-sm font-semibold text-[#ED8A25] hover:underline">
+            <Link href="/admin/wallet" className="text-sm font-semibold text-[#FF7900] hover:underline">
               Retour
             </Link>
           </div>
@@ -169,7 +169,7 @@ export default function AdminWalletDetailsPage() {
           <div className="card">
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold">Transactions (100 dernières)</p>
-              <Link href={`/admin/transactions?category=CREDIT&source=CreditTransaction&q=${encodeURIComponent(data.userId)}`} className="text-sm font-semibold text-[#ED8A25] hover:underline">
+              <Link href={`/admin/transactions?category=CREDIT&source=CreditTransaction&q=${encodeURIComponent(data.userId)}`} className="text-sm font-semibold text-[#FF7900] hover:underline">
                 Voir dans Transactions
               </Link>
             </div>
@@ -227,7 +227,7 @@ export default function AdminWalletDetailsPage() {
               <p className="text-gray-600">{u.email}</p>
               <p className="text-xs text-gray-500 font-mono">{u.id}</p>
               <div className="mt-4">
-                <Link href={`/admin/utilisateurs/${u.id}`} className="text-sm font-semibold text-[#ED8A25] hover:underline">
+                <Link href={`/admin/utilisateurs/${u.id}`} className="text-sm font-semibold text-[#FF7900] hover:underline">
                   Voir utilisateur
                 </Link>
               </div>

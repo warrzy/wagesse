@@ -16,7 +16,7 @@ export default function CatalogImage({ src, alt, priority, sizes, className }: C
 
   if (failed) {
     return (
-      <div className={"absolute inset-0 bg-[#354B44] " + (className ?? "")} role="img" aria-label={alt}>
+      <div className={"absolute inset-0 bg-[#071D40] " + (className ?? "")} role="img" aria-label={alt}>
         <span className="sr-only">{alt}</span>
       </div>
     )

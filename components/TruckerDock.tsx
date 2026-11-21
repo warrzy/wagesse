@@ -15,7 +15,7 @@ export default function TruckerDock() {
   const pathname = usePathname()
 
   return (
-    <nav className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-[#13283A]/10 bg-white/95 backdrop-blur lg:hidden" aria-label="Navigation transporteur">
+    <nav className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-[#071D40]/10 bg-white/95 backdrop-blur lg:hidden" aria-label="Navigation transporteur">
       <ul className="grid grid-cols-4">
         {items.map((item) => {
           const active = pathname === item.href
@@ -24,7 +24,7 @@ export default function TruckerDock() {
             <li key={item.href}>
               <Link
                 href={item.href}
-                className={"flex min-h-16 flex-col items-center justify-center gap-1 text-xs font-semibold " + (active ? "text-[#ED8A25]" : "text-[#13283A]/70")}
+                className={"flex min-h-16 flex-col items-center justify-center gap-1 text-xs font-semibold " + (active ? "text-[#FF7900]" : "text-[#071D40]/70")}
               >
                 <Icon size={20} aria-hidden="true" />
                 {item.label}

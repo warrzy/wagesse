@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import BrandLogo from "@/components/BrandLogo"
 
 type NavItem = {
   label: string
@@ -85,7 +86,7 @@ function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () 
                   onClick={onNavigate}
                   className={
                     "block min-h-11 rounded-xl px-3 py-2 text-sm transition-colors " +
-                    (active ? "bg-[#ED8A25] text-[#13283A]" : "text-white/80 hover:bg-white/10 hover:text-white")
+                    (active ? "bg-[#FF7900] text-[#071D40]" : "text-white/80 hover:bg-white/10 hover:text-white")
                   }
                 >
                   {item.label}
@@ -105,16 +106,17 @@ export default function AdminSidebar() {
 
   return (
     <>
-      <div className="bg-[#13283A] px-4 py-3 text-white lg:hidden">
-        <button type="button" className="text-sm font-semibold" onClick={() => setOpen((value) => !value)}>
+      <div className="bg-[#071D40] px-4 py-3 text-white lg:hidden">
+        <BrandLogo tone="dark" />
+        <button type="button" className="mt-3 text-sm font-semibold" onClick={() => setOpen((value) => !value)}>
           {open ? "Fermer le menu" : "Menu"}
         </button>
         {open ? <NavLinks pathname={pathname} onNavigate={() => setOpen(false)} /> : null}
       </div>
-      <aside className="hidden w-72 flex-col border-r border-white/10 bg-[#13283A] text-white lg:flex">
-      <div className="px-6 py-5 border-b border-white/10">
-        <p className="text-xs text-white/70">Administration</p>
-        <p className="text-lg font-bold tracking-tight">WAGESSE</p>
+      <aside className="hidden w-72 flex-col border-r border-white/10 bg-[#071D40] text-white lg:flex">
+      <div className="border-b border-white/10 px-6 py-5">
+        <BrandLogo tone="dark" />
+        <p className="mt-3 text-xs text-white/70">Administration</p>
       </div>
 
       <NavLinks pathname={pathname} />

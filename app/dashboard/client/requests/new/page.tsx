@@ -307,7 +307,7 @@ export default function NewRequestPage() {
                 type="button"
                 disabled={loading}
                 onClick={(e) => handleSubmit(e as any, false)}
-                className="flex-1 py-3 px-4 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:border-[#ED8A25] transition-colors disabled:opacity-50"
+                className="flex-1 py-3 px-4 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:border-[#FF7900] transition-colors disabled:opacity-50"
               >
                 Enregistrer en brouillon
               </button>
@@ -315,7 +315,7 @@ export default function NewRequestPage() {
                 type="button"
                 disabled={loading}
                 onClick={(e) => handleSubmit(e as any, true)}
-                className="flex-1 py-3 px-4 bg-[#ED8A25] text-[#13283A] rounded-lg font-medium hover:bg-[#c56f12] transition-colors disabled:opacity-50"
+                className="flex-1 py-3 px-4 bg-[#FF7900] text-[#071D40] rounded-lg font-medium hover:bg-[#e56d00] transition-colors disabled:opacity-50"
               >
                 {loading ? "Envoi…" : "Publier la demande"}
               </button>

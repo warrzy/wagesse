@@ -132,7 +132,7 @@ export default function AdminCreditPackDetailsPage() {
             type="button"
             disabled={saving || deleting}
             onClick={onSave}
-            className="rounded-xl bg-[#ED8A25] px-4 py-2 text-sm font-semibold text-[#13283A] hover:bg-[#c56f12] disabled:opacity-50"
+            className="rounded-xl bg-[#FF7900] px-4 py-2 text-sm font-semibold text-[#071D40] hover:bg-[#e56d00] disabled:opacity-50"
           >
             {saving ? "Enregistrement…" : "Enregistrer"}
           </button>
@@ -146,7 +146,7 @@ export default function AdminCreditPackDetailsPage() {
           </button>
           <Link
             href="/admin/tarifs"
-            className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-[#13283A] hover:bg-[#F5F4F0]"
+            className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-[#071D40] hover:bg-[#F4F8FC]"
           >
             Retour
           </Link>

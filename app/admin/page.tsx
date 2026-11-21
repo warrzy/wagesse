@@ -108,7 +108,7 @@ export default function AdminIndexPage() {
         <div className="flex gap-3">
           <Link
             href="/admin/abonnements"
-            className="py-2 px-4 border-2 border-[#ED8A25] text-[#ED8A25] rounded-lg font-medium hover:bg-[#ED8A25] hover:text-[#13283A] transition-colors"
+            className="py-2 px-4 border-2 border-[#FF7900] text-[#FF7900] rounded-lg font-medium hover:bg-[#FF7900] hover:text-[#071D40] transition-colors"
           >
             Abonnements
           </Link>
