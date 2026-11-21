@@ -344,6 +344,10 @@ class APIClient {
     return this.request("GET", "/admin/parametres")
   }
 
+  async adminSetQuoteCreditCost(quoteCreditCost: number) {
+    return this.request("POST", "/admin/parametres", { quoteCreditCost })
+  }
+
   async adminListPaiements(params: {
     page?: number
     pageSize?: number
@@ -677,6 +681,10 @@ class APIClient {
 
   async adminRejectCommande(id: string, note: string) {
     return this.request("POST", `/admin/commandes/${id}/reject`, { note })
+  }
+
+  async adminAnnotateCommande(id: string, action: "INSTRUCTIONS_SENT" | "PAYMENT_REFERENCE" | "INTERNAL_NOTE", note: string) {
+    return this.request("POST", `/admin/commandes/${id}/note`, { action, note })
   }
 
   async adminAdjustWallet(id: string, data: { amount: number; reason: string; idempotencyKey: string }) {

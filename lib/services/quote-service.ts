@@ -4,6 +4,8 @@ import { Quote, QuoteStatus } from '@prisma/client';
 import { generateReference } from '@/lib/auth';
 import { sanitizeOptionalString } from '@/lib/anti-leak';
 import { notifyUser } from '@/lib/notify';
+import { debitQuoteCredit } from '@/lib/services/credit-service';
+import { readQuoteCreditCost } from '@/lib/services/quote-credit';
 
 const truckerSelect = {
   id: true,
@@ -40,7 +42,8 @@ export const quoteService = {
    */
   async create(
     truckerId: string,
-    data: CreateQuoteInput
+    data: CreateQuoteInput,
+    userId: string
   ): Promise<Quote> {
     const validated = createQuoteSchema.parse(data);
 
@@ -64,36 +67,54 @@ export const quoteService = {
       throw new Error('Vehicle not found or does not belong to you');
     }
 
-    const existingQuote = await prisma.quote.findFirst({
-      where: {
-        requestId: validated.requestId,
-        truckerId,
-      },
-    });
+    const quote = await prisma.$transaction(async (tx) => {
+      const current = await tx.transportRequest.findUnique({
+        where: { id: validated.requestId },
+        select: { status: true, customerId: true },
+      });
+      if (!current || current.status !== 'PUBLISHED') {
+        throw new Error('Can only quote on published requests');
+      }
 
-    if (existingQuote) {
-      throw new Error('You have already quoted on this request');
-    }
-
-    const quote = await prisma.quote.create({
-      data: {
+      const amount = await readQuoteCreditCost(tx);
+      const debit = await debitQuoteCredit(tx, {
+        userId,
         requestId: validated.requestId,
-        truckerId,
-        vehicleId: validated.vehicleId,
-        totalPrice: validated.totalPrice,
-        pricePerTrip: validated.pricePerTrip,
-        numberOfTrips: validated.numberOfTrips,
-        currencyCode: 'XOF',
-        proposedDate: validated.proposedDate,
-        validUntil: validated.validUntil,
-        comments: sanitizeOptionalString(validated.comments),
-        specialConditions: sanitizeOptionalString(validated.specialConditions),
-        status: 'PENDING',
-      },
-      include: {
-        request: true,
-        trucker: { select: truckerSelect },
-      },
+        amount,
+      });
+      const existingQuote = await tx.quote.findFirst({
+        where: { requestId: validated.requestId, truckerId },
+      });
+      if (existingQuote) {
+        throw new Error('You have already quoted on this request');
+      }
+      if (debit.insufficient) {
+        const error = new Error('INSUFFICIENT_CREDITS') as Error & { quoteCost: number; balance: number };
+        error.quoteCost = amount;
+        error.balance = debit.balance;
+        throw error;
+      }
+
+      return tx.quote.create({
+        data: {
+          requestId: validated.requestId,
+          truckerId,
+          vehicleId: validated.vehicleId,
+          totalPrice: validated.totalPrice,
+          pricePerTrip: validated.pricePerTrip,
+          numberOfTrips: validated.numberOfTrips,
+          currencyCode: 'XOF',
+          proposedDate: validated.proposedDate,
+          validUntil: validated.validUntil,
+          comments: sanitizeOptionalString(validated.comments),
+          specialConditions: sanitizeOptionalString(validated.specialConditions),
+          status: 'PENDING',
+        },
+        include: {
+          request: true,
+          trucker: { select: truckerSelect },
+        },
+      });
     });
 
     try {
@@ -221,14 +242,6 @@ export const quoteService = {
       where: { id: customerId },
       select: { userId: true },
     });
-    const unlockedByUserId = customerProfile?.userId;
-
-    const unlock = unlockedByUserId
-      ? await prisma.contactUnlock.findFirst({ where: { requestId: quote.requestId, unlockedByUserId } })
-      : null;
-    if (!unlock) {
-      throw new Error('You must unlock the quotes on this request before accepting one');
-    }
 
     const mission = await prisma.$transaction(async (tx) => {
       await tx.quote.update({
@@ -286,7 +299,7 @@ export const quoteService = {
           missionId: newMission.id,
           previousStatus: null,
           newStatus: 'ACCEPTED',
-          changedBy: unlockedByUserId,
+          changedBy: customerProfile?.userId,
         },
       });
 

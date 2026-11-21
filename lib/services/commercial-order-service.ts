@@ -38,7 +38,7 @@ async function notify(
 
 async function notifyAdmins(tx: Prisma.TransactionClient, title: string, message: string, actionUrl: string) {
   const admins = await tx.user.findMany({
-    where: { role: "ADMIN", status: "ACTIVE", deletedAt: null },
+    where: { role: { in: ["ADMIN", "SUPER_ADMIN"] }, status: "ACTIVE", deletedAt: null },
     select: { id: true },
   })
   for (const admin of admins) {
@@ -298,6 +298,36 @@ export const commercialOrderService = {
 
       const updated = await tx.commercialOrder.findUnique({ where: { id: order.id } })
       return { order: updated, alreadyProcessed: false as const }
+    })
+  },
+
+  async annotate(orderId: string, actorId: string, action: string, note: string) {
+    const allowed = new Set(["INSTRUCTIONS_SENT", "PAYMENT_REFERENCE", "INTERNAL_NOTE"])
+    if (!allowed.has(action)) throw new Error("ACTION_INVALID")
+    const text = note?.trim()
+    if (!text || text.length < 2) throw new Error("NOTE_REQUIRED")
+
+    return prisma.$transaction(async (tx) => {
+      const order = await tx.commercialOrder.findUnique({ where: { id: orderId } })
+      if (!order) throw new Error("ORDER_NOT_FOUND")
+      if (order.status !== "PENDING" && action !== "INTERNAL_NOTE") throw new Error("ORDER_CLOSED")
+
+      await tx.commercialOrderEvent.create({
+        data: { orderId, action, actorId, note: text },
+      })
+      await tx.auditLog.create({
+        data: {
+          userId: actorId,
+          action: action.toLowerCase(),
+          resource: "CommercialOrder",
+          resourceId: orderId,
+          changes: { reference: order.reference, note: text },
+        },
+      })
+      return tx.commercialOrder.findUnique({
+        where: { id: orderId },
+        include: { events: { orderBy: { createdAt: "asc" } } },
+      })
     })
   },
 

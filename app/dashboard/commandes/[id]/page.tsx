@@ -76,6 +76,11 @@ export default function CommandePage() {
                   ))}
                 </ul>
               ) : null}
+              {order.status === "PENDING" ? (
+                <div className="mt-6 rounded-xl border border-[#087DD1]/30 bg-[#F4F8FC] p-4 text-sm text-[#071D40]">
+                  Votre demande d&apos;achat a été enregistrée. Notre équipe vous contactera pour vous transmettre les instructions de paiement. Vos crédits seront disponibles après confirmation de votre règlement.
+                </div>
+              ) : null}
               <div className="mt-6 rounded-xl border border-gray-200 bg-[#F4F8FC] p-4 text-sm text-gray-700">
                 <p className="font-semibold text-[#071D40]">Instructions de règlement</p>
                 <p className="mt-2 whitespace-pre-wrap">{order.paymentInstructions}</p>

@@ -70,6 +70,7 @@ enum Role {
   TRUCKER
   OPERATOR
   ADMIN
+  SUPER_ADMIN
 }
 
 model Permission {
@@ -675,6 +676,7 @@ enum CreditTransactionType {
   SUBSCRIPTION_MONTHLY_TOPUP
   ADMIN_ADJUSTMENT
   PROMO
+  QUOTE_SUBMISSION
 }
 
 model CreditTransaction {

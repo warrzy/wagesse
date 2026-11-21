@@ -86,7 +86,7 @@ test("la liste des demandes ne révèle pas le téléphone du client", async () 
   assert.equal(JSON.stringify(found).includes(client.phone), false)
 })
 
-test("les devis ne révèlent pas le téléphone tant que le contact n'est pas débloqué", async () => {
+test("le client voit le devis sans crédit et sans le téléphone", async () => {
   const client = await createUser("CLIENT")
   const trucker = await createUser("TRUCKER")
   const customer = await prisma.customerProfile.findUniqueOrThrow({ where: { userId: client.id } })
@@ -129,9 +129,11 @@ test("les devis ne révèlent pas le téléphone tant que le contact n'est pas d
   const response = await listQuotes(authRequest(`/api/quotes?requestId=${request.id}`, token))
   const payload = await response.json()
   const body = JSON.stringify(payload)
-  assert.equal(body.includes(trucker.phone), false)
-  assert.equal(payload.data[0].locked, true)
-  assert.equal(payload.data[0].totalPrice, undefined)
+  assert.notEqual(payload.data[0].trucker.user.phone, trucker.phone)
+  assert.equal(String(payload.data[0].trucker.user.phone).includes(trucker.phone), false)
+  assert.equal(payload.data[0].locked, false)
+  assert.equal(payload.data[0].totalPrice, 25000)
+  assert.equal(body.includes("locked\":true"), false)
 })
 
 test("un forfait payant ne s'active pas sans règlement", async () => {
@@ -187,7 +189,7 @@ test("la confirmation sandbox en production n'attribue pas de crédits", async (
 })
 
 test("le circuit manuel fige la commande et n'attribue qu'une fois", async () => {
-  const user = await createUser("CLIENT")
+  const user = await createUser("TRUCKER")
   const admin = await createUser("ADMIN")
   const code = `PACK_${user.phone}`
   await prisma.creditPack.create({

@@ -28,7 +28,7 @@ export default function PhoneNotice() {
   return (
     <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
       Votre numéro n&apos;est pas encore vérifié. Vous pouvez publier une demande et consulter les devis.
-      L&apos;achat de crédits, le forfait et le déblocage des contacts attendent le code SMS.{" "}
+      L&apos;achat de crédits et le forfait attendent le code SMS.{" "}
       <Link href={href} className="font-semibold underline">
         Saisir le code
       </Link>

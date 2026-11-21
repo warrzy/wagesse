@@ -13,6 +13,10 @@ export function isAdminRole(role: string | null | undefined) {
   return role === "ADMIN" || role === "SUPER_ADMIN"
 }
 
+export function isSuperAdmin(role: string | null | undefined) {
+  return role === "SUPER_ADMIN"
+}
+
 export async function getAuthContext(request: NextRequest): Promise<AuthContext | null> {
   const token = request.headers.get("Authorization")?.split(" ")[1]
   if (!token) return null

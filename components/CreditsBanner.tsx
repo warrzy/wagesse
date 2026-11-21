@@ -15,6 +15,7 @@ export default function CreditsBanner({ dashboardHref, contactsHref }: CreditsBa
   const [subscription, setSubscription] = useState<number | null>(null)
   const [purchased, setPurchased] = useState<number | null>(null)
   const [expiresAt, setExpiresAt] = useState<string | null>(null)
+  const [quoteCost, setQuoteCost] = useState(1)
 
   useEffect(() => {
     const load = async () => {
@@ -25,6 +26,7 @@ export default function CreditsBanner({ dashboardHref, contactsHref }: CreditsBa
         setSubscription(typeof data?.subscription === "number" ? data.subscription : null)
         setPurchased(typeof data?.purchased === "number" ? data.purchased : null)
         setExpiresAt(typeof data?.subscriptionExpiresAt === "string" ? data.subscriptionExpiresAt : null)
+        setQuoteCost(typeof data?.quoteCost === "number" ? data.quoteCost : 1)
       }
       setLoading(false)
     }
@@ -39,7 +41,7 @@ export default function CreditsBanner({ dashboardHref, contactsHref }: CreditsBa
           <p className="mt-1 text-sm text-gray-600">
             Solde: {loading ? "…" : balance === null ? "—" : `${balance} crédit${balance > 1 ? "s" : ""}`}
             <span className="text-gray-400"> • </span>
-            1 crédit = 1 contact débloqué
+            {quoteCost} crédit{quoteCost > 1 ? "s" : ""} = 1 devis envoyé
           </p>
           {!loading && (subscription !== null || purchased !== null) ? (
             <p className="mt-1 text-xs text-gray-500">

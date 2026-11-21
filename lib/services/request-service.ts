@@ -78,11 +78,10 @@ export const requestService = {
   },
 
   /**
-   * Get a single request by ID (owner view). Quote details (price, trucker
-   * identity, vehicle) stay hidden until the customer pays to unlock them —
-   * only the count/status of received quotes is visible before that.
+   * Owner view. Quote prices, vehicles and transporter names are free.
+   * Personal phone numbers stay masked until the quote is accepted.
    */
-  async getById(requestId: string, unlockedByUserId?: string | null) {
+  async getById(requestId: string, _unlockedByUserId?: string | null) {
     const request = await prisma.transportRequest.findUnique({
       where: { id: requestId },
       include: {
@@ -103,27 +102,28 @@ export const requestService = {
 
     if (!request) return null;
 
-    const unlock = unlockedByUserId
-      ? await prisma.contactUnlock.findFirst({ where: { requestId, unlockedByUserId } })
-      : null;
-    const contactsUnlocked = !!unlock;
+    const quotes = request.quotes.map((quote) => {
+      const hidePhone = quote.status !== "ACCEPTED"
+      return {
+        ...quote,
+        locked: false as const,
+        trucker: {
+          ...quote.trucker,
+          user: maskContactUser(quote.trucker.user, hidePhone),
+        },
+      }
+    })
 
-    const quotes = contactsUnlocked
-      ? request.quotes.map((q) => ({ ...q, locked: false as const }))
-      : request.quotes.map((q) => ({
-          id: q.id,
-          status: q.status,
-          createdAt: q.createdAt,
-          locked: true as const,
-        }));
-
-    if (!contactsUnlocked) {
-      for (const match of request.matches) {
-        match.trucker.user.phone = maskPhoneNumber(match.trucker.user.phone);
+    for (const match of request.matches) {
+      const accepted = request.quotes.some(
+        (quote) => quote.truckerId === match.truckerId && quote.status === "ACCEPTED"
+      )
+      if (!accepted) {
+        match.trucker.user.phone = maskPhoneNumber(match.trucker.user.phone)
       }
     }
 
-    return { ...request, quotes, contactsUnlocked };
+    return { ...request, quotes, contactsUnlocked: true };
   },
 
   /**
@@ -139,7 +139,7 @@ export const requestService = {
     });
   },
 
-  async getPublicByIdForUser(requestId: string, unlockedByUserId: string) {
+  async getPublicByIdForUser(requestId: string, truckerId: string) {
     const request = await prisma.transportRequest.findFirst({
       where: { id: requestId, status: { not: 'DRAFT' }, deletedAt: null },
       include: {
@@ -149,8 +149,17 @@ export const requestService = {
 
     if (!request) return null;
 
-    const unlock = await prisma.contactUnlock.findFirst({ where: { requestId, unlockedByUserId } });
-    const customerContactsUnlocked = !!unlock;
+    const accepted = await prisma.quote.findFirst({
+      where: { requestId, truckerId, status: "ACCEPTED" },
+      select: { id: true },
+    })
+    const mission = accepted
+      ? null
+      : await prisma.mission.findFirst({
+          where: { requestId, truckerId },
+          select: { id: true },
+        })
+    const customerContactsUnlocked = Boolean(accepted || mission)
 
     if (!customerContactsUnlocked) {
       request.customer.user.phone = maskPhoneNumber(request.customer.user.phone);

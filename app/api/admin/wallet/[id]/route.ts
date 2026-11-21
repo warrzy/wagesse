@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { getAuthContext, unauthorized } from "@/lib/api-auth"
+import { getAuthContext, isAdminRole, isSuperAdmin, unauthorized } from "@/lib/api-auth"
 import { adjustPurchasedCredits } from "@/lib/services/credit-service"
-
-function isAdmin(role: string | null | undefined) {
-  return role === "ADMIN" || role === "SUPER_ADMIN"
-}
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const auth = await getAuthContext(request)
     if (!auth) return unauthorized()
-    if (!isAdmin(auth.role)) return unauthorized("Forbidden")
+    if (!isAdminRole(auth.role)) return unauthorized("Forbidden")
 
     const { id } = await params
 
@@ -53,7 +49,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     const auth = await getAuthContext(request)
     if (!auth) return unauthorized()
-    if (!isAdmin(auth.role)) return unauthorized("Forbidden")
+    if (!isSuperAdmin(auth.role)) {
+      return NextResponse.json(
+        { success: false, error: "Seul le super administrateur peut ajuster un portefeuille.", code: "SUPER_ADMIN_REQUIRED" },
+        { status: 403 }
+      )
+    }
 
     const { id } = await params
     const body = await request.json().catch(() => null)

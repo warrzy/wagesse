@@ -141,7 +141,7 @@ export default function CheckoutClient() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="card">
               <h1 className="text-2xl font-bold">Acheter des crédits</h1>
-              <p className="mt-2 text-sm text-gray-600">Vous ne payez que pour débloquer un contact.</p>
+              <p className="mt-2 text-sm text-gray-600">Un crédit permet d’envoyer un devis. Le règlement est confirmé par l’équipe avant l’attribution.</p>
 
               <div className="mt-6 rounded-2xl border border-gray-200 bg-[#F4F8FC] p-5">
                 <div className="flex items-start justify-between gap-3">
@@ -163,7 +163,7 @@ export default function CheckoutClient() {
                     {pack.priceXof.toLocaleString("fr-FR")} <span className="text-base font-semibold text-gray-600">FCFA</span>
                   </p>
                   {unitPrice !== null ? (
-                    <p className="text-xs text-gray-500">{unitPrice.toLocaleString("fr-FR")} FCFA/contact</p>
+                    <p className="text-xs text-gray-500">{unitPrice.toLocaleString("fr-FR")} FCFA par crédit</p>
                   ) : null}
                 </div>
               </div>
@@ -226,9 +226,9 @@ export default function CheckoutClient() {
             <div className="card">
               <h2 className="text-lg font-semibold text-[#071D40]">Comment ça marche</h2>
               <div className="mt-4 space-y-3 text-sm text-gray-700">
-                <p>1 crédit = 1 contact débloqué</p>
-                <p>Celui qui initie le contact paie</p>
-                <p>Un contact déjà débloqué n’est jamais facturé deux fois</p>
+                <p>1 crédit sert à envoyer un devis</p>
+                <p>Le client ne paie pas pour publier</p>
+                <p>Un même devis n’est jamais facturé deux fois</p>
               </div>
 
               <div className="mt-6 rounded-xl border border-gray-200 bg-[#F4F8FC] p-4 text-sm text-gray-700">

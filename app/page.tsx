@@ -40,11 +40,11 @@ const faqs = [
   },
   {
     q: "Quand voit-on les coordonnées ?",
-    a: "Les numéros restent masqués. Le déblocage d’un contact consomme un crédit. Rien n’est débloqué tant que le crédit n’a pas été accordé.",
+    a: "Les numéros restent masqués tant que le client n’a pas accepté un devis. L’acceptation ne coûte rien au client. Le transporteur dépense des crédits seulement pour envoyer un devis.",
   },
   {
     q: "Comment paie-t-on les crédits et les forfaits ?",
-    a: "La commande est enregistrée en paiement manuel. L’administration la valide ou la refuse. Les crédits ou le forfait ne sont attribués qu’après validation.",
+    a: "Le transporteur choisit un pack ou un forfait. La commande reste en attente. Le super administrateur confirme le règlement reçu hors plateforme, puis les crédits sont attribués une seule fois.",
   },
   {
     q: "Comment suit-on une mission ?",
@@ -83,7 +83,7 @@ export default function Home() {
                 {[
                   ["Décrire le besoin", "Matériau, quantité, départ, destination et date."],
                   ["Recevoir des devis", "Chaque devis indique un prix en FCFA et une date."],
-                  ["Débloquer le contact", "Les coordonnées restent masquées jusqu’à l’usage d’un crédit."],
+                  ["Choisir gratuitement", "Le prix, le véhicule et le transporteur sont visibles. Le numéro arrive après acceptation."],
                   ["Confirmer la mission", "Vous validez la fin du transport après la livraison."],
                 ].map(([title, text], index) => (
                   <li key={title} className="flex gap-4">
@@ -109,7 +109,7 @@ export default function Home() {
                   {[
                     ["Créer le compte", "Téléphone et mot de passe, depuis le téléphone."],
                     ["Déclarer les véhicules", "Plaque, type et capacité en tonnes."],
-                    ["Répondre à une demande", "Un devis : prix, véhicule et date."],
+                    ["Répondre avec des crédits", "Consulter est gratuit. Envoyer un devis débite le portefeuille."],
                     ["Avancer la mission", "Chaque étape se met à jour jusqu’à la confirmation du client."],
                   ].map(([title, text], index) => (
                     <li key={title} className="flex gap-4">
@@ -197,7 +197,7 @@ export default function Home() {
             {[
               [ClipboardList, "Demande structurée", "Matériau, quantité, villes et date. Le brouillon reste privé tant qu’il n’est pas publié."],
               [Truck, "Devis comparables", "Prix en FCFA, véhicule et date proposée. Vous acceptez un devis, pas une promesse automatique."],
-              [Lock, "Contacts protégés", "Le numéro de l’autre partie reste masqué jusqu’au déblocage par crédit."],
+              [Lock, "Contacts protégés", "Le numéro reste masqué jusqu’à l’acceptation du devis. Aucun crédit supplémentaire n’est demandé."],
               [Wallet, "Paiement manuel", "Crédits et forfaits sont commandés, puis validés par l’administration. Rien n’est attribué avant."],
               [Route, "Mission par étapes", "Le transporteur déclare le chargement, la route et la livraison. Le client confirme la fin."],
               [ArrowRight, "Comptes distincts", "Client et transporteur n’ont pas le même espace. L’administration a le sien."],
@@ -218,7 +218,7 @@ export default function Home() {
             <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#FF7900]">Tarifs</p>
             <h2 className="mt-3 text-4xl text-white md:text-5xl">Les prix affichés sont ceux publiés.</h2>
             <p className="mt-5 max-w-xl text-white/75">
-              La publication d’une demande ne débite pas de crédit. Les crédits servent à débloquer un contact. Les forfaits ajoutent des crédits et des avantages, seulement après validation du paiement manuel.
+              Le client publie et gère ses demandes gratuitement. Le transporteur utilise des crédits pour répondre à une demande. Packs et forfaits sont attribués après validation manuelle du règlement.
             </p>
             <Link href="/pricing" className="mt-8 inline-flex min-h-12 items-center rounded-xl bg-[#FF7900] px-6 font-semibold text-[#071D40]">
               Voir les forfaits et les crédits

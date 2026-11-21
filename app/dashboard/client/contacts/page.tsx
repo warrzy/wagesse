@@ -58,9 +58,7 @@ export default function ClientContactsPage() {
               <h1 className="text-3xl font-bold">Mes contacts</h1>
               <p className="mt-2 text-gray-600">Retrouvez les coordonnées que vous avez déjà débloquées.</p>
             </div>
-            <Link href="/pricing" className="text-sm font-semibold text-[#FF7900] hover:underline">
-              Acheter des crédits
-            </Link>
+            <p className="text-sm text-gray-600">Les coordonnées utiles apparaissent après l’acceptation d’un devis. Aucun achat n’est demandé.</p>
           </div>
 
           <div className="mt-8">

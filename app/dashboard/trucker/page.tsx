@@ -312,7 +312,7 @@ export default function TruckerDashboard() {
                     Acheter des crédits
                   </Link>
                 </div>
-                <p className="mt-2 text-xs text-gray-500">1 crédit = 1 contact débloqué</p>
+                <p className="mt-2 text-xs text-gray-500">Les crédits servent à envoyer un devis. La consultation des demandes reste gratuite.</p>
               </div>
 
               <div className="mt-6 pt-6 border-t border-gray-200">

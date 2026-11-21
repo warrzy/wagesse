@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getAuthContext, getTruckerProfileId, requireVerifiedPhone, unauthorized } from "@/lib/api-auth"
+import { getAuthContext, getTruckerProfileId, unauthorized } from "@/lib/api-auth"
 import { prisma } from "@/lib/prisma"
-import { consumeCreditForUnlock } from "@/lib/services/credit-service"
-import { getUnlockCostCreditsForUser } from "@/lib/services/subscription-service"
 
 /**
  * POST /api/requests/[id]/unlock-customer-contact
- * Trucker unlocks the customer contact info for a request using 1 credit.
- * Stores the unlock so it is never charged twice.
+ * Les coordonnées du client sont transmises après acceptation du devis.
+ * Cet appel ne débite aucun crédit.
  */
 export async function POST(
   request: NextRequest,
@@ -15,7 +13,6 @@ export async function POST(
 ) {
   try {
     const { id: requestId } = await params
-
     const auth = await getAuthContext(request)
     if (!auth) return unauthorized()
 
@@ -26,52 +23,44 @@ export async function POST(
 
     const transportRequest = await prisma.transportRequest.findFirst({
       where: { id: requestId, status: { not: "DRAFT" }, deletedAt: null },
-      select: { id: true, customerId: true },
+      select: {
+        id: true,
+        customer: { select: { user: { select: { phone: true, email: true } } } },
+      },
     })
-
     if (!transportRequest) {
       return NextResponse.json({ error: "Request not found" }, { status: 404 })
     }
 
-    const phoneGate = await requireVerifiedPhone(auth.userId)
-    if (phoneGate) return phoneGate
-
-    const unlockCost = await getUnlockCostCreditsForUser(auth.userId)
-    const spend = await consumeCreditForUnlock({
-      userId: auth.userId,
-      requestId,
-      amount: unlockCost,
-      resolveContacts: async (tx) => {
-        const customer = await tx.customerProfile.findUnique({
-          where: { id: transportRequest.customerId },
-          select: { id: true, user: { select: { phone: true, email: true } } },
-        })
-        return [
-          {
-            customerId: transportRequest.customerId,
-            phone: customer?.user?.phone,
-            email: customer?.user?.email,
-          },
-        ]
-      },
+    const accepted = await prisma.quote.findFirst({
+      where: { requestId, truckerId, status: "ACCEPTED" },
+      select: { id: true },
     })
+    const mission = accepted
+      ? null
+      : await prisma.mission.findFirst({ where: { requestId, truckerId }, select: { id: true } })
 
-    if (spend.alreadyUnlocked) {
-      return NextResponse.json({ success: true, data: { alreadyUnlocked: true } })
-    }
-    if ("insufficient" in spend && spend.insufficient) {
+    if (!accepted && !mission) {
       return NextResponse.json(
-        { success: false, error: "Vous n'avez plus suffisamment de crédits.", code: "INSUFFICIENT_CREDITS" },
-        { status: 402 }
+        {
+          success: false,
+          error: "Les coordonnées sont transmises lorsque le client accepte votre devis.",
+          code: "CONTACT_AFTER_ACCEPTANCE",
+        },
+        { status: 403 }
       )
     }
 
-    return NextResponse.json({ success: true, data: { alreadyUnlocked: false, unlocked: true } })
+    return NextResponse.json({
+      success: true,
+      data: {
+        charged: false,
+        phone: transportRequest.customer.user.phone,
+        email: transportRequest.customer.user.email,
+      },
+    })
   } catch (error: any) {
     console.error("[POST /api/requests/[id]/unlock-customer-contact]", error)
-    return NextResponse.json(
-      { error: error.message || "Internal server error" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 })
   }
 }

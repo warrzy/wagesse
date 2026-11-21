@@ -105,7 +105,7 @@ export default function AbonnementPage() {
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-[#071D40]">Abonnement</h1>
             <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
-              Choisis un plan pour obtenir des crédits mensuels et plus de visibilité. La publication et la consultation restent gratuites.
+              Un forfait crédite le portefeuille après confirmation du règlement. La consultation des demandes reste gratuite. Répondre à une demande consomme des crédits.
             </p>
           </div>
 
@@ -146,10 +146,8 @@ export default function AbonnementPage() {
                     </p>
 
                     <div className="mt-5 space-y-2 text-sm text-gray-700">
-                      <p className="font-semibold">{p.monthlyCredits} crédits/mois</p>
-                      <p>Boosts: {p.monthlyBoosts}/mois</p>
-                      <p>Coût déblocage: {p.unlockCostCredits} crédit{p.unlockCostCredits > 1 ? "s" : ""}</p>
-                      <p className="text-gray-500">Cycle: {p.cycleDays} jours</p>
+                      <p className="font-semibold">{p.monthlyCredits} crédits inclus</p>
+                      <p className="text-gray-500">Cycle de {p.cycleDays} jours, sans prélèvement automatique</p>
                     </div>
 
                     <ul className="mt-5 space-y-2 text-sm text-gray-700">

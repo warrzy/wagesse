@@ -29,6 +29,8 @@ export default function AdminCommandeDetailPage() {
   const params = useParams<{ id: string }>()
   const [order, setOrder] = useState<Order | null>(null)
   const [note, setNote] = useState("")
+  const [reference, setReference] = useState("")
+  const [internalNote, setInternalNote] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -53,6 +55,18 @@ export default function AdminCommandeDetailPage() {
     setBusy(false)
     if (!res.success) {
       setError(res.error || "Approbation impossible")
+      return
+    }
+    await load()
+  }
+
+  const annotate = async (action: "INSTRUCTIONS_SENT" | "PAYMENT_REFERENCE" | "INTERNAL_NOTE", value: string) => {
+    setBusy(true)
+    setError(null)
+    const res = await apiClient.adminAnnotateCommande(params.id, action, value)
+    setBusy(false)
+    if (!res.success) {
+      setError(res.error || "Annotation impossible")
       return
     }
     await load()
@@ -89,8 +103,7 @@ export default function AdminCommandeDetailPage() {
           <p className="mt-2 font-semibold">{order.title}</p>
           <p className="text-sm text-gray-600">Code {order.offerCode}</p>
           <p className="mt-3 text-2xl font-extrabold">{order.amountXof.toLocaleString("fr-FR")} {order.currency}</p>
-          <p className="mt-2 text-sm">{order.credits} crédits</p>
-          <p className="text-sm">{order.monthlyBoosts} boosts</p>
+          <p className="mt-2 text-sm">{order.credits} crédits à attribuer</p>
           {order.badge ? <p className="text-sm">{order.badge}</p> : null}
           {benefits.length ? (
             <ul className="mt-2 text-sm list-disc pl-5">
@@ -107,6 +120,29 @@ export default function AdminCommandeDetailPage() {
           <p className="mt-4 text-sm whitespace-pre-wrap">{order.paymentInstructions}</p>
         </div>
       </div>
+
+      {order.status === "PENDING" ? (
+        <div className="card mt-4 space-y-4">
+          <p className="text-sm font-semibold">Suivi du règlement hors plateforme</p>
+          <div className="flex flex-wrap gap-3">
+            <button type="button" disabled={busy} onClick={() => annotate("INSTRUCTIONS_SENT", note || "Instructions de paiement transmises")} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold disabled:opacity-50">
+              Instructions envoyées
+            </button>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <input className="input-field" value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Référence de transaction" />
+            <button type="button" disabled={busy} onClick={() => annotate("PAYMENT_REFERENCE", reference)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold disabled:opacity-50">
+              Enregistrer la référence
+            </button>
+          </div>
+          <div className="flex flex-col gap-2">
+            <textarea className="input-field min-h-20" value={internalNote} onChange={(e) => setInternalNote(e.target.value)} placeholder="Note interne" />
+            <button type="button" disabled={busy} onClick={() => annotate("INTERNAL_NOTE", internalNote)} className="self-start rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold disabled:opacity-50">
+              Ajouter la note
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       <div className="card mt-4">
         <p className="text-sm font-semibold">Décision</p>
