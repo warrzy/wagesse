@@ -19,7 +19,8 @@ require_root() {
 secret_filter() {
   sed -E \
     -e 's#mysql://[^[:space:]]+#mysql://***#g' \
-    -e 's#(password|passphrase|token|secret|authorization)[=:][^[:space:]]+#\1=***#Ig'
+    -e 's#(password|passphrase|token|secret|authorization)[=:][^[:space:]]+#\1=***#Ig' \
+    -e 's#IDENTIFIED BY PASSWORD [^[:space:]]+#IDENTIFIED BY PASSWORD ***#Ig'
 }
 
 preprod_database_name() {

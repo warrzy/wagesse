@@ -1,6 +1,11 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
+import {
+  accessSchemaApplied,
+  creditSchemaApplied,
+  missingPrivileges,
+} from "../../deploy/preprod/migration-preflight.mjs"
 
 function source(relative: string): string {
   return readFileSync(new URL(`../../${relative}`, import.meta.url), "utf8")
@@ -27,4 +32,27 @@ test("le déploiement isolé n'accepte que la migration relue et la base de pré
   assert.equal(designate.includes("WHERE role <>"), false)
   assert.match(runner, /deploy-monetisation\.sh/)
   assert.match(runner, /designate-super-admin\.sh/)
+  const install = deploy.indexOf("ci --no-audit --no-fund")
+  const generate = deploy.indexOf("prisma/build/index.js generate")
+  const typecheck = deploy.indexOf("run typecheck")
+  const privileges = deploy.indexOf("migration-preflight.mjs privileges")
+  const migrate = deploy.indexOf("migrate deploy")
+  const verify = deploy.indexOf("migration-preflight.mjs verify")
+  assert.ok(install > 0 && generate > install && typecheck > generate && privileges > typecheck && migrate > privileges && verify > migrate)
+  assert.match(source("deploy/preprod/lib.sh"), /IDENTIFIED BY PASSWORD/)
+})
+
+test("le contrôle de migration ne divulgue pas les droits bruts", () => {
+  const grants = [
+    "GRANT USAGE ON *.* TO `wagesse_preprod`@`localhost` IDENTIFIED BY PASSWORD '*HASHSECRETHASH'",
+    "GRANT SELECT, INSERT, UPDATE, DELETE ON `wagesse_preprod`.* TO `wagesse_preprod`@`localhost`",
+  ].join("\n")
+  const missing = missingPrivileges(grants, "wagesse_preprod")
+  assert.deepEqual(missing, ["CREATE", "ALTER", "INDEX"])
+  assert.equal(missing.join(" ").includes("HASHSECRET"), false)
+  assert.deepEqual(missingPrivileges("GRANT ALL PRIVILEGES ON `wagesse_preprod`.* TO `app`@`localhost`", "wagesse_preprod"), [])
+  assert.equal(creditSchemaApplied("enum('ADMIN')", "enum('PURCHASE')"), false)
+  assert.equal(creditSchemaApplied("enum('ADMIN','SUPER_ADMIN')", "enum('PURCHASE')"), true)
+  assert.equal(accessSchemaApplied(["phone"], []), false)
+  assert.equal(accessSchemaApplied(["tokenVersion"], []), true)
 })

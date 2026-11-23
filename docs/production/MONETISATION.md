@@ -101,6 +101,23 @@ Aucun paiement réel. La référence de transaction est un libellé de recette.
 8. Refuser une autre commande. Le solde ne change pas.
 9. Contrôler que `https://ecom-touch.tech/`, `https://preprod.ecomschool.fr/`, `https://wendyam-finance.com/` et `https://tme-machinery.com/` répondent encore.
 
+## Échec du 23 novembre 2026 et reprise
+
+Le déploiement de `1cbf41b36aef2d69a42a76301e0f7a0a83fe9c99` s'est arrêté à l'étape `migration`. Le service est revenu à `7a2a9719cddf354bb66914107b53c748f92bffda`. Le script lançait `prisma migrate` avec le `node_modules` déjà installé, avant `npm ci`, puis masquait la cause derrière un échec générique. Sur MariaDB 10.11.14, les deux SQL s'appliquent dans l'ordre lorsque le compte possède `ALTER`, `CREATE` et `INDEX`. Un compte limité au DML s'arrête sur `P3018` / erreur `1142` et peut laisser une ligne non terminée dans `_prisma_migrations`, sans ajouter les colonnes.
+
+Avant toute reprise, lecture seule sur `wagesse_preprod` :
+
+```sql
+SELECT migration_name, started_at, finished_at, rolled_back_at
+FROM _prisma_migrations
+ORDER BY started_at;
+SELECT COLUMN_NAME FROM information_schema.COLUMNS
+WHERE TABLE_SCHEMA = 'wagesse_preprod' AND TABLE_NAME = 'User'
+  AND COLUMN_NAME IN ('tokenVersion', 'passwordMustChange', 'temporaryPasswordExpiresAt');
+```
+
+Ne pas restaurer le dump si ces colonnes sont absentes et qu'aucune ligne nouvelle n'est terminée : la base n'a pas reçu la migration, et un dump écraserait les écritures faites depuis la sauvegarde. Ne pas supprimer `wagesse_preprod`. Le correctif installe les dépendances, fait le typecheck, contrôle les privilèges sans les afficher, puis migre. S'il trouve une ligne non terminée sans changement de schéma, il annule seulement cette ligne du journal Prisma et rejoue la migration. Il ne rend pas les crédits et ne change aucun rôle.
+
 ## Décision
 
 Conditionnel pour la préproduction : le parcours est prêt, mais il attend l'autorisation explicite `WAGESSE_PREPROD_AUTHORIZE=yes` et le téléphone de l'administrateur à promouvoir.
