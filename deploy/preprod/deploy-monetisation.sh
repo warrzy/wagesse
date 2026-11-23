@@ -60,9 +60,48 @@ shown=$(git_in "$APP" show "${REF}:prisma/migrations/${MIGRATION}/migration.sql"
 shown_access=$(git_in "$APP" show "${REF}:prisma/migrations/${MIGRATION_ACCESS}/migration.sql" | sha256sum | awk '{print $1}')
 [[ "$shown_access" == "$MIGRATION_ACCESS_SHA" ]] || die "La migration d'accès aux comptes n'est pas celle qui a été relue."
 
+DIAG=
 fail() {
   echo "Étape ${step} : $1" >&2
+  [[ -n "${DIAG:-}" && -f "$DIAG" ]] && echo "Diagnostic redacté : $DIAG" >&2
   rollback 1
+}
+
+record_prisma() {
+  local log="$1"
+  secret_filter < "$log" | tee -a "$DIAG"
+}
+
+run_prisma() {
+  local log="$1"
+  local database="$2"
+  shift 2
+  local -a env_args=(HOME=/opt/wagesse-preprod PATH="$NODE_BIN:/usr/bin:/bin")
+  if [[ "$database" == "db" ]]; then
+    env_args+=(DATABASE_URL="$db_url")
+  fi
+  if [[ -n "${NODE_OPTIONS:-}" ]]; then
+    env_args+=(NODE_OPTIONS="$NODE_OPTIONS")
+  fi
+  local code=0
+  set +e
+  runuser -u wagesse -- env -i \
+    "${env_args[@]}" \
+    bash -c 'set -euo pipefail; cd "$1"; shift; "$@"' \
+    bash "$APP" "$@" >"$log" 2>&1
+  code=$?
+  set -e
+  record_prisma "$log"
+  return "$code"
+}
+
+pending_from_status() {
+  awk '
+    /have not yet been applied:/ { capture = 1; next }
+    capture && /^[0-9]{14}_[a-z0-9_]+$/ { print; next }
+    capture && NF == 0 { next }
+    capture { exit }
+  '
 }
 
 BK=
@@ -150,52 +189,123 @@ step=code
 git_in "$APP" checkout --detach "$REF"
 actual=$(git_in "$APP" rev-parse HEAD)
 [[ "$actual" == "$REF" ]] || fail "HEAD ${actual} différent de ${REF}."
+DIAG="$BK/migration-diagnostic.txt"
+install -m 600 /dev/null "$DIAG"
+{
+  echo "Étape code : commit ${actual}."
+  echo "Répertoire : ${APP}."
+  echo "Node : $("$NODE_BIN/node" -v)."
+  echo "Base visée : wagesse_preprod. Le mot de passe n'est pas journalisé."
+} >> "$DIAG"
+
+step=dependances
+dep_log=$(mktemp)
+if ! run_prisma "$dep_log" nodb "$NODE_BIN/npm" ci --no-audit --no-fund; then
+  rm -f "$dep_log"
+  fail "Installation des dépendances refusée. La base n'a pas été migrée."
+fi
+if ! run_prisma "$dep_log" nodb "$NODE_BIN/node" node_modules/prisma/build/index.js generate --schema prisma/schema.prisma; then
+  rm -f "$dep_log"
+  fail "Génération du client Prisma refusée. La base n'a pas été migrée."
+fi
+rm -f "$dep_log"
+
+step=typecheck
+type_log=$(mktemp)
+if ! run_prisma "$type_log" nodb "$NODE_BIN/npm" run typecheck; then
+  rm -f "$type_log"
+  fail "Le typecheck a échoué. La base n'a pas été migrée."
+fi
+rm -f "$type_log"
+
+step=privileges
+priv_log=$(mktemp)
+if ! run_prisma "$priv_log" db "$NODE_BIN/node" deploy/preprod/migration-preflight.mjs privileges; then
+  rm -f "$priv_log"
+  fail "Privilèges MariaDB insuffisants. Aucune migration n'est lancée."
+fi
+rm -f "$priv_log"
+
+step=migration_reprise
+failed_log=$(mktemp)
+if ! run_prisma "$failed_log" db "$NODE_BIN/node" deploy/preprod/migration-preflight.mjs failed; then
+  rm -f "$failed_log"
+  fail "Lecture de l'état des migrations refusée. Aucune migration n'est lancée."
+fi
+while IFS= read -r line; do
+  [[ -z "$line" || "$line" == "FAILED_NONE" ]] && continue
+  if [[ "$line" =~ ^FAILED\ (20261121190000_quote_submission_credit|20261123160000_account_access)\ schema_applied=(yes|no)$ ]]; then
+    failed_name="${BASH_REMATCH[1]}"
+    if [[ "${BASH_REMATCH[2]}" == "yes" ]]; then
+      rm -f "$failed_log"
+      fail "La migration ${failed_name} est marquée en échec et une partie du schéma est déjà présente. Aucune reprise automatique."
+    fi
+    echo "La migration ${failed_name} est marquée en échec sans changement de schéma. Journal Prisma annulé, puis migration rejouée." | tee -a "$DIAG"
+    if ! run_prisma "$failed_log" db "$NODE_BIN/node" node_modules/prisma/build/index.js migrate resolve --rolled-back "$failed_name" --schema prisma/schema.prisma; then
+      rm -f "$failed_log"
+      fail "Impossible d'annuler le journal de ${failed_name}. Aucune nouvelle migration n'est lancée."
+    fi
+  else
+    rm -f "$failed_log"
+    fail "Diagnostic de migration illisible. Aucune migration n'est lancée."
+  fi
+done < "$failed_log"
+rm -f "$failed_log"
 
 step=migration
 status_file=$(mktemp)
 set +e
 runuser -u wagesse -- env -i \
-  HOME=/opt/wagesse-preprod PATH="$NODE_BIN:/usr/bin:/bin" \
+  HOME=/opt/wagesse-preprod \
+  PATH="$NODE_BIN:/usr/bin:/bin" \
   DATABASE_URL="$db_url" \
-  bash -c 'set -euo pipefail; cd "$1"; npx prisma migrate status --schema prisma/schema.prisma' \
-  bash "$APP" >"$status_file" 2>&1
+  bash -c 'set -euo pipefail; cd "$1"; shift; "$@"' \
+  bash "$APP" "$NODE_BIN/node" node_modules/prisma/build/index.js migrate status --schema prisma/schema.prisma \
+  >"$status_file" 2>&1
 status_code=$?
 set -e
-secret_filter < "$status_file"
+record_prisma "$status_file"
 if grep -q "Database schema is up to date" "$status_file"; then
-  echo "Migration déjà appliquée."
+  echo "Migration déjà appliquée." | tee -a "$DIAG"
 else
-  names=$(grep -oE '[0-9]{14}_[a-z0-9_]+' "$status_file" | sort -u)
-  [[ -n "$names" ]] || fail "Migrations en attente refusées : vide."
+  names=$(pending_from_status < "$status_file" | sort -u)
+  [[ -n "$names" ]] || fail "État Prisma illisible ou vide. Aucune migration n'est lancée."
   while IFS= read -r name; do
     [[ -z "$name" ]] && continue
     case "$name" in
       "$MIGRATION"|"$MIGRATION_ACCESS") ;;
-      *) fail "Migrations en attente refusées : ${name}" ;;
+      *) fail "Migration en attente refusée : ${name}. Aucune migration n'est lancée." ;;
     esac
   done <<< "$names"
-  [[ "$status_code" -ne 0 ]] || fail "L'état des migrations est ambigu."
-  runuser -u wagesse -- env -i \
-    HOME=/opt/wagesse-preprod PATH="$NODE_BIN:/usr/bin:/bin" \
-    DATABASE_URL="$db_url" \
-    bash -c 'set -euo pipefail; cd "$1"; npx prisma migrate deploy --schema prisma/schema.prisma' \
-    bash "$APP" 2>&1 | secret_filter
+  [[ "$status_code" -ne 0 ]] || fail "L'état des migrations est ambigu. Aucune migration n'est lancée."
+  deploy_log=$(mktemp)
+  if ! run_prisma "$deploy_log" db "$NODE_BIN/node" node_modules/prisma/build/index.js migrate deploy --schema prisma/schema.prisma; then
+    rm -f "$deploy_log"
+    fail "prisma migrate deploy a échoué. La base n'est pas restaurée automatiquement. Lire le diagnostic redacté."
+  fi
+  rm -f "$deploy_log"
 fi
 rm -f "$status_file"
+
+step=migration_controle
+verify_log=$(mktemp)
+if ! run_prisma "$verify_log" db "$NODE_BIN/node" deploy/preprod/migration-preflight.mjs verify; then
+  rm -f "$verify_log"
+  fail "Le contrôle après migration a échoué. La base n'est pas restaurée automatiquement."
+fi
+rm -f "$verify_log"
 unset db_url
 
-step=dependances
-runuser -u wagesse -- env -i \
-  HOME=/opt/wagesse-preprod PATH="$NODE_BIN:/usr/bin:/bin" \
-  bash -c 'set -euo pipefail; cd "$1"; npm ci --no-audit --no-fund; npx prisma generate --schema prisma/schema.prisma' \
-  bash "$APP" 2>&1 | secret_filter
-
 step=compilation
-runuser -u wagesse -- env -i \
-  HOME=/opt/wagesse-preprod PATH="$NODE_BIN:/usr/bin:/bin" \
-  NODE_OPTIONS=--max-old-space-size=2048 \
-  bash -c 'set -euo pipefail; cd "$1"; npm run build' \
-  bash "$APP"
+build_log=$(mktemp)
+NODE_OPTIONS=--max-old-space-size=2048
+if ! run_prisma "$build_log" nodb "$NODE_BIN/npm" run build; then
+  unset NODE_OPTIONS
+  rm -f "$build_log"
+  fail "La compilation Next.js a échoué. La base n'est pas restaurée automatiquement."
+fi
+unset NODE_OPTIONS
+rm -f "$build_log"
 
 step=redemarrage
 systemctl restart wagesse-preprod.service
