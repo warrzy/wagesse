@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import type { QuoteStatus } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { getAuthContext, unauthorized } from "@/lib/api-auth"
+import { REDACTED_CONTACT } from "@/lib/contact-privacy"
 
 function isAdmin(role: string | null | undefined) {
   return role === "ADMIN" || role === "SUPER_ADMIN"
@@ -129,6 +130,11 @@ export async function GET(request: NextRequest) {
                   user: { select: { id: true, firstName: true, lastName: true, phone: true, email: true } },
                 },
               },
+              missions: {
+                select: { id: true, status: true, createdAt: true, missionReference: true },
+                orderBy: { createdAt: "desc" },
+                take: 1,
+              },
             },
           },
           trucker: {
@@ -137,11 +143,6 @@ export async function GET(request: NextRequest) {
               verificationStatus: true,
               user: { select: { id: true, firstName: true, lastName: true, phone: true, email: true } },
             },
-          },
-          missions: {
-            select: { id: true, status: true, createdAt: true, missionReference: true },
-            orderBy: { createdAt: "desc" },
-            take: 1,
           },
         },
       }),
@@ -162,7 +163,22 @@ export async function GET(request: NextRequest) {
         pageSize,
         total,
         totalPages: Math.ceil(total / pageSize),
-        items,
+        items: items.map((item) => {
+          const released = item.status === "ACCEPTED" || item.request.missions.length > 0
+          return {
+            ...item,
+            missions: item.request.missions,
+            request: {
+              ...item.request,
+              customer: {
+                ...item.request.customer,
+                user: released
+                  ? item.request.customer.user
+                  : { ...item.request.customer.user, phone: REDACTED_CONTACT, email: REDACTED_CONTACT },
+              },
+            },
+          }
+        }),
         filters: {
           truckers,
         },

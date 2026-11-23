@@ -18,6 +18,8 @@ import { GET as getMission } from "../../app/api/missions/[id]/route"
 import { GET as customerProfile } from "../../app/api/profile/customer/route"
 import { GET as adminUsers } from "../../app/api/admin/utilisateurs/route"
 import { GET as findAccount, POST as resetPassword } from "../../app/api/admin/mots-de-passe/route"
+import { GET as adminOffer } from "../../app/api/admin/offres/[id]/route"
+import { GET as adminUser } from "../../app/api/admin/utilisateurs/[id]/route"
 import { sendAccountEmail } from "../../lib/mail"
 
 const prisma = new PrismaClient()
@@ -171,6 +173,8 @@ test("les coordonnées restent masquées tant que le devis n'est pas accepté", 
   const richToken = generateToken(rich.id, rich.email, "TRUCKER")
   const otherToken = generateToken(other.id, other.email, "TRUCKER")
   const clientToken = generateToken(client.id, client.email, "CLIENT")
+  const admin = await createUser("ADMIN")
+  const adminToken = generateToken(admin.id, admin.email, "ADMIN")
 
   const listed = await browse(call("/api/requests/browse", "GET", poorToken))
   const listedBody = await listed.json()
@@ -202,6 +206,11 @@ test("les coordonnées restent masquées tant que le devis n'est pas accepté", 
   assert.equal(JSON.stringify(detailBody).includes(client.phone), false)
   const quoteView = await getQuote(call(`/api/quotes/${quoteId}`, "GET", richToken), { params: Promise.resolve({ id: quoteId }) })
   assert.equal(JSON.stringify(await quoteView.json()).includes(client.phone), false)
+  const offer = await adminOffer(call(`/api/admin/offres/${quoteId}`, "GET", adminToken), { params: Promise.resolve({ id: quoteId }) })
+  assert.equal(offer.status, 200)
+  const offerBody = await offer.json()
+  assert.equal(offerBody.data.request.customer.user.phone, "masqué")
+  assert.equal(JSON.stringify(offerBody).includes(client.phone), false)
   const direct = await unlockCustomer(call(`/api/requests/${request.id}/unlock-customer-contact`, "POST", richToken), { params: Promise.resolve({ id: request.id }) })
   assert.equal(direct.status, 403)
   const book = await contacts(call("/api/contacts", "GET", richToken))
@@ -286,6 +295,10 @@ test("réinitialisation administrateur, sessions et conservation du mode sans en
   assert.equal(reset.status, 200)
   const resetBody = await reset.json()
   const temporaryPassword = resetBody.data.temporaryPassword as string
+  const stored = await prisma.user.findUniqueOrThrow({ where: { id: client.id }, select: { password: true, tokenVersion: true } })
+  assert.equal(stored.password.startsWith("$2"), true)
+  assert.equal(stored.password.includes(temporaryPassword), false)
+  assert.equal(stored.tokenVersion, 1)
   const audits = await prisma.auditLog.findMany({ where: { resourceId: client.id, action: "password_reset_admin" } })
   assert.equal(JSON.stringify(audits).includes(temporaryPassword), false)
   const stillOpen = await customerProfile(call("/api/profile/customer", "GET", oldToken))
@@ -306,6 +319,29 @@ test("réinitialisation administrateur, sessions et conservation du mode sans en
   assert.equal(reused.status, 401)
   const replaced = await login(call("/api/auth/login", "POST", undefined, { identifier: client.email, password: "suivant123" }))
   assert.equal(replaced.status, 200)
+
+  const expiredReset = await resetPassword(call("/api/admin/mots-de-passe", "POST", adminToken, {
+    identifier: client.phone,
+    confirm: true,
+    identityMethod: "IN_PERSON",
+    identityNote: "Deuxième contrôle au bureau",
+  }))
+  assert.equal(expiredReset.status, 200)
+  const expiredPassword = (await expiredReset.json()).data.temporaryPassword as string
+  await prisma.user.update({
+    where: { id: client.id },
+    data: { temporaryPasswordExpiresAt: new Date(Date.now() - 60_000) },
+  })
+  const expiredLogin = await login(call("/api/auth/login", "POST", undefined, { identifier: client.phone, password: expiredPassword }))
+  assert.equal(expiredLogin.status, 401)
+  assert.equal((await expiredLogin.json()).code, "TEMP_PASSWORD_EXPIRED")
+
+  const dossier = await adminUser(call(`/api/admin/utilisateurs/${client.id}`, "GET", superToken), { params: Promise.resolve({ id: client.id }) })
+  const dossierBody = await dossier.json()
+  assert.equal(dossier.status, 200)
+  assert.equal(dossierBody.data.password, undefined)
+  assert.equal(dossierBody.data.twoFactorSecret, undefined)
+  assert.equal(JSON.stringify(dossierBody).includes(expiredPassword), false)
 
   const reinforced = await resetPassword(call("/api/admin/mots-de-passe", "POST", superToken, {
     identifier: otherSuper.email,
