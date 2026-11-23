@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { assertAuthAttemptAllowed, clearAuthFailure, generateToken, hashPassword, recordAuthFailure, verifyPassword } from "@/lib/auth"
+import { findAccountsByIdentifier } from "@/lib/account-directory"
 import { writeAudit } from "@/lib/audit"
 import { loginSchema } from "@/lib/validations"
 import { prisma } from "@/lib/prisma"
@@ -28,18 +29,28 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { phone, password } = validation.data
-    if (!assertAuthAttemptAllowed("login", phone).ok) {
+    const { phone, identifier, password } = validation.data
+    const rawIdentifier = (identifier || phone || "").trim()
+    if (!assertAuthAttemptAllowed("login", rawIdentifier).ok) {
       return NextResponse.json(
         { success: false, error: "Trop de tentatives. Réessayez plus tard.", code: "AUTH_RATE_LIMIT" },
         { status: 429 }
       )
     }
 
-    const user = await prisma.user.findUnique({ where: { phone } })
+    const found = await findAccountsByIdentifier(rawIdentifier)
+    if (found.status === "collision") {
+      await timingPad(password)
+      recordAuthFailure("login", rawIdentifier)
+      return NextResponse.json(
+        { success: false, error: "Identifiants incorrects", code: "INVALID_CREDENTIALS" },
+        { status: 401 }
+      )
+    }
+    const user = found.status === "ok" ? found.user : null
     if (!user) {
       await timingPad(password)
-      recordAuthFailure("login", phone)
+      recordAuthFailure("login", rawIdentifier)
       return NextResponse.json(
         { success: false, error: "Identifiants incorrects", code: "INVALID_CREDENTIALS" },
         { status: 401 }
@@ -48,7 +59,7 @@ export async function POST(request: NextRequest) {
 
     const passwordValid = await verifyPassword(password, user.password)
     if (!passwordValid) {
-      recordAuthFailure("login", phone)
+      recordAuthFailure("login", rawIdentifier)
       const attempts = user.loginAttempts + 1
       const lockedUntil = attempts >= 5 ? new Date(Date.now() + 15 * 60 * 1000) : null
       await prisma.user.update({
@@ -78,19 +89,51 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    clearAuthFailure("login", phone)
+    clearAuthFailure("login", rawIdentifier)
+
+    if (user.passwordMustChange) {
+      const expires = user.temporaryPasswordExpiresAt
+      if (!expires || expires.getTime() <= Date.now()) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Ce mot de passe temporaire a expiré. Demandez une nouvelle assistance.",
+            code: "TEMP_PASSWORD_EXPIRED",
+          },
+          { status: 401 }
+        )
+      }
+      const token = generateToken(user.id, user.email, user.role, user.tokenVersion, "password-change")
+      return NextResponse.json({
+        success: true,
+        data: {
+          token,
+          passwordChangeRequired: true,
+          user: {
+            id: user.id,
+            phone: user.phone,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role,
+            phoneVerified: user.phoneVerified,
+          },
+        },
+        message: "Changez le mot de passe temporaire avant de continuer.",
+      })
+    }
 
     await prisma.user.update({
       where: { id: user.id },
       data: { lastLoginAt: new Date(), loginAttempts: 0, lockedUntil: null },
     })
 
-    const token = generateToken(user.id, user.email, user.role)
+    const token = generateToken(user.id, user.email, user.role, user.tokenVersion)
 
     return NextResponse.json({
       success: true,
       data: {
         token,
+        passwordChangeRequired: false,
         user: {
           id: user.id,
           phone: user.phone,
@@ -103,7 +146,7 @@ export async function POST(request: NextRequest) {
       message: "Connexion réussie",
     })
   } catch (error) {
-    console.error("Login error:", error)
+    console.error("Login error:", error instanceof Error ? error.name : "error")
     return NextResponse.json(
       { success: false, error: "Internal server error", code: "SERVER_ERROR" },
       { status: 500 }

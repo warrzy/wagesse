@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { assertAuthAttemptAllowed, generateToken, hashPassword, recordAuthFailure } from "@/lib/auth"
 import { issueOtp } from "@/lib/otp-delivery"
 import { phoneVerificationMisconfigured, phoneVerificationRequired } from "@/lib/phone-policy"
+import { normalizeEmail } from "@/lib/account-identity"
 import { signupSchema } from "@/lib/validations"
 import { prisma } from "@/lib/prisma"
 
@@ -39,7 +40,14 @@ export async function POST(request: NextRequest) {
         { status: 429 }
       )
     }
-    const email = `${data.phone}@wagesse.local`
+    const providedEmail = data.email?.trim()
+    const email = providedEmail ? normalizeEmail(providedEmail) : `${data.phone}@wagesse.local`
+    if (!email) {
+      return NextResponse.json(
+        { success: false, error: "Adresse e-mail invalide", code: "VALIDATION_ERROR" },
+        { status: 400 }
+      )
+    }
 
     const existingUser = await prisma.user.findFirst({
       where: { OR: [{ phone: data.phone }, { email }] },
@@ -49,7 +57,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "Un compte existe déjà avec ce numéro de téléphone",
+          error: "Un compte existe déjà avec ces informations",
           code: "USER_EXISTS",
         },
         { status: 409 }
@@ -105,7 +113,7 @@ export async function POST(request: NextRequest) {
       debugOtp = issued.debugOtp
     }
 
-    const token = generateToken(user.id, user.email, user.role)
+    const token = generateToken(user.id, user.email, user.role, user.tokenVersion)
 
     return NextResponse.json(
       {
@@ -131,7 +139,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     )
   } catch (error) {
-    console.error("Signup error:", error)
+    console.error("Signup error:", error instanceof Error ? error.name : "error")
     return NextResponse.json(
       {
         success: false,

@@ -9,6 +9,20 @@ const updateQuotePriceSchema = z.object({
   totalPrice: z.number().positive('Le prix doit être positif'),
 });
 
+function redactCustomerUntilAccepted<T extends { status: string; request?: { customer?: { user?: { phone?: string | null; email?: string | null } } } }>(quote: T): T {
+  if (contactsReleased(quote.status) || !quote.request?.customer?.user) return quote
+  return {
+    ...quote,
+    request: {
+      ...quote.request,
+      customer: {
+        ...quote.request.customer,
+        user: maskContactUser(quote.request.customer.user, true),
+      },
+    },
+  }
+}
+
 /**
  * PUT /api/quotes/[id]
  * Update a quote's price (trucker only, while PENDING)
@@ -78,7 +92,7 @@ export async function GET(
     }
 
     if (isAdminRole(auth.role)) {
-      return NextResponse.json({ success: true, data: quote });
+      return NextResponse.json({ success: true, data: redactCustomerUntilAccepted(quote) });
     }
 
     const customerId = await getCustomerProfileId(auth.userId);

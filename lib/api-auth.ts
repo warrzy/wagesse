@@ -21,13 +21,14 @@ export async function getAuthContext(request: NextRequest): Promise<AuthContext 
   const token = request.headers.get("Authorization")?.split(" ")[1]
   if (!token) return null
   const decoded = verifyToken(token)
-  if (!decoded) return null
+  if (!decoded || decoded.purpose) return null
 
   const user = await prisma.user.findUnique({
     where: { id: decoded.userId },
-    select: { id: true, email: true, role: true, status: true, deletedAt: true },
+    select: { id: true, email: true, role: true, status: true, deletedAt: true, tokenVersion: true },
   })
   if (!user || user.deletedAt || user.status !== "ACTIVE") return null
+  if (user.tokenVersion !== decoded.tokenVersion) return null
   return { userId: user.id, email: user.email, role: user.role }
 }
 

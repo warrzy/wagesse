@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getAuthContext, unauthorized } from "@/lib/api-auth"
+import { REDACTED_CONTACT } from "@/lib/contact-privacy"
 
 function isAdmin(role: string | null | undefined) {
   return role === "ADMIN" || role === "SUPER_ADMIN"
@@ -233,7 +234,9 @@ export async function GET(request: NextRequest) {
         type: "REQUEST_CREATED",
         label: "Nouvelle annonce créée",
         userId: r.customer?.user?.id,
-        userPhone: r.customer?.user?.phone,
+        userPhone: ["ASSIGNED", "IN_PROGRESS", "COMPLETED", "DISPUTED"].includes(String(r.status))
+          ? r.customer?.user?.phone
+          : REDACTED_CONTACT,
         resourceId: r.id,
         status: String(r.status),
       })

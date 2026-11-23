@@ -1,4 +1,4 @@
-import { maskEmail, maskPhoneNumber } from "@/lib/auth"
+export const REDACTED_CONTACT = "masqué"
 
 type ContactUser = {
   phone?: string | null
@@ -10,8 +10,8 @@ export function maskContactUser<T extends ContactUser>(user: T, hide: boolean): 
   if (!hide) return user
   return {
     ...user,
-    phone: user.phone ? maskPhoneNumber(user.phone) : user.phone,
-    email: user.email ? maskEmail(user.email) : user.email,
+    phone: user.phone == null ? user.phone : REDACTED_CONTACT,
+    email: user.email == null ? user.email : REDACTED_CONTACT,
   }
 }
 

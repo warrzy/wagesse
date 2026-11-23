@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getAuthContext, unauthorized } from "@/lib/api-auth"
+import { REDACTED_CONTACT } from "@/lib/contact-privacy"
 
 function isAdmin(role: string | null | undefined) {
   return role === "ADMIN" || role === "SUPER_ADMIN"
@@ -66,6 +67,39 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                 user: { select: { id: true, firstName: true, lastName: true, phone: true, email: true } },
               },
             },
+            missions: {
+              orderBy: { createdAt: "desc" },
+              select: {
+                id: true,
+                status: true,
+                createdAt: true,
+                missionReference: true,
+                scheduledDate: true,
+                startDate: true,
+                endDate: true,
+                contractPrice: true,
+                contractCurrency: true,
+                platformCommission: true,
+                platformCommissionRate: true,
+                payment: {
+                  select: {
+                    id: true,
+                    reference: true,
+                    status: true,
+                    type: true,
+                    amount: true,
+                    currency: true,
+                    providerName: true,
+                    initiatedAt: true,
+                    confirmedAt: true,
+                  },
+                },
+                statusHistory: {
+                  orderBy: { timestamp: "asc" },
+                  select: { previousStatus: true, newStatus: true, reason: true, notes: true, changedBy: true, timestamp: true },
+                },
+              },
+            },
           },
         },
         trucker: {
@@ -78,39 +112,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             user: { select: { id: true, firstName: true, lastName: true, phone: true, email: true } },
           },
         },
-        missions: {
-          orderBy: { createdAt: "desc" },
-          select: {
-            id: true,
-            status: true,
-            createdAt: true,
-            missionReference: true,
-            scheduledDate: true,
-            startDate: true,
-            endDate: true,
-            contractPrice: true,
-            contractCurrency: true,
-            platformCommission: true,
-            platformCommissionRate: true,
-            payment: {
-              select: {
-                id: true,
-                reference: true,
-                status: true,
-                type: true,
-                amount: true,
-                currency: true,
-                providerName: true,
-                initiatedAt: true,
-                confirmedAt: true,
-              },
-            },
-            statusHistory: {
-              orderBy: { timestamp: "asc" },
-              select: { previousStatus: true, newStatus: true, reason: true, notes: true, changedBy: true, timestamp: true },
-            },
-          },
-        },
       },
     })
 
@@ -118,7 +119,22 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ success: false, error: "Offre introuvable" }, { status: 404 })
     }
 
-    return NextResponse.json({ success: true, data: quote })
+    const released = quote.status === "ACCEPTED" || quote.request.missions.length > 0
+    const data = {
+      ...quote,
+      missions: quote.request.missions,
+      request: {
+        ...quote.request,
+        customer: {
+          ...quote.request.customer,
+          user: released
+            ? quote.request.customer.user
+            : { ...quote.request.customer.user, phone: REDACTED_CONTACT, email: REDACTED_CONTACT },
+        },
+      },
+    }
+
+    return NextResponse.json({ success: true, data })
   } catch (error) {
     console.error("[GET /api/admin/offres/[id]]", error)
     return NextResponse.json(

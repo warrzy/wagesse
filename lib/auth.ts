@@ -25,23 +25,44 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 }
 
 // Generate JWT token
-export function generateToken(userId: string, email: string, role: string): string {
+export type TokenPurpose = "password-change"
+
+export function generateToken(
+  userId: string,
+  email: string,
+  role: string,
+  tokenVersion = 0,
+  purpose?: TokenPurpose
+): string {
   return jwt.sign(
-    { userId, email, role },
+    { userId, email, role, tokenVersion, ...(purpose ? { purpose } : {}) },
     jwtSecret(),
-    { expiresIn: JWT_EXPIRATION, algorithm: "HS256" }
+    { expiresIn: purpose ? "15m" : JWT_EXPIRATION, algorithm: "HS256" }
   )
 }
 
-// Verify JWT token
-export function verifyToken(token: string): { userId: string; email: string; role: string } | null {
+export function verifyToken(token: string): {
+  userId: string
+  email: string
+  role: string
+  tokenVersion: number
+  purpose?: string
+} | null {
   try {
     const decoded = jwt.verify(token, jwtSecret(), { algorithms: ["HS256"] }) as {
       userId: string
       email: string
       role: string
+      tokenVersion?: number
+      purpose?: string
     }
-    return decoded
+    return {
+      userId: decoded.userId,
+      email: decoded.email,
+      role: decoded.role,
+      tokenVersion: typeof decoded.tokenVersion === "number" ? decoded.tokenVersion : 0,
+      purpose: decoded.purpose,
+    }
   } catch {
     return null
   }
