@@ -2,7 +2,7 @@
 
 Décision préparée, non exécutée. La production, la base commerciale et les autres applications du VPS ne sont pas modifiées. Aucun règlement réel n'est demandé.
 
-Le commit à installer est le sommet de la pull request #11 une fois son contrôle continu vert. Il doit contenir le logo `7a2a9719cddf354bb66914107b53c748f92bffda`, l'authentification simple `d01574087fcbf740e7d9bd5ea4f715a32f7ed113`, et la migration dont l'empreinte est `47b47f7994fd4ea5a52c61a267883e4c4b9f72b5a9632a75aa7c2df3720a37c8`.
+Le commit à installer est le sommet qui contient la pull request #11 et les compléments d'accès, une fois son contrôle continu vert. Il doit contenir le logo `7a2a9719cddf354bb66914107b53c748f92bffda`, l'authentification simple `d01574087fcbf740e7d9bd5ea4f715a32f7ed113`, la migration de crédits `47b47f7994fd4ea5a52c61a267883e4c4b9f72b5a9632a75aa7c2df3720a37c8`, et la migration d'accès `4fa3db1c17eb10549bc1069a5cd9e694e60bbbe2bee0a3ae0b2581451f8bb70a`. Le parcours, les permissions et le retour arrière des colonnes de session sont dans `docs/security/ACCES_COMPTES.md`.
 
 `deploy/preprod/deploy-auth-simple.sh` refuse ce commit, parce qu'il modifie Prisma. Ne pas l'utiliser. Ne pas lancer `deploy/production/deploy.sh` : la production n'est pas ouverte.
 

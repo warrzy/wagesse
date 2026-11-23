@@ -44,13 +44,16 @@ async function createUser(role: "CLIENT" | "TRUCKER" | "ADMIN", status: "ACTIVE"
 }
 
 test("un numéro inconnu et un compte existant reçoivent la même réponse de récupération", async () => {
-  const env = process.env as { OTP_DEBUG_RETURN?: string }
+  const env = process.env as { OTP_DEBUG_RETURN?: string; ACCOUNT_RECOVERY_CHANNEL?: string }
   const previous = env.OTP_DEBUG_RETURN
+  const previousChannel = env.ACCOUNT_RECOVERY_CHANNEL
   env.OTP_DEBUG_RETURN = "true"
+  env.ACCOUNT_RECOVERY_CHANNEL = "sms"
   const user = await createUser("CLIENT")
   const unknown = await forgotPassword(jsonRequest("/api/auth/forgot-password", { phone: "70000000" }))
   const known = await forgotPassword(jsonRequest("/api/auth/forgot-password", { phone: user.phone }))
   env.OTP_DEBUG_RETURN = previous
+  env.ACCOUNT_RECOVERY_CHANNEL = previousChannel
   assert.equal(unknown.status, 200)
   assert.equal(known.status, 200)
   const unknownBody = await unknown.json()
@@ -61,8 +64,10 @@ test("un numéro inconnu et un compte existant reçoivent la même réponse de r
 })
 
 test("la réinitialisation change le mot de passe et un compte bloqué ne se connecte pas", async () => {
-  const env = process.env as { OTP_DEBUG_RETURN?: string }
+  const env = process.env as { OTP_DEBUG_RETURN?: string; ACCOUNT_RECOVERY_CHANNEL?: string }
+  const previousChannel = env.ACCOUNT_RECOVERY_CHANNEL
   env.OTP_DEBUG_RETURN = "true"
+  env.ACCOUNT_RECOVERY_CHANNEL = "sms"
   const user = await createUser("CLIENT")
   const asked = await forgotPassword(jsonRequest("/api/auth/forgot-password", { phone: user.phone }))
   const code = (await asked.json()).debugOtp as string
@@ -73,6 +78,7 @@ test("la réinitialisation change le mot de passe et un compte bloqué ne se con
 
   const blocked = await createUser("CLIENT", "BLOCKED")
   const refused = await login(jsonRequest("/api/auth/login", { phone: blocked.phone, password: "password123" }))
+  env.ACCOUNT_RECOVERY_CHANNEL = previousChannel
   assert.equal(refused.status, 403)
 })
 

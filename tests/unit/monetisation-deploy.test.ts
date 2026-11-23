@@ -12,6 +12,7 @@ test("le déploiement isolé n'accepte que la migration relue et la base de pré
   const runner = source("deploy/preprod/run-step.sh")
   assert.match(deploy, /7a2a9719cddf354bb66914107b53c748f92bffda/)
   assert.match(deploy, /47b47f7994fd4ea5a52c61a267883e4c4b9f72b5a9632a75aa7c2df3720a37c8/)
+  assert.match(deploy, /4fa3db1c17eb10549bc1069a5cd9e694e60bbbe2bee0a3ae0b2581451f8bb70a/)
   assert.match(deploy, /assert_preprod_database/)
   assert.match(deploy, /restore-check\.sh/)
   assert.match(deploy, /wagesse-preprod\.service/)

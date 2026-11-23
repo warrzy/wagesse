@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getAuthContext, unauthorized } from "@/lib/api-auth"
+import { REDACTED_CONTACT } from "@/lib/contact-privacy"
 
 function isAdmin(role: string | null | undefined) {
   return role === "ADMIN" || role === "SUPER_ADMIN"
@@ -173,7 +174,19 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ success: false, error: "Annonce introuvable" }, { status: 404 })
     }
 
-    return NextResponse.json({ success: true, data: req })
+    const released =
+      req.missions.length > 0 || req.quotes.some((quote) => quote.status === "ACCEPTED")
+    const data = released
+      ? req
+      : {
+          ...req,
+          customer: {
+            ...req.customer,
+            user: { ...req.customer.user, phone: REDACTED_CONTACT, email: REDACTED_CONTACT },
+          },
+        }
+
+    return NextResponse.json({ success: true, data })
   } catch (error) {
     console.error("[GET /api/admin/annonces/[id]]", error)
     return NextResponse.json(

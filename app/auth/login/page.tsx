@@ -14,7 +14,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
-    phone: "",
+    identifier: "",
     password: "",
   })
 
@@ -37,11 +37,17 @@ export default function LoginPage() {
         return
       }
 
-      const response = await apiClient.login(formData.phone, formData.password)
+      const response = await apiClient.login(formData.identifier, formData.password)
 
       if (!response.success) {
         setError(response.error || "Erreur de connexion")
         setLoading(false)
+        return
+      }
+
+      if (response.data?.passwordChangeRequired && response.data.token) {
+        sessionStorage.setItem("password_change_token", response.data.token)
+        router.push("/auth/changer-mot-de-passe")
         return
       }
 
@@ -63,7 +69,7 @@ export default function LoginPage() {
   }
 
   return (
-    <AuthShell title="Se connecter" subtitle="Téléphone et mot de passe. Aucun code SMS n’est demandé.">
+    <AuthShell title="Se connecter" subtitle="Téléphone ou e-mail, puis le mot de passe. Aucun code SMS n’est demandé.">
             <div>
 
             {error && (
@@ -74,13 +80,14 @@ export default function LoginPage() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <input
-                type="tel"
-                name="phone"
-                aria-label="Numéro de téléphone"
-                placeholder="Numéro de téléphone"
-                value={formData.phone}
+                type="text"
+                name="identifier"
+                aria-label="Téléphone ou e-mail"
+                placeholder="Téléphone ou e-mail"
+                value={formData.identifier}
                 onChange={handleInputChange}
                 className="input-field"
+                autoComplete="username"
                 required
               />
 

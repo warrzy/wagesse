@@ -11,6 +11,7 @@ La V1 commerciale fonctionne sans SMS. Le code OTP, les routes, le modèle `phon
 - Les achats, forfaits, déblocages, devis et missions ne consultent pas ce champ.
 - Les permissions, les soldes, la validation manuelle et l'interdiction d'une double attribution restent actifs.
 - Un numéro non vérifié ne reçoit pas de code de réinitialisation. Le rétablissement passe par un administrateur, après un contrôle d'identité hors du numéro.
+- Le canal de récupération se choisit avec `ACCOUNT_RECOVERY_CHANNEL`. La valeur de lancement est `admin`. `sms` réutilise les routes OTP déjà présentes, sans les remplacer. `smtp` est décrit dans `docs/security/REACTIVATION_SMTP.md`.
 
 ## Mode vérifié
 

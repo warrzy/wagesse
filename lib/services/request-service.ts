@@ -1,7 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { createTransportRequestSchema, CreateTransportRequestInput } from '@/lib/validations';
 import { TransportRequest, RequestStatus } from '@prisma/client';
-import { maskEmail, maskPhoneNumber } from '@/lib/auth';
 import { maskContactUser } from '@/lib/contact-privacy';
 import { notifyAdmins, notifyUser } from '@/lib/notify';
 import { sanitizeOptionalString } from '@/lib/anti-leak';
@@ -119,7 +118,7 @@ export const requestService = {
         (quote) => quote.truckerId === match.truckerId && quote.status === "ACCEPTED"
       )
       if (!accepted) {
-        match.trucker.user.phone = maskPhoneNumber(match.trucker.user.phone)
+        match.trucker.user = maskContactUser(match.trucker.user, true)
       }
     }
 
@@ -131,12 +130,21 @@ export const requestService = {
    * (used when a trucker views a request to decide whether to quote on it)
    */
   async getPublicById(requestId: string) {
-    return await prisma.transportRequest.findFirst({
+    const request = await prisma.transportRequest.findFirst({
       where: { id: requestId, status: { not: 'DRAFT' }, deletedAt: null },
       include: {
         customer: { select: customerSelect },
       },
     });
+    if (!request) return null
+    return {
+      ...request,
+      customerContactsUnlocked: false,
+      customer: {
+        ...request.customer,
+        user: maskContactUser(request.customer.user, true),
+      },
+    }
   },
 
   async getPublicByIdForUser(requestId: string, truckerId: string) {
@@ -162,8 +170,7 @@ export const requestService = {
     const customerContactsUnlocked = Boolean(accepted || mission)
 
     if (!customerContactsUnlocked) {
-      request.customer.user.phone = maskPhoneNumber(request.customer.user.phone);
-      request.customer.user.email = maskEmail(request.customer.user.email);
+      request.customer.user = maskContactUser(request.customer.user, true)
     }
 
     return { ...request, customerContactsUnlocked };
@@ -387,17 +394,25 @@ export const requestService = {
       prisma.transportRequest.count({ where }),
     ]);
 
-    const unlocks = viewerUserId
-      ? await prisma.contactUnlock.findMany({
-          where: { unlockedByUserId: viewerUserId, requestId: { in: requests.map((item) => item.id) } },
+    const releasedIds = new Set<string>()
+    if (viewerUserId && requests.length > 0) {
+      const requestIds = requests.map((item) => item.id)
+      const [acceptedQuotes, missions] = await Promise.all([
+        prisma.quote.findMany({
+          where: { requestId: { in: requestIds }, status: "ACCEPTED", trucker: { userId: viewerUserId } },
           select: { requestId: true },
-        })
-      : [];
-    const unlockedIds = new Set(unlocks.map((item) => item.requestId));
+        }),
+        prisma.mission.findMany({
+          where: { requestId: { in: requestIds }, trucker: { userId: viewerUserId } },
+          select: { requestId: true },
+        }),
+      ])
+      for (const item of [...acceptedQuotes, ...missions]) releasedIds.add(item.requestId)
+    }
 
     const visible = requests.map((item) => {
       const ownRequest = item.customer.user.id === viewerUserId;
-      if (ownRequest || unlockedIds.has(item.id)) return item;
+      if (ownRequest || releasedIds.has(item.id)) return item;
       return {
         ...item,
         customer: {

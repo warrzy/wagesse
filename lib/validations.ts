@@ -1,10 +1,22 @@
 import { z } from "zod"
+import { classifyIdentifier } from "@/lib/account-identity"
 
-// Auth Schemas
-export const loginSchema = z.object({
-  phone: z.string().regex(/^[0-9]{8,}$/, "Numéro de téléphone invalide"),
-  password: z.string().min(8, "Le mot de passe doit avoir au moins 8 caractères"),
-})
+export const loginSchema = z
+  .object({
+    phone: z.string().optional(),
+    identifier: z.string().optional(),
+    password: z.string().min(8, "Le mot de passe doit avoir au moins 8 caractères"),
+  })
+  .superRefine((data, ctx) => {
+    const raw = (data.identifier || data.phone || "").trim()
+    if (!classifyIdentifier(raw)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Indiquez un téléphone ou un e-mail valide",
+        path: ["identifier"],
+      })
+    }
+  })
 
 /** New passwords. Existing hashes stay valid: login does not reapply this rule. */
 export const passwordSchema = z
@@ -16,6 +28,7 @@ export const passwordSchema = z
 // Base signup payload — this is what actually gets sent to the API
 export const signupSchema = z.object({
   phone: z.string().regex(/^[0-9]{8,}$/, "Numéro de téléphone invalide"),
+  email: z.string().trim().max(191).optional(),
   password: passwordSchema,
   firstName: z.string().min(2, "Le prénom est requis"),
   lastName: z.string().min(2, "Le nom est requis"),

@@ -2,6 +2,7 @@ import { ApiResponse } from "@/lib/types"
 
 interface AuthResponseData {
   token: string
+  passwordChangeRequired?: boolean
   user: {
     id: string
     phone: string
@@ -618,8 +619,8 @@ class APIClient {
   }
 
   // Authentication
-  async login(phone: string, password: string) {
-    return this.request<AuthResponseData>("POST", "/auth/login", { phone, password })
+  async login(identifier: string, password: string) {
+    return this.request<AuthResponseData>("POST", "/auth/login", { identifier, password })
   }
 
   async signup(data: {
@@ -636,8 +637,37 @@ class APIClient {
     return this.request("POST", "/auth/verify-otp", { phone, code })
   }
 
-  async forgotPassword(phone: string) {
-    return this.request("POST", "/auth/forgot-password", { phone })
+  async forgotPassword(identifier: string) {
+    return this.request("POST", "/auth/forgot-password", { identifier })
+  }
+
+  async recoveryPolicy() {
+    return this.request<{ channel: "admin" | "smtp" | "sms"; automaticDelivery: boolean }>("GET", "/auth/recovery-policy")
+  }
+
+  async changeTemporaryPassword(password: string, token: string) {
+    const previous = typeof window !== "undefined" ? localStorage.getItem("auth_token") : this.token
+    if (typeof window !== "undefined") localStorage.removeItem("auth_token")
+    this.token = token
+    const result = await this.request<AuthResponseData>("POST", "/auth/change-password", { password })
+    if (typeof window !== "undefined" && previous) localStorage.setItem("auth_token", previous)
+    this.token = previous
+    return result
+  }
+
+  async adminFindAccount(identifier: string) {
+    return this.request("GET", `/admin/mots-de-passe?identifier=${encodeURIComponent(identifier)}`)
+  }
+
+  async adminResetPassword(body: {
+    identifier: string
+    confirm: true
+    identityDoubt?: boolean
+    identityMethod: string
+    identityNote: string
+    confirmationPhrase?: string
+  }) {
+    return this.request("POST", "/admin/mots-de-passe", body)
   }
 
   async resetPassword(data: { phone: string; code: string; password: string }) {

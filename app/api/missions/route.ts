@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { missionService } from '@/lib/services/mission-service';
 import { getAuthContext, getCustomerProfileId, getTruckerProfileId, unauthorized } from '@/lib/api-auth';
 import { MissionStatus } from '@prisma/client';
-import { prisma } from '@/lib/prisma';
-import { maskContactUser } from '@/lib/contact-privacy';
 
 /**
  * GET /api/missions?status=IN_PROGRESS&skip=0&take=10
@@ -40,23 +38,7 @@ export async function GET(request: NextRequest) {
       take,
     });
 
-    const unlocks = await prisma.contactUnlock.findMany({
-      where: { unlockedByUserId: auth.userId, requestId: { in: result.missions.map((mission) => mission.requestId) } },
-      select: { requestId: true },
-    });
-    const unlockedIds = new Set(unlocks.map((item) => item.requestId));
-    const missions = result.missions.map((mission) => {
-      if (unlockedIds.has(mission.requestId)) return mission;
-      if (role === 'CLIENT' && mission.trucker?.user) {
-        return { ...mission, trucker: { ...mission.trucker, user: maskContactUser(mission.trucker.user, true) } };
-      }
-      if (role === 'TRUCKER' && mission.customer?.user) {
-        return { ...mission, customer: { ...mission.customer, user: maskContactUser(mission.customer.user, true) } };
-      }
-      return mission;
-    });
-
-    return NextResponse.json({ success: true, data: { ...result, missions } });
+    return NextResponse.json({ success: true, data: result });
   } catch (error: any) {
     console.error('[GET /api/missions]', error);
     return NextResponse.json(

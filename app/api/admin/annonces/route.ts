@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getAuthContext, unauthorized } from "@/lib/api-auth"
+import { REDACTED_CONTACT } from "@/lib/contact-privacy"
 
 function isAdmin(role: string | null | undefined) {
   return role === "ADMIN" || role === "SUPER_ADMIN"
@@ -143,7 +144,16 @@ export async function GET(request: NextRequest) {
         pageSize,
         total,
         totalPages: Math.ceil(total / pageSize),
-        items,
+        items: items.map((item) => {
+          if (item.missions.length > 0) return item
+          return {
+            ...item,
+            customer: {
+              ...item.customer,
+              user: { ...item.customer.user, phone: REDACTED_CONTACT, email: REDACTED_CONTACT },
+            },
+          }
+        }),
         filters: {
           materials,
         },

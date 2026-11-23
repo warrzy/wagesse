@@ -60,6 +60,7 @@ const sections: NavSection[] = [
       { label: "Administrateurs", href: "/admin/administrateurs" },
       { label: "Notifications", href: "/admin/notifications" },
       { label: "Journal d’audit", href: "/admin/logs" },
+      { label: "Réinitialisation de mot de passe", href: "/admin/mots-de-passe" },
       { label: "Paramètres", href: "/admin/parametres" },
     ],
   },

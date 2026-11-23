@@ -57,6 +57,9 @@ export async function POST(request: NextRequest) {
         password: await hashPassword(password),
         loginAttempts: 0,
         lockedUntil: null,
+        passwordMustChange: false,
+        temporaryPasswordExpiresAt: null,
+        tokenVersion: { increment: 1 },
       },
     })
 
